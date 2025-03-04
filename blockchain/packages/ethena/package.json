@@ -1,0 +1,50 @@
+{
+    "name": "@molecula-monorepo/blockchain.ethena",
+    "description": "A package responsible for compiling ethena contracts",
+    "version": "0.13.0",
+    "private": true,
+    "license": "GPL-3.0-only",
+    "main": "src/index.ts",
+    "scripts": {
+        "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version",
+        "compile": "hardhat compile",
+        "eslint:check": "eslint . --resolve-plugins-relative-to .",
+        "eslint:fix": "eslint --fix . --resolve-plugins-relative-to .",
+        "prettier:check": "prettier --check .",
+        "prettier:fix": "prettier --write .",
+        "susde:deposit": "yarn --cwd ../../.. run compile:all && ts-node --files scripts/stakeUSDe.ts",
+        "susde:previewRedeem": "yarn --cwd ../../.. run compile:all && ts-node --files scripts/stakeUSDe-previewRedeem.ts",
+        "test": "hardhat test",
+        "tsc": "tsc",
+        "usde:mint": "yarn --cwd ../../.. run compile:all && ts-node --files scripts/mintUSDe.ts"
+    },
+    "dependencies": {
+        "@molecula-monorepo/solidity": "*",
+        "@openzeppelin/contracts": "^4.9.5",
+        "hardhat": "^2.22.19",
+        "hardhat-gas-reporter": "^2.2.2",
+        "node-fetch": "^2.6.7"
+    },
+    "devDependencies": {
+        "@molecula-monorepo/eslint-config-shared": "*",
+        "@molecula-monorepo/prettier-config-shared": "*",
+        "@molecula-monorepo/tsconfig-shared": "*",
+        "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+        "@nomicfoundation/hardhat-ethers": "^3.0.8",
+        "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
+        "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+        "@nomicfoundation/hardhat-verify": "^2.0.12",
+        "@typechain/ethers-v6": "^0.5.1",
+        "@typechain/hardhat": "^9.1.0",
+        "@types/chai": "^4.3.11",
+        "@types/mocha": "^10.0.6",
+        "@types/node": "^20.11.20",
+        "chai": "^4.3.7",
+        "ethers": "^6.13.4",
+        "solidity-coverage": "^0.8.14",
+        "typechain": "^8.3.2"
+    },
+    "peerDependencies": {
+        "@molecula-monorepo/blockchain.addresses": "*"
+    }
+}

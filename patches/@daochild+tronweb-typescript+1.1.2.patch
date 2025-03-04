@@ -1,0 +1,10 @@
+diff --git a/node_modules/@daochild/tronweb-typescript/dist/index.d.ts b/node_modules/@daochild/tronweb-typescript/dist/index.d.ts
+index a19a5e6..0be8d98 100644
+--- a/node_modules/@daochild/tronweb-typescript/dist/index.d.ts
++++ b/node_modules/@daochild/tronweb-typescript/dist/index.d.ts
+@@ -1,3 +1,5 @@
++import('./interfaces');
++
+ declare module 'tronweb' {
+     import { BigNumber } from "bignumber.js";
+     import { Account, AccountMnemonic, AssetTRC10, AssetUpdate, BlockInfo, BlockInput, BlockTransaction, BytesLike, ChainParameter, ContractExecutionParams, CreateRandomOptions, DelegatedResourceAccount, DelegatedResourceList, EnergyEstimate, EventResult, Exchange, Header, HexString, JsonFragment, KeyValue, Miner, NodeInfo, Proposal, Resource, SideOptions, TokenInfo, Transaction, TransactionResult, TriggerConstantContractResult, TronAccountResource, TronContract, TronContractResult, TronWebConstructor, TrxAccount } from "tronweb/interfaces";

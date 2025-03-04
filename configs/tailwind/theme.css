@@ -1,0 +1,76 @@
+@tailwind base;
+
+@layer base {
+    :root {
+        --color-bg-primary: 255 255 255;
+        --color-bg-primary-inverted: 0 0 0;
+        --color-bg-secondary: 238 238 238;
+        --color-bg-secondary-inverted: 38 38 38;
+        --color-bg-tertiary: 246 246 246;
+        --color-bg-tertiary-inverted: 246 246 246;
+        --color-bg-button-primary: 110 236 132;
+        --color-bg-button-primary-hover: 22 200 115;
+        --color-bg-button-primary-pressed: 8 161 88;
+        --color-bg-button-primary-disabled: 238 238 238;
+        --color-bg-button-secondary: 238 238 238;
+        --color-bg-button-secondary-hover: 246 246 246;
+        --color-bg-button-secondary-pressed: 230 230 230;
+        --color-bg-button-secondary-disabled: 238 238 238;
+        --color-text-primary: 5 5 5;
+        --color-text-primary-inverted: 255 255 255;
+        --color-text-secondary: 163 163 163;
+        --color-text-secondary-inverted: 178 178 178;
+        --color-text-tertiary: 164 164 164;
+        --color-text-tertiary-inverted: 120 120 120;
+        --color-text-accent: 110 236 132;
+        --color-text-accent-hover: 145 255 164;
+        --color-text-accent-pressed: 8 161 88;
+        --color-text-disabled: 163 163 163;
+        --color-text-error: 244 67 54;
+        --color-line-border: 234 234 234;
+        --color-line-hard: 5 5 5;
+        --color-line-light: 246 246 246;
+        --color-line-error: 239 154 154;
+        --color-line-button-primary-hover: 22 200 115;
+        --color-line-button-primary-pressed: 8 161 88;
+        --color-line-quote: 53 186 85;
+        --color-shadow-primary: 45 45 45 / 0.1;
+    }
+
+    :root[class~='dark'] {
+        /* dynamic */
+        --color-bg-primary: 255 255 255;
+        --color-bg-primary-inverted: 0 0 0;
+        --color-bg-secondary: 238 238 238;
+        --color-bg-secondary-inverted: 38 38 38;
+        --color-bg-tertiary: 246 246 246;
+        --color-bg-tertiary-inverted: 246 246 246;
+        --color-bg-button-primary: 110 236 132;
+        --color-bg-button-primary-hover: 22 200 115;
+        --color-bg-button-primary-pressed: 8 161 88;
+        --color-bg-button-primary-disabled: 238 238 238;
+        --color-bg-button-secondary: 238 238 238;
+        --color-bg-button-secondary-hover: 246 246 246;
+        --color-bg-button-secondary-pressed: 230 230 230;
+        --color-bg-button-secondary-disabled: 238 238 238;
+        --color-text-primary: 5 5 5;
+        --color-text-primary-inverted: 255 255 255;
+        --color-text-secondary: 163 163 163;
+        --color-text-secondary-inverted: 178 178 178;
+        --color-text-tertiary: 164 164 164;
+        --color-text-tertiary-inverted: 120 120 120;
+        --color-text-accent: 110 236 132;
+        --color-text-accent-hover: 0 154 53;
+        --color-text-accent-pressed: 0 123 15;
+        --color-text-disabled: 163 163 163;
+        --color-text-error: 244 67 54;
+        --color-line-border: 234 234 234;
+        --color-line-hard: 5 5 5;
+        --color-line-light: 191 191 191;
+        --color-line-error: 239 154 154;
+        --color-line-quote: 53 186 85;
+        --color-line-button-primary-hover: 22 200 115;
+        --color-line-button-primary-pressed: 8 161 88;
+        --color-shadow-primary: 45 45 45 / 0.1;
+    }
+}

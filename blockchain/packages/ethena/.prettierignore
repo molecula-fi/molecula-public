@@ -1,0 +1,11 @@
+# Hardhat files
+/artifacts
+/cache
+
+# TypeChain files
+/typechain
+/typechain-types
+
+
+# We ignore contracts
+/contracts

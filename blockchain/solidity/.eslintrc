@@ -1,0 +1,5 @@
+{
+    "extends": ["@molecula-monorepo/eslint-config-shared"],
+    "root": true,
+    "ignorePatterns": ["/coverage"]
+}

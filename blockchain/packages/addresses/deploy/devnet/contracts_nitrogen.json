@@ -1,0 +1,15 @@
+{
+    "eth": {
+        "supplyManager": "0x775aD8E7e15e48a366DaEcE3D8a74367a87DE50E",
+        "moleculaPool": "0x3D5536A48f11E8FDB1eD60869C3F8E696a595233",
+        "accountantAgent": "0xcd3C84def6522Ea1F0AB53ba4F9DE66dbAD52205",
+        "rebaseToken": "0xbeDEdE8d3310CF2dd359Ca16Dd5CDA330DCAD675",
+        "poolKeeper": "0x51fFFb7a28734D7Abb70a30012ce86646E39E269",
+        "mUSDLock": "0xC6Ee812a677f9421DA3164C7567e50070ae153a1",
+        "mUSDe": "0xef3B9337Aa0b4b1F75232079a211014678047ddf",
+        "ethena": {
+            "USDe": "0x3882Ef2d84B0aA75b1565Bb99A8fb90e52612b92",
+            "sUSDe": "0x572d3e6b50BB4B2CB4061db7aa233Ae50d9ab258"
+        }
+    }
+}

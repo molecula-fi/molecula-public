@@ -1,0 +1,31 @@
+{
+    "name": "@molecula-monorepo/common.evm-utilities",
+    "description": "Molecula-monorepo blockchain utilities",
+    "version": "0.13.0",
+    "private": true,
+    "scripts": {
+        "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version",
+        "tsc": "tsc",
+        "prettier:check": "prettier --check .",
+        "prettier:fix": "prettier --write .",
+        "eslint:check": "eslint . --resolve-plugins-relative-to .",
+        "eslint:fix": "eslint --fix . --resolve-plugins-relative-to ."
+    },
+    "main": "src/index.ts",
+    "dependencies": {
+        "@ethereumjs/util": "^9.0.0",
+        "@molecula-monorepo/common.utilities": "*",
+        "ethers": "^6.13.2",
+        "siwe": "^2.3.2"
+    },
+    "devDependencies": {
+        "@molecula-monorepo/eslint-config-shared": "*",
+        "@molecula-monorepo/prettier-config-shared": "*",
+        "@molecula-monorepo/solidity": "*",
+        "@molecula-monorepo/tsconfig-shared": "*"
+    },
+    "peerDependencies": {
+        "@molecula-monorepo/blockchain.addresses": "*",
+        "@molecula-monorepo/common.evm-contracts": "*"
+    }
+}

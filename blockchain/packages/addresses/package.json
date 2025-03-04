@@ -1,0 +1,28 @@
+{
+    "name": "@molecula-monorepo/blockchain.addresses",
+    "description": "A package containing the contract addresses registry",
+    "version": "0.13.0",
+    "private": true,
+    "main": "src/index.ts",
+    "scripts": {
+        "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version",
+        "eslint:check": "eslint . --resolve-plugins-relative-to .",
+        "eslint:fix": "eslint --fix . --resolve-plugins-relative-to .",
+        "fix:code": "yarn eslint:fix && yarn prettier:fix",
+        "prettier:check": "prettier --check .",
+        "prettier:fix": "prettier --write .",
+        "tsc": "tsc"
+    },
+    "devDependencies": {
+        "@molecula-monorepo/common.evm-contracts": "*",
+        "@molecula-monorepo/common.evm-utilities": "*",
+        "@molecula-monorepo/common.tron-utilities": "*",
+        "@molecula-monorepo/eslint-config-shared": "*",
+        "@molecula-monorepo/prettier-config-shared": "*",
+        "@molecula-monorepo/solidity": "*",
+        "@molecula-monorepo/tsconfig-shared": "*",
+        "ethers": "^6.13.4",
+        "tronweb": "^5.3.2",
+        "ts-node": "^10.9.2"
+    }
+}

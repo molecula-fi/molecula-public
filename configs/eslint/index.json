@@ -1,0 +1,121 @@
+{
+    "env": {
+        "browser": true,
+        "node": true,
+        "jest": true
+    },
+    "extends": [
+        "airbnb",
+        "prettier",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:import/typescript",
+        "plugin:react-hooks/recommended",
+        "turbo"
+    ],
+    "globals": {
+        "jestExpect": false
+    },
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaFeatures": {
+            "legacyDecorators": true
+        }
+    },
+    "plugins": ["@babel", "@typescript-eslint", "eslint-plugin-tsdoc", "import"],
+    "root": true,
+    "rules": {
+        "@typescript-eslint/ban-ts-comment": "off",
+        "@typescript-eslint/explicit-module-boundary-types": "off",
+        "@typescript-eslint/explicit-member-accessibility": ["error"],
+        "@typescript-eslint/no-explicit-any": "error",
+        "@typescript-eslint/no-inferrable-types": "off",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "@typescript-eslint/no-use-before-define": ["error", { "variables": false }],
+        "@typescript-eslint/no-shadow": ["error"],
+        "@typescript-eslint/consistent-type-imports": [
+            "error",
+            {
+                "fixStyle": "inline-type-imports"
+            }
+        ],
+
+        "import/extensions": [
+            "error",
+            "ignorePackages",
+            {
+                "js": "never",
+                "jsx": "never",
+                "ts": "never",
+                "tsx": "never"
+            }
+        ],
+        "import/order": [
+            "error",
+            {
+                "groups": [["builtin", "external"], "internal", "parent", "sibling", "index"],
+                "pathGroups": [
+                    {
+                        "pattern": "@molecula-monorepo/**",
+                        "group": "internal"
+                    },
+                    {
+                        "pattern": "@src/**",
+                        "group": "parent",
+                        "position": "after"
+                    }
+                ],
+                "pathGroupsExcludedImportTypes": [],
+                "distinctGroup": false,
+                "newlines-between": "always-and-inside-groups",
+                "alphabetize": { "order": "asc" }
+            }
+        ],
+        "import/no-cycle": ["error", { "maxDepth": 10 }],
+        "import/prefer-default-export": "off",
+
+        "tsdoc/syntax": "error",
+
+        "jsx-a11y/anchor-is-valid": ["warn", { "aspects": ["invalidHref"] }],
+        "jsx-a11y/href-no-hash": "off",
+        "jsx-a11y/accessible-emoji": "off",
+
+        "react/jsx-filename-extension": [
+            1,
+            {
+                "extensions": [".js", ".jsx", ".tsx"]
+            }
+        ],
+        "react/jsx-indent-props": [1, 4],
+        "react/jsx-indent": ["error", 4],
+        "react/jsx-props-no-spreading": "off",
+        "react/prop-types": ["warn", { "skipUndeclared": true }],
+        "react/react-in-jsx-scope": "off",
+        "react/require-default-props": "off",
+        "react-hooks/exhaustive-deps": "error",
+
+        "arrow-body-style": "off",
+        "arrow-parens": ["error", "as-needed"],
+        "curly": ["error", "all"],
+        "quote-props": "off",
+        "no-console": "off",
+        "no-continue": "off",
+        "no-confusing-arrow": ["error", { "allowParens": false }],
+        "no-mixed-operators": "off",
+        "no-restricted-globals": ["error", "close"],
+        "turbo/no-undeclared-env-vars": [
+            "error",
+            {
+                "allowList": ["^NEXT_PUBLIC_.*$"]
+            }
+        ],
+        "no-unused-expressions": "off",
+        "no-unused-vars": "off",
+        "no-use-before-define": "off",
+        "no-shadow": "off",
+        "max-lines": ["error", { "max": 300, "skipBlankLines": true, "skipComments": true }],
+        "object-curly-newline": "off",
+        "operator-linebreak": "off",
+        "prefer-arrow-callback": ["error", { "allowNamedFunctions": true }]
+    }
+}

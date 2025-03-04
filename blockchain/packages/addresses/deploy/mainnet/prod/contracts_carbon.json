@@ -1,0 +1,23 @@
+{
+    "eth": {
+        "moleculaPool": "",
+        "agentLZ": "",
+        "wmUSDT": "",
+        "supplyManager": "",
+        "poolKeeper": "",
+        "swftBridge": "",
+        "ethena": {
+            "USDe": "",
+            "sUSDe": ""
+        },
+        "mUSDe": ""
+    },
+    "tron": {
+        "rebaseToken": "",
+        "oracle": "",
+        "accountantLZ": "",
+        "treasury": "",
+        "mUSDLock": "",
+        "swftBridge": ""
+    }
+}

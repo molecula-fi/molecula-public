@@ -1,0 +1,39 @@
+# OSX
+#
+.DS_Store
+
+# IDE
+.idea
+
+# node.js
+#
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Git-secret
+.gitsecret/keys/random_seed
+!*.secret
+blockchain/solidity/configs/ethereum/index.ts
+blockchain/solidity/configs/tron/index.ts
+configs/frontend-environments/shared/.env
+configs/frontend-environments/shared/.env.production
+configs/frontend-environments/prelaunch/.env
+configs/frontend-environments/website/.env
+configs/frontend-environments/retail/.env
+configs/frontend-environments/website/.env.production
+configs/frontend-environments/prelaunch/.env.production
+configs/frontend-environments/retail/.env.production
+
+# Ui tests repo
+ui-tests/extensions/
+ui-tests/.husky/
+test-results/
+ui-tests/integration-tests/tests-results/
+ui-tests/integration-tests/playwright-report/
+
+# Turborepo logs, outputs, and other functionality.
+.turbo
+
+# Terraform
+tfState.json

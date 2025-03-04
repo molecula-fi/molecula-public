@@ -1,0 +1,32 @@
+{
+    "name": "@molecula-monorepo/common.evm-contracts",
+    "description": "Molecula-monorepo EVM network smart contracts",
+    "version": "0.13.0",
+    "private": true,
+    "scripts": {
+        "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version",
+        "tsc": "tsc",
+        "prettier:check": "prettier --check .",
+        "prettier:fix": "prettier --write .",
+        "eslint:check": "eslint . --resolve-plugins-relative-to .",
+        "eslint:fix": "eslint --fix . --resolve-plugins-relative-to .",
+        "types:generate": "typechain 'abis/**/*.json' --target ethers-v6 --out-dir=typechain"
+    },
+    "main": "src/index.ts",
+    "dependencies": {
+        "@molecula-monorepo/common.evm-utilities": "*",
+        "@molecula-monorepo/common.utilities": "*",
+        "@molecula-monorepo/solidity": "*",
+        "bignumber.js": "^9.1.2",
+        "ethers-decode-error": "^2.1.3",
+        "p-queue": "6.6.2"
+    },
+    "devDependencies": {
+        "@molecula-monorepo/eslint-config-shared": "*",
+        "@molecula-monorepo/prettier-config-shared": "*",
+        "@molecula-monorepo/tsconfig-shared": "*",
+        "@typechain/ethers-v6": "^0.5.1",
+        "ethers": "^6.13.4",
+        "typechain": "^8.3.2"
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "eth": {
+        "moleculaPool": "0x25701Cf04B6FC8E21546bd076E50072bBbfA0D0D",
+        "agentLZ": "0x446fb1624c0D8049C7853A36E40e12509b651589",
+        "wmUSDT": "0xB1b21313Ad7a91F147BEe20d4dd76854Be617bfa",
+        "supplyManager": "0xdd41E44aE2BfF8d22B3e38655A03a0Dc07f5a1aB",
+        "poolKeeper": "0xAAf36E377B55C50e10f02B5724F4DDC84632a65C",
+        "swftBridge": "0xb685760ebd368a891f27ae547391f4e2a289895b",
+        "ethena": {
+            "USDe": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+            "sUSDe": "0x9d39a5de30e57443bff2a8307a4256c8797a3497"
+        },
+        "mUSDe": "0x6918bB03196D3F74FA144B8F5091E59c4c093De5"
+    },
+    "tron": {
+        "rebaseToken": "TCPhdKFFGF8CMGxLR1h3imwFA9WgCeYhjt",
+        "oracle": "TFJDzrvzkhD55QYcH5Hqtgxawp2xZfd4GF",
+        "accountantLZ": "TBsKdsrZDPnE7KdD1cC9oUS3ZsQyMkUHUc",
+        "treasury": "TSNmqjEWnkAo8iP9HbAEMXaTnWkHni1Z3K",
+        "mUSDLock": "TGRgmbt6CDLU8xJ7QX3K5gsBtg2Br7LVEc",
+        "swftBridge": "TPwezUWpEGmFBENNWJHwXHRG1D2NCEEt5s"
+    }
+}

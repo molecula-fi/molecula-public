@@ -1,0 +1,28 @@
+{
+    "name": "@molecula-monorepo/blockchain.documentation",
+    "description": "A package responsible for contracts documentation management",
+    "version": "0.13.0",
+    "private": true,
+    "license": "GPL-3.0-only",
+    "main": "src/index.ts",
+    "scripts": {
+        "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version",
+        "tsc": "tsc",
+        "prettier:check": "prettier --check .",
+        "prettier:fix": "prettier --write .",
+        "eslint:check": "eslint . --resolve-plugins-relative-to .",
+        "eslint:fix": "eslint --fix . --resolve-plugins-relative-to .",
+        "docs:generate": "yarn --cwd ../../.. run compile:all && ts-node --files scripts/generate_docs.ts"
+    },
+    "dependencies": {
+        "@molecula-monorepo/common.utilities": "*",
+        "@molecula-monorepo/solidity": "*",
+        "solidity-docgen": "^0.6.0-beta.36"
+    },
+    "devDependencies": {
+        "@molecula-monorepo/eslint-config-shared": "*",
+        "@molecula-monorepo/prettier-config-shared": "*",
+        "@molecula-monorepo/tsconfig-shared": "*",
+        "ts-node": "^10.9.2"
+    }
+}

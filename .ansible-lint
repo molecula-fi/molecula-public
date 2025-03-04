@@ -1,0 +1,55 @@
+---
+# based on
+# https://raw.githubusercontent.com/ansible-community/schemas/main/f/ansible-lint.json
+
+# Usage:
+#   ansible-lint --force-color --offline -f pep8
+#
+# For best development experience use pip version of ansible and lint:
+#
+#   pip3 install ansible "ansible-lint[community,yamllint]"
+#
+# In this configuration ansible-lint will make a combined report with yamllint
+
+exclude_paths:
+  - .ansible-lint
+  - .yamllint
+
+skip_list:
+  - var-naming
+  - risky-shell-pipe
+  - command-instead-of-shell
+  - unnamed-task
+  - meta-no-info
+  - role-name
+  - package-latest
+  - empty-string-compare
+  - no-handler
+  - experimental
+  - fqcn-builtins
+  - name[template]
+  - name[casing]
+warn_list:
+  - deprecated-bare-vars # Using bare variables is deprecated
+  - deprecated-command-syntax # Using command rather than an argument to e.g. file
+  - deprecated-local-action # Do not use 'local_action', use 'delegate_to: localhost'
+  - risky-file-permissions
+  - yaml
+  - var-spacing # Variables should have spaces before and after:  {{ var_name }}
+  - no-changed-when # Commands should not change things if nothing needs doing
+  - fqcn-builtins
+
+extra_vars:
+  HOSTS: all
+
+kinds:
+  - yaml: "ansible/*.{yml,yaml}"
+  - vars: "**/host_vars/*"
+  - vars: "**/group_vars/*"
+  - playbook: "ansible/*.{yml,yaml}"
+  # - playbook: "**/playbooks/*.{yml,yaml}"
+  # - galaxy: "**/folder/galaxy.yml"
+  - tasks: "**/tasks/*.{yml,yaml}"
+  # - vars: "**/vars/*.yml"
+  # - meta: "**/meta/main.yml"
+  # - yaml: "**/*.yaml-too"

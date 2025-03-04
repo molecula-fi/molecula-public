@@ -1,0 +1,21 @@
+diff --git a/node_modules/@typechain/ethers-v6/static/common.ts b/node_modules/@typechain/ethers-v6/static/common.ts
+index aa03eda..b7c2ab3 100644
+--- a/node_modules/@typechain/ethers-v6/static/common.ts
++++ b/node_modules/@typechain/ethers-v6/static/common.ts
+@@ -8,6 +8,7 @@ import type {
+   EventLog,
+   TransactionRequest,
+   LogDescription,
++  ContractEventPayload,
+ } from 'ethers'
+ 
+ export interface TypedDeferredTopicFilter<_TCEvent extends TypedContractEvent> extends DeferredTopicFilter {}
+@@ -35,7 +36,7 @@ export interface TypedLogDescription<TCEvent extends TypedContractEvent> extends
+ }
+ 
+ export type TypedListener<TCEvent extends TypedContractEvent> = (
+-  ...listenerArg: [...__TypechainAOutputTuple<TCEvent>, TypedEventLog<TCEvent>, ...undefined[]]
++  ...listenerArg: [...__TypechainAOutputTuple<TCEvent>, ContractEventPayload, ...undefined[]]
+ ) => void
+ 
+ export type MinEthersFactory<C, ARGS> = {
