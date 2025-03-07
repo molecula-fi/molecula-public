@@ -1,12 +1,13 @@
-import { ethers } from 'hardhat';
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
-import { DEPLOY_GAS_LIMIT } from '../configs/ethereum';
+import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
-import { getConfig, getNonce, increaseBalance } from './utils/deployUtils';
+import { getConfig, getNonce, increaseBalance } from '../../utils/deployUtils';
 
 export async function deployNitrogen(
+    hre: HardhatRuntimeEnvironment,
     environment: NetworkType,
     contractsCore: {
         mUSDe: string;
@@ -14,7 +15,7 @@ export async function deployNitrogen(
         supplyManager: string;
     },
 ) {
-    const { config, account, USDT } = await getConfig(environment);
+    const { config, account, USDT } = await getConfig(hre, environment);
 
     // deploy mUSDe
     const { mUSDe } = contractsCore;
@@ -32,15 +33,15 @@ export async function deployNitrogen(
 
     // calc future addresses
     const transactionCount = await getNonce(account);
-    const rebaseTokenFutureAddress = ethers.getCreateAddress({
-        from: account,
+    const rebaseTokenFutureAddress = hre.ethers.getCreateAddress({
+        from: account.address,
         nonce: transactionCount + 1,
     });
 
     // deploy agent accountant
-    const Agent = await ethers.getContractFactory('AccountantAgent');
+    const Agent = await hre.ethers.getContractFactory('AccountantAgent');
     const agent = await Agent.deploy(
-        account,
+        account.address,
         rebaseTokenFutureAddress,
         contractsCore.supplyManager,
         config.USDT_ADDRESS,
@@ -51,13 +52,16 @@ export async function deployNitrogen(
     console.log('Agent address: ', await agent.getAddress());
 
     // deploy supply manager
-    const supplyManager = await ethers.getContractAt('SupplyManager', contractsCore.supplyManager);
+    const supplyManager = await hre.ethers.getContractAt(
+        'SupplyManager',
+        contractsCore.supplyManager,
+    );
     console.log('SupplyManager address: ', await supplyManager.getAddress());
 
     // deploy Rebase Token
-    const RebaseToken = await ethers.getContractFactory('RebaseToken');
+    const RebaseToken = await hre.ethers.getContractFactory('RebaseToken');
     const rebaseToken = await RebaseToken.deploy(
-        account,
+        account.address,
         await agent.getAddress(),
         await supplyManager.totalSharesSupply(),
         await supplyManager.getAddress(),
@@ -84,14 +88,14 @@ export async function deployNitrogen(
     console.log('Agent set to supply manager');
 
     // deploy musdLock
-    const musdLockFactory = await ethers.getContractFactory('MUSDLock');
+    const musdLockFactory = await hre.ethers.getContractFactory('MUSDLock');
     const musdLock = await musdLockFactory.deploy(await rebaseToken.getAddress(), {
         gasLimit: DEPLOY_GAS_LIMIT,
     });
     await musdLock.waitForDeployment();
 
     // print addresses
-    console.log('Block #', await ethers.provider.getBlockNumber());
+    console.log('Block #', await hre.ethers.provider.getBlockNumber());
     console.log('Agent address: ', await agent.getAddress());
     console.log('RebaseToken address: ', await rebaseToken.getAddress());
     console.log('MoleculaPool address: ', moleculaPool);

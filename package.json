@@ -52,6 +52,7 @@
         "tron-exchanger-evm-retail:build": "docker build --tag tron-exchanger-evm-retail:$npm_package_version -f backend/tron-exchanger-evm-retail/.Dockerfile .",
         "tron-bridge-evm-retail:build": "docker build --tag tron-bridge-evm-retail:$npm_package_version -f backend/tron-bridge-evm-retail/.Dockerfile .",
         "evm-tracker-evm-retail:build": "docker build --tag evm-tracker-evm-retail:$npm_package_version -f backend/evm-tracker-evm-retail/.Dockerfile .",
+        "evm-token-tracker-retail:build": "docker build --tag evm-token-tracker-retail:$npm_package_version -f backend/evm-token-tracker-retail/.Dockerfile .",
         "tron-tracker-evm-retail:build": "docker build --tag tron-tracker-evm-retail:$npm_package_version -f backend/tron-tracker-evm-retail/.Dockerfile .",
         "tron-confirmer-evm-retail:build": "docker build --tag tron-confirmer-evm-retail:$npm_package_version -f backend/tron-confirmer-evm-retail/.Dockerfile .",
         "evm-confirmer-evm-retail:build": "docker build --tag evm-confirmer-evm-retail:$npm_package_version -f backend/evm-confirmer-evm-retail/.Dockerfile .",
@@ -141,7 +142,7 @@
         "@vercel/fun": "1.1.1",
         "@walletconnect/ethereum-provider": "2.17.1",
         "elliptic": "^6.6.1",
-        "ethers": "^6.13.4",
+        "ethers": "^6.13.5",
         "lightningcss": "~1.22.0",
         "solc-typed-ast": "18.2.4",
         "viem": "^2.21.0"

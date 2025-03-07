@@ -1,19 +1,21 @@
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
+
 import type {
     ContractsNitrogen,
     MainBetaContractsNitrogen,
     MainProdContractsNitrogen,
+    NetworkType,
 } from '@molecula-monorepo/blockchain.addresses';
 
-import { getNetwork, handleError, readFromFile, setOwnerFromConfig } from '../utils/deployUtils';
+import { setOwnerFromConfig } from '../helpers';
+import { readFromFile } from '../utils/deployUtils';
 
-const network = getNetwork();
-
-async function run() {
+export async function setNitrogenOwner(hre: HardhatRuntimeEnvironment, environment: NetworkType) {
     const config:
         | typeof ContractsNitrogen
         | typeof MainBetaContractsNitrogen
         | typeof MainProdContractsNitrogen = await readFromFile(
-        `${network}/contracts_nitrogen.json`,
+        `${environment}/contracts_nitrogen.json`,
     );
     const contracts = [
         { name: 'SupplyManager', addr: config.eth.supplyManager },
@@ -21,7 +23,5 @@ async function run() {
         { name: 'RebaseToken', addr: config.eth.rebaseToken },
         { name: 'AccountantAgent', addr: config.eth.accountantAgent },
     ];
-    await setOwnerFromConfig(network, contracts);
+    await setOwnerFromConfig(hre, environment, contracts);
 }
-
-run().catch(handleError);

@@ -1,13 +1,13 @@
 /* eslint-disable no-await-in-loop, no-restricted-syntax */
 
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import TronWeb from 'tronweb';
 
-import { NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import { type NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
-import { abi as OWNABLE_ABI } from '../artifacts/@openzeppelin/contracts/access/Ownable.sol/Ownable.json';
-import { tronMainnetBetaConfig } from '../configs/tron/mainnetBetaTyped';
-import { tronMainnetProdConfig } from '../configs/tron/mainnetProdTyped';
-import { shastaConfig } from '../configs/tron/shastaTyped';
+import { abi as OWNABLE_ABI } from '../../../artifacts/@openzeppelin/contracts/access/Ownable.sol/Ownable.json';
+
+import { getTronNetworkConfig, getDeployerPrivateKey } from '../../utils/deployUtils';
 
 import {
     deployAccountantLZ,
@@ -16,68 +16,44 @@ import {
     setTreasury,
     setGasLimit,
     setAuthorizedLZConfigurator,
-} from './tronUtils/deployAccountantLZ';
-import { deployOracle, setOracleAccountant } from './tronUtils/deployOracle';
-import { deployRebaseToken } from './tronUtils/deployRebaseToken';
+} from './deployAccountantLZ';
+import { deployOracle, setOracleAccountant } from './deployOracle';
+import { deployRebaseToken } from './deployRebaseToken';
 import {
     deployTreasury,
     treasurySetAuthorizedLZConfigurator,
     treasurySetGasLimit,
-} from './tronUtils/deployTreasury';
-import { deploymUSDLock } from './tronUtils/deploymUSDLock';
-
-export function getNetworkConfig(network: NetworkType) {
-    switch (network) {
-        case NetworkType['mainnet/beta']:
-            return tronMainnetBetaConfig;
-        case NetworkType['mainnet/prod']:
-            return tronMainnetProdConfig;
-        case NetworkType.devnet:
-            return shastaConfig;
-        default:
-            throw new Error('Unsupported network type!');
-    }
-}
+} from './deployTreasury';
+import { deploymUSDLock } from './deploymUSDLock';
 
 function to32BytesHexString(hexString: string) {
     const resString = hexString.startsWith('0x') ? hexString.slice(2) : hexString;
     return `0x${resString.padStart(64, '0')}`;
 }
 
-export async function getTronWeb(tronPhraseOrKey: string, network: NetworkType) {
+export async function getTronWeb(hre: HardhatRuntimeEnvironment, network: NetworkType) {
     // get config
-    const config = getNetworkConfig(network);
+    const config = getTronNetworkConfig(network);
     // Create TronWeb instance
     const tronWeb = new TronWeb({
         fullHost: config.RPC_URL,
     });
     // Get private key
-    let privateKey;
-    if (tronPhraseOrKey.includes(' ')) {
-        const accountInfo = tronWeb.fromMnemonic(tronPhraseOrKey, "m/44'/195'/0'/0/0");
-        if (accountInfo instanceof Error) {
-            throw new Error('Invalid account information returned from fromMnemonic.');
-        }
-        privateKey = accountInfo.privateKey.substring(2);
-        console.log('Deploy wallet address: ', accountInfo.address);
-    } else {
-        privateKey = tronPhraseOrKey;
-        const walletAddress = tronWeb.address.fromPrivateKey(privateKey);
-        console.log('Deploy wallet address: ', walletAddress);
-    }
+    const privateKey = await getDeployerPrivateKey(hre);
+
     tronWeb.setPrivateKey(privateKey);
     return { config, tronWeb, privateKey };
 }
 
 export async function deployCarbon(
-    tronPhraseOrKey: string,
+    hre: HardhatRuntimeEnvironment,
     network: NetworkType,
     params: {
         agentLZ: string;
         wmUSDT: string;
     },
 ) {
-    const { config, tronWeb, privateKey } = await getTronWeb(tronPhraseOrKey, network);
+    const { config, tronWeb, privateKey } = await getTronWeb(hre, network);
 
     // get initial owner
     const initialOwner = tronWeb.address.fromPrivateKey(privateKey);
@@ -246,11 +222,17 @@ export async function deployCarbon(
 }
 
 export async function setTronOwnerFromConfig(
-    tronPhraseOrKey: string,
+    privateKey: string,
     network: NetworkType,
     contracts: { name: string; addr: string }[],
 ) {
-    const { config, tronWeb, privateKey } = await getTronWeb(tronPhraseOrKey, network);
+    const config = getTronNetworkConfig(network);
+    // Create TronWeb instance
+    const tronWeb = new TronWeb({
+        fullHost: config.RPC_URL,
+    });
+    // Ge
+    tronWeb.setPrivateKey(privateKey);
     console.log(`Setting owner ${config.OWNER} for the contracts:`);
     const initialOwner = tronWeb.address.fromPrivateKey(privateKey);
     for (const contract of contracts) {

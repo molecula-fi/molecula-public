@@ -4,7 +4,7 @@ import type { Transaction } from 'tronweb/interfaces';
 import {
     abi as ORACLE_ABI,
     bytecode as ORACLE_BYTECODE,
-} from '../../artifacts/contracts/solutions/Carbon/tron/TronOracle.sol/TronOracle.json';
+} from '../../../artifacts/contracts/solutions/Carbon/tron/TronOracle.sol/TronOracle.json';
 
 import { waitForDeployment } from './waitForDeployment';
 

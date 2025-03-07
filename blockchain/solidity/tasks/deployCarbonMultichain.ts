@@ -3,13 +3,15 @@
 import { spawn } from 'child_process';
 import { task } from 'hardhat/config';
 
+import { getEnvironment } from '../scripts/utils/deployUtils';
+
+// TODO
 task('deployCarbonMultichain', 'Deploys Carbon to multiple networks')
-    .addOptionalParam('environment', 'Deployment environment')
-    .setAction(async taskArgs => {
+    .addParam('environment', 'Deployment environment')
+    .setAction(async (taskArgs, hre) => {
         console.log(`\n Environment: ${taskArgs.environment}`);
 
-        const { getEnvironment } = await import('../scripts/utils/deployUtils');
-        const deployEnvFlag = getEnvironment(taskArgs.environment);
+        const deployEnvFlag = getEnvironment(hre, taskArgs.environment);
 
         const networks: string[] =
             taskArgs.environment === 'devnet' ? ['sepolia', 'shasta'] : ['ethereum', 'tron'];
@@ -21,7 +23,9 @@ task('deployCarbonMultichain', 'Deploys Carbon to multiple networks')
             const taskName =
                 network === 'sepolia' ? 'ethereum' : network === 'shasta' ? 'tron' : network;
 
-            console.log(`Running: npx hardhat deployCarbon_${taskName} --network ${network}`);
+            console.log(
+                `Running: npx hardhat ${taskName}MajorScope deployCarbon_${taskName} --network ${network}`,
+            );
 
             await new Promise((resolve, reject) => {
                 const child = spawn(

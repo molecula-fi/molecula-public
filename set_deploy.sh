@@ -75,7 +75,7 @@ echo "- Current branch: $current_branch"
 echo
 
 echo "- Fetching tags..."
-git fetch --tags --prune-tags
+git fetch --tags &> /dev/null
 echo
 
 echo "- Creating git tag on branch '${current_branch}' ($current_commit)..."

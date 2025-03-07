@@ -34,8 +34,8 @@ class SentryLogger {
 export class SentryWriter implements LogWriter {
     private readonly sentryLogger: SentryLogger;
 
-    public constructor(sentryLogger: SentryLogger) {
-        this.sentryLogger = sentryLogger;
+    public constructor(environment: string, dsn: string) {
+        this.sentryLogger = new SentryLogger(environment, dsn);
     }
 
     public debug() {}

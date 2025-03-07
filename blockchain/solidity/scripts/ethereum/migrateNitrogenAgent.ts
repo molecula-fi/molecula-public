@@ -1,5 +1,4 @@
-import { type HDNodeWallet } from 'ethers';
-import { ethers } from 'hardhat';
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import {
     MoleculaPoolVersion,
@@ -8,36 +7,24 @@ import {
     type ContractsNitrogen,
 } from '@molecula-monorepo/blockchain.addresses';
 
-import {
-    getArgValue,
-    getNetwork,
-    getVersion,
-    handleError,
-    readFromFile,
-    writeToFile,
-    getProviderAndAccount,
-} from '../utils/deployUtils';
+import { getConfig, readFromFile, writeToFile } from '../utils/deployUtils';
 
 async function ensureNoValueToRedeem(
+    hre: HardhatRuntimeEnvironment,
     version: MoleculaPoolVersion,
     address: string,
-    account: HDNodeWallet,
     token: string,
 ) {
     switch (version) {
         case MoleculaPoolVersion.v10: {
-            const moleculaPool = await ethers.getContractAt('MoleculaPool', address, account);
+            const moleculaPool = await hre.ethers.getContractAt('MoleculaPool', address);
             if ((await moleculaPool.valueToRedeem()) !== 0n) {
                 throw new Error('moleculaPool.valueToRedeem() !== 0');
             }
             break;
         }
         case MoleculaPoolVersion.v11: {
-            const moleculaPool = await ethers.getContractAt(
-                'MoleculaPoolTreasury',
-                address,
-                account,
-            );
+            const moleculaPool = await hre.ethers.getContractAt('MoleculaPoolTreasury', address);
             const tokenInfo = await moleculaPool.poolMap(token);
             if (tokenInfo.valueToRedeem !== 0n) {
                 throw new Error('tokenInfo.valueToRedeem !== 0n');
@@ -49,39 +36,41 @@ async function ensureNoValueToRedeem(
     }
 }
 
-async function run(phrase: string, network: NetworkType, version: MoleculaPoolVersion) {
-    const { account } = await getProviderAndAccount(phrase, network);
+export async function migrateNitrogenAgent(
+    hre: HardhatRuntimeEnvironment,
+    environment: NetworkType,
+    version: MoleculaPoolVersion,
+) {
+    const { account } = await getConfig(hre, environment);
 
     const accountantAgentAddress = (
-        (await readFromFile(`${network}/accountant_agent.json`)) as typeof AccountantAgentContract
+        (await readFromFile(
+            `${environment}/accountant_agent.json`,
+        )) as typeof AccountantAgentContract
     ).accountantAgent;
     if (accountantAgentAddress.length === 0) {
         throw new Error('Firstly deploy accountantAgentAddress');
     }
 
     const contractsNitrogen: typeof ContractsNitrogen = await readFromFile(
-        `${network}/contracts_nitrogen.json`,
+        `${environment}/contracts_nitrogen.json`,
     );
-    const newAgent = await ethers.getContractAt('AccountantAgent', accountantAgentAddress, account);
-    const oldAgent = await ethers.getContractAt(
+    const newAgent = await hre.ethers.getContractAt('AccountantAgent', accountantAgentAddress);
+    const oldAgent = await hre.ethers.getContractAt(
         'AgentAccountant',
         contractsNitrogen.eth.accountantAgent,
-        account,
     );
-    const rebaseToken = await ethers.getContractAt(
+    const rebaseToken = await hre.ethers.getContractAt(
         'RebaseToken',
         contractsNitrogen.eth.rebaseToken,
-        account,
     );
-    const supplyManager = await ethers.getContractAt(
+    const supplyManager = await hre.ethers.getContractAt(
         'SupplyManager',
         contractsNitrogen.eth.supplyManager,
-        account,
     );
-    const moleculaPool = await ethers.getContractAt(
+    const moleculaPool = await hre.ethers.getContractAt(
         'Ownable',
         contractsNitrogen.eth.moleculaPool,
-        account,
     );
     if ((await newAgent.owner()) !== account.address) {
         throw new Error('Bad newAgent owner');
@@ -108,7 +97,7 @@ async function run(phrase: string, network: NetworkType, version: MoleculaPoolVe
     }
 
     // 2. Again ensure to satisfy all pending requests
-    await ensureNoValueToRedeem(version, contractsNitrogen.eth.moleculaPool, account, token);
+    await ensureNoValueToRedeem(hre, version, contractsNitrogen.eth.moleculaPool, token);
 
     // 3. Change accountant agent in RebaseToken
     let tx = await rebaseToken.setAccountant(newAgent);
@@ -122,11 +111,5 @@ async function run(phrase: string, network: NetworkType, version: MoleculaPoolVe
 
     // 5. Update deploy file.
     contractsNitrogen.eth.accountantAgent = await newAgent.getAddress();
-    writeToFile(`${network}/contracts_nitrogen.json`, contractsNitrogen);
+    writeToFile(`${environment}/contracts_nitrogen.json`, contractsNitrogen);
 }
-
-const ethPhrase = getArgValue('--ethPhrase');
-const network = getNetwork();
-const version = getVersion();
-
-run(ethPhrase, network, version).catch(handleError);

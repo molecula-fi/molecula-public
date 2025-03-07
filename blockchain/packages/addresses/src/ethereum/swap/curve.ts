@@ -6,7 +6,7 @@ export const swapPoolAddressesCurve = {
         prod: '0xd3bcd417aee942fd4611b8fe6ffca500019045cf' as EVMAddress,
         beta: '0x5bcaa8a1216d8120a59489f7df4585e834c90eaf' as EVMAddress,
     },
-    [EVMChainIDs.Sepolia]: '0xNotSupportedYet', // TODO: deploy on Sepolia
+    [EVMChainIDs.Sepolia]: '0x99989F3CB6fB6d1d8432E265D1D69E27E28107cD' as EVMAddress,
 } as const;
 
 export const swapPoolFactoryAddressesCurve = {

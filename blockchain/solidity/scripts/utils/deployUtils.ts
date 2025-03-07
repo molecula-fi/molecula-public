@@ -1,59 +1,55 @@
-/* eslint-disable no-await-in-loop, no-restricted-syntax, @typescript-eslint/no-explicit-any */
+/* eslint-disable no-restricted-syntax, @typescript-eslint/no-explicit-any */
 
+import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import { readFile, writeFileSync, mkdirSync, existsSync } from 'fs';
 
-import { ethers, run } from 'hardhat';
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import * as path from 'path';
 
-import { NetworkType, MoleculaPoolVersion } from '@molecula-monorepo/blockchain.addresses';
+import {
+    NetworkType,
+    MoleculaPoolVersion,
+    getMoleculaPoolVersion,
+} from '@molecula-monorepo/blockchain.addresses';
 
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 import { ethMainnetProdConfig } from '../../configs/ethereum/mainnetProdTyped';
 import { sepoliaConfig } from '../../configs/ethereum/sepoliaTyped';
+import { tronMainnetBetaConfig } from '../../configs/tron/mainnetBetaTyped';
+import { tronMainnetProdConfig } from '../../configs/tron/mainnetProdTyped';
+import { shastaConfig } from '../../configs/tron/shastaTyped';
 import type { IERC20 } from '../../typechain-types';
-import type { TokenAndNStruct } from '../../typechain-types/contracts/core/MoleculaPoolTreasury';
 
-export function chooseParam(param: string, expectedValues: string[]) {
-    const value = getArgValue(param);
-    if (expectedValues.find(x => x === value) === undefined) {
-        throw new Error(
-            `Unexpected value '${value}' for '${param}' cmd-line parameter.\nExpected values for '${param}': '${expectedValues.join("' ")}'.`,
-        );
-    }
-    return value;
-}
-
-export function getVersion(): MoleculaPoolVersion {
-    const param = '--version';
-    const value = getArgValue(param);
-    const version = Object.values(MoleculaPoolVersion).find(x => x === value);
+export function getVersion(param: string): MoleculaPoolVersion {
+    const version = Object.values(MoleculaPoolVersion).find(x => x === param);
     if (version === undefined) {
-        const expectedValues = Object.values(MoleculaPoolVersion).filter(item => {
-            return isNaN(Number(item));
-        });
         throw new Error(
-            `Unexpected value '${value}' for '${param}' cmd-line parameter.\nExpected values for '${param}': '${expectedValues.join("', '")}'.`,
+            `Unexpected value '${param}' ': '${getMoleculaPoolVersion().join("', '")}'.`,
         );
     }
     return version;
 }
 
-export function getNetwork() {
-    const param = '--network';
-    const value = getArgValue(param);
-    const network = NetworkType[value as keyof typeof NetworkType];
-    if (network === undefined) {
-        const expectedValues = Object.values(NetworkType).filter(item => {
-            return isNaN(Number(item));
-        });
-        throw new Error(
-            `Unexpected value '${value}' for '${param}' cmd-line parameter.\nExpected values for '${param}': '${expectedValues.join("', '")}'.`,
+export function verifyEnvironment(network: string, environment: string) {
+    if ((network === 'sepolia' || network === 'shasta') && environment !== 'devnet') {
+        console.error(
+            `Expected network and environment set correctly: network ${network} couldn't be used in this environment ${environment}`,
         );
+        process.exit(1);
     }
-    return network;
+    if (
+        (network === 'ethereum' || network === 'tron') &&
+        environment !== 'mainnet/beta' &&
+        environment !== 'mainnet/prod'
+    ) {
+        console.error(
+            `Expected network and environment set correctly: network ${network} couldn't be used in this environment ${environment}`,
+        );
+        process.exit(1);
+    }
 }
 
-export function getEnvironment(network: string) {
+export function getEnvironment(hre: HardhatRuntimeEnvironment, network: string) {
     const environment = NetworkType[network as keyof typeof NetworkType];
     if (environment === undefined) {
         const expectedValues = Object.values(NetworkType).filter(item => {
@@ -63,21 +59,9 @@ export function getEnvironment(network: string) {
             `Unexpected value '${environment}' for '${network}' cmd-line parameter.\nExpected values for '${network}': '${expectedValues.join("', '")}'.`,
         );
     }
+    verifyEnvironment(hre.network.name, environment);
     return environment;
 }
-
-export const hasFlag = (flag: string) => {
-    const index = process.argv.indexOf(flag);
-    return index !== -1;
-};
-
-export const getArgValue = (flag: string) => {
-    const index = process.argv.indexOf(flag);
-    if (index !== -1 && index + 1 < process.argv.length && process.argv[index + 1]) {
-        return process.argv[index + 1]!;
-    }
-    throw new Error(`Expected command-line option: ${flag}`);
-};
 
 export const handleError = (error: Error) => {
     console.error('Failed to run script with error:', error);
@@ -130,22 +114,6 @@ export const readFromFile = (fileName: string): Promise<any> => {
     });
 };
 
-export async function verifyContract(
-    contractName: string,
-    address: string,
-    constructorArguments: any[],
-) {
-    try {
-        await run('verify:verify', {
-            address,
-            constructorArguments,
-        });
-    } catch (e) {
-        console.error(`Failed to verify "${contractName}" with error:`, e);
-    }
-    console.log(`${contractName} is verified! ${address}`);
-}
-
 export function getNetworkConfig(network: NetworkType) {
     switch (network) {
         case NetworkType['mainnet/beta']:
@@ -159,71 +127,51 @@ export function getNetworkConfig(network: NetworkType) {
     }
 }
 
-export async function getProviderAndAccount(phrase: string, network: NetworkType) {
-    console.log('Network:', network);
-    const config = getNetworkConfig(network);
-    // create provider
-    const provider = new ethers.JsonRpcProvider(config.JSON_RPC, config.JSON_RPC_ID);
-    console.log('Block #', await provider.getBlockNumber());
-    // get wallet
-    const wallet = ethers.Wallet.fromPhrase(phrase).connect(provider);
-    const account = wallet;
-
-    // check is correct deployer address used in network config
-    if (config.DEPLOYER_ADDRESS !== account.address) {
-        console.log(
-            `Warning: Incorrect DEPLOYER_ADDRESS for ${network}. Expected: ${config.DEPLOYER_ADDRESS}, but got: ${account.address}`,
-        );
+export function getTronNetworkConfig(network: NetworkType) {
+    switch (network) {
+        case NetworkType['mainnet/beta']:
+            return tronMainnetBetaConfig;
+        case NetworkType['mainnet/prod']:
+            return tronMainnetProdConfig;
+        case NetworkType.devnet:
+            return shastaConfig;
+        default:
+            throw new Error('Unsupported network type!');
     }
-
-    // get USDT contract
-    const USDT: IERC20 = (await ethers.getContractAt('IERC20', config.USDT_ADDRESS)).connect(
-        account,
-    );
-    // print wallet balances
-    console.log('Wallet address: ', account.address);
-    console.log('ETH balance: ', ethers.formatEther(await provider.getBalance(account.address)));
-    console.log('USDT balance: ', ethers.formatUnits(await USDT.balanceOf(account.address), 6));
-    return {
-        config,
-        provider,
-        account,
-        USDT,
-    };
 }
 
 export function unitePool20And4626(
     pool20: { pool: string; n: number }[],
     pool4626: { pool: string; n: number }[],
 ) {
-    const pool: TokenAndNStruct[] = [];
-    pool20.forEach(p20 => {
-        pool.push({
-            token: p20.pool,
-            n: p20.n,
-        });
-    });
-    pool4626.forEach(p4626 => {
-        pool.push({
-            token: p4626.pool,
-            n: p4626.n,
-        });
+    const pool: string[] = [];
+    [...pool20, ...pool4626].forEach(p => {
+        pool.push(p.pool);
     });
     return pool;
 }
 
-export async function getConfig(network: NetworkType) {
+export async function getConfig(hre: HardhatRuntimeEnvironment, network: NetworkType) {
     console.log('Network:', network);
 
     const config = getNetworkConfig(network);
 
-    const USDT = await ethers.getContractAt('IERC20', config.USDT_ADDRESS);
-    const account = config.DEPLOYER_ADDRESS;
+    const USDT = await hre.ethers.getContractAt('IERC20', config.USDT_ADDRESS);
+    const account = (await hre.ethers.getSigners())[0]!;
+
+    if (account.address !== config.DEPLOYER_ADDRESS) {
+        console.log(
+            `Incorrect DEPLOYER_ADDRESS in network config, expected ${account.address} to equal ${config.DEPLOYER_ADDRESS}`,
+        );
+    }
 
     // print wallet balances
-    console.log('Wallet address: ', account);
-    console.log('ETH balance: ', ethers.formatEther(await ethers.provider.getBalance(account)));
-    console.log('USDT balance: ', ethers.formatUnits(await USDT.balanceOf(account), 6));
+    console.log('Wallet address: ', account.address);
+    console.log(
+        'ETH balance: ',
+        hre.ethers.formatEther(await hre.ethers.provider.getBalance(account.address)),
+    );
+    console.log('USDT balance: ', hre.ethers.formatUnits(await USDT.balanceOf(account.address), 6));
     return {
         config,
         account,
@@ -231,34 +179,9 @@ export async function getConfig(network: NetworkType) {
     };
 }
 
-export async function getNonce(account: string) {
-    const nonce = await ethers.provider.getTransactionCount(account);
+export async function getNonce(account: HardhatEthersSigner) {
+    const nonce = await account.getNonce();
     return nonce;
-}
-
-export async function setOwnerFromConfig(
-    environment: NetworkType,
-    contracts: { addr: string; name: string }[],
-) {
-    const { account, config } = await getConfig(environment);
-    console.log(`Setting owner ${config.OWNER} for the contracts:`);
-    for (const contract of contracts) {
-        const ownableContract = await ethers.getContractAt('Ownable', contract.addr);
-        const currentOwner = await ownableContract.owner();
-        if (currentOwner === config.OWNER) {
-            console.log(
-                `\tContract ${contract.name} ${contract.addr} has already the owner. Skipped.`,
-            );
-        } else if (currentOwner === account) {
-            const response = await ownableContract.transferOwnership(config.OWNER);
-            await response.wait();
-            console.log(`\tSet owner for contract ${contract.name} ${contract.addr}.`);
-        } else {
-            throw Error(
-                `\tContract ${contract.name} ${contract.addr} has ${currentOwner} owner. It's impossible to change the owner.`,
-            );
-        }
-    }
 }
 
 // If `target` does not have enough erc20Token tokens, then transfer them
@@ -280,4 +203,9 @@ export async function increaseBalance(
         console.error('Expected INITIAL_USDT_SUPPLY: ', initSupply);
         process.exit(1);
     }
+}
+
+export async function getDeployerPrivateKey(hre: HardhatRuntimeEnvironment) {
+    const accounts = hre.network.config.accounts as string[];
+    return accounts[0] || '';
 }

@@ -1,15 +1,20 @@
 import type { AddressLike } from 'ethers';
-import { ethers } from 'hardhat';
+
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
-import { DEPLOY_GAS_LIMIT } from '../configs/ethereum';
+import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
-import { getConfig, increaseBalance, unitePool20And4626, getNonce } from './utils/deployUtils';
+import { getConfig, increaseBalance, unitePool20And4626, getNonce } from '../../utils/deployUtils';
 
-async function deploymUSDe(stakedUSDe: AddressLike, owner: AddressLike) {
+async function deploymUSDe(
+    hre: HardhatRuntimeEnvironment,
+    stakedUSDe: AddressLike,
+    owner: AddressLike,
+) {
     // deploy mUSDe
-    const musdeFactory = await ethers.getContractFactory('MUSDE');
+    const musdeFactory = await hre.ethers.getContractFactory('MUSDE');
     const musde = await musdeFactory.deploy(stakedUSDe, owner, { gasLimit: DEPLOY_GAS_LIMIT });
     await musde.waitForDeployment();
     const musdeAddress = await musde.getAddress();
@@ -18,11 +23,15 @@ async function deploymUSDe(stakedUSDe: AddressLike, owner: AddressLike) {
     return musdeAddress;
 }
 
-export async function deployCore(environment: NetworkType, nomUSDe: boolean) {
-    const { config, account, USDT } = await getConfig(environment);
+export async function deployCore(
+    hre: HardhatRuntimeEnvironment,
+    environment: NetworkType,
+    nomusde: boolean,
+) {
+    const { config, account, USDT } = await getConfig(hre, environment);
 
     // deploy mUSDe
-    const mUSDe = nomUSDe ? '' : await deploymUSDe(config.SUSDE_ADDRESS, config.POOL_KEEPER);
+    const mUSDe = nomusde ? '' : await deploymUSDe(hre, config.SUSDE_ADDRESS, config.POOL_KEEPER);
     console.log('mUSDe address: ', mUSDe);
 
     // Pool keeper is already deployed
@@ -36,16 +45,16 @@ export async function deployCore(environment: NetworkType, nomUSDe: boolean) {
     console.log('pools20:', pools20);
 
     // deploy moleculaPool
-    const supplyManagerFutureAddress = ethers.getCreateAddress({
-        from: account,
+    const supplyManagerFutureAddress = hre.ethers.getCreateAddress({
+        from: account.address,
         nonce: (await getNonce(account)) + 2, // deploy moleculaPool + transfer tokens
     });
-    const MoleculaPoolFactory = await ethers.getContractFactory('MoleculaPoolTreasury');
+    const MoleculaPoolFactory = await hre.ethers.getContractFactory('MoleculaPoolTreasury');
     if (config.GUARDIAN_ADDRESS === '0x') {
         throw new Error(`Set guardian address in config.`);
     }
     const moleculaPool = await MoleculaPoolFactory.deploy(
-        account,
+        account.address,
         unitePool20And4626(pools20, config.POOLS4626),
         poolKeeper,
         supplyManagerFutureAddress,
@@ -64,9 +73,9 @@ export async function deployCore(environment: NetworkType, nomUSDe: boolean) {
     );
 
     // deploy supply manager
-    const SupplyManager = await ethers.getContractFactory('SupplyManager');
+    const SupplyManager = await hre.ethers.getContractFactory('SupplyManager');
     const supplyManager = await SupplyManager.deploy(
-        account, // In the end set owner to pool_keeper
+        account.address, // In the end set owner to pool_keeper
         poolKeeper,
         await moleculaPool.getAddress(),
         config.APY_FORMATTER,
@@ -90,7 +99,7 @@ export async function deployCore(environment: NetworkType, nomUSDe: boolean) {
     }
 
     // print addresses
-    console.log('Block #', await ethers.provider.getBlockNumber());
+    console.log('Block #', await hre.ethers.provider.getBlockNumber());
     console.log('MoleculaPool address: ', await moleculaPool.getAddress());
     console.log('SupplyManager address: ', await supplyManager.getAddress());
     console.log('Pool keeper: ', poolKeeper);

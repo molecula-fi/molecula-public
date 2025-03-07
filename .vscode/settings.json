@@ -25,6 +25,7 @@
     "eslint.workingDirectories": [
         "./backend/evm-confirmer-evm-retail",
         "./backend/evm-tracker-evm-retail",
+        "./backend/evm-token-tracker-retail",
         "./backend/packages/aml",
         "./backend/packages/contracts",
         "./backend/packages/graphql",
@@ -65,7 +66,6 @@
         "./blockchain/solidity",
         "./blockchain/ton",
         "./blockchain/packages/addresses",
-        "./blockchain/packages/documentation",
         "./blockchain/packages/ethena",
         "./frontend/dev-expo",
         "./frontend/dev-expo-pool-admin",

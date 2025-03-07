@@ -1,3 +1,5 @@
+/// @deprecated TODO delete me
+
 export const SHASTA_RPC_URL = 'https://api.shasta.trongrid.io/';
 export const LAYER_ZERO_SHASTA_ENDPOINT = 'TCT5FvMTuUCspdY689LbKbUThCwBVUw4tM';
 

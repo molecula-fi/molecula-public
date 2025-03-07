@@ -470,7 +470,7 @@ describe('Test Nitrogen solution v1.1', () => {
             const { moleculaPool, poolOwner } = await loadFixture(deployNitrogenV2WithStakedUSDe);
 
             // It's not smart-contract
-            await expect(moleculaPool.addToken(poolOwner, 0)).to.be.rejectedWith('ENotContract');
+            await expect(moleculaPool.addToken(poolOwner)).to.be.rejectedWith('ENotContract');
         });
 
         it('Check duplicated pools', async () => {
@@ -478,8 +478,8 @@ describe('Test Nitrogen solution v1.1', () => {
             const token = ethMainnetBetaConfig.USDT_ADDRESS;
             const token2 = ethMainnetBetaConfig.USDC_ADDRESS;
 
-            await moleculaPool.connect(poolOwner).addToken(token, 8);
-            await expect(moleculaPool.connect(poolOwner).addToken(token, 8)).to.be.rejectedWith(
+            await moleculaPool.connect(poolOwner).addToken(token);
+            await expect(moleculaPool.connect(poolOwner).addToken(token)).to.be.rejectedWith(
                 'EDuplicatedToken()',
             );
 
@@ -491,7 +491,7 @@ describe('Test Nitrogen solution v1.1', () => {
             expect((await moleculaPool.connect(poolOwner).getTokenPool()).length).to.be.equal(0);
 
             const USDT = await ethers.getContractAt('IERC20', token);
-            await moleculaPool.connect(poolOwner).addToken(USDT, 6);
+            await moleculaPool.connect(poolOwner).addToken(USDT);
             await grantERC20(moleculaPool, USDT, 100_000_000n);
             await expect(moleculaPool.connect(poolOwner).removeToken(USDT)).to.be.rejectedWith(
                 'ENotZeroBalanceOfRemovedToken()',
@@ -504,9 +504,9 @@ describe('Test Nitrogen solution v1.1', () => {
             const token2 = ethMainnetBetaConfig.USDC_ADDRESS;
             const token3 = ethMainnetBetaConfig.USDE_ADDRESS;
 
-            await moleculaPool.connect(poolOwner).addToken(token, 8);
-            await moleculaPool.connect(poolOwner).addToken(token2, 8);
-            await moleculaPool.connect(poolOwner).addToken(token3, 8);
+            await moleculaPool.connect(poolOwner).addToken(token);
+            await moleculaPool.connect(poolOwner).addToken(token2);
+            await moleculaPool.connect(poolOwner).addToken(token3);
             // in pool: token, token2, token3
             await moleculaPool.connect(poolOwner).removeToken(token);
             expect((await moleculaPool.connect(poolOwner).poolMap(token)).tokenType).to.be.equal(0);
@@ -523,8 +523,8 @@ describe('Test Nitrogen solution v1.1', () => {
 
             const { susde, usde, usdeMinter } = await getEthena();
 
-            await moleculaPool.connect(poolOwner).addToken(susde, 8);
-            await expect(moleculaPool.connect(poolOwner).addToken(susde, 8)).to.be.rejectedWith(
+            await moleculaPool.connect(poolOwner).addToken(susde);
+            await expect(moleculaPool.connect(poolOwner).addToken(susde)).to.be.rejectedWith(
                 'EDuplicatedToken()',
             );
 
@@ -534,7 +534,7 @@ describe('Test Nitrogen solution v1.1', () => {
             await moleculaPool.connect(poolOwner).removeToken(susde);
             await expect(moleculaPool.connect(poolOwner).pool(0)).to.be.rejected;
 
-            await moleculaPool.connect(poolOwner).addToken(susde, 6);
+            await moleculaPool.connect(poolOwner).addToken(susde);
             await grantStakedUSDE(moleculaPool, 100_000_000n, usde, susde, usdeMinter);
             await expect(moleculaPool.connect(poolOwner).removeToken(susde)).to.be.rejectedWith(
                 'ENotZeroBalanceOfRemovedToken()',
@@ -543,7 +543,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
         it('Check SupplyManager.apyFormatter', async () => {
             const { moleculaPool, poolOwner, USDT } = await loadFixture(deployMoleculaPoolV2);
-            await moleculaPool.connect(poolOwner).addToken(USDT, 6);
+            await moleculaPool.connect(poolOwner).addToken(USDT);
             await grantERC20(await moleculaPool.getAddress(), USDT, 100_000_000n);
 
             const SupplyManager = await ethers.getContractFactory('SupplyManager');
@@ -867,7 +867,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 await loadFixture(deployNitrogenV2WithUSDT);
 
             await expect(
-                moleculaPool.connect(randAccount).addToken(randAccount, 0n),
+                moleculaPool.connect(randAccount).addToken(randAccount),
             ).to.be.rejectedWith('OwnableUnauthorizedAccount');
 
             await expect(

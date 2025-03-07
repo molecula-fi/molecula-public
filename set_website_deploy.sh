@@ -38,8 +38,6 @@ echo "- Current branch: $current_branch"
 echo
 
 echo "- Fetching tags..."
-# Safely delete local tags and fetch fresh ones
-git tag -l | xargs -n 1 git tag -d 2>/dev/null || true
 git fetch --tags &> /dev/null
 echo
 

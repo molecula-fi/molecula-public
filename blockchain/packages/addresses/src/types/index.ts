@@ -28,3 +28,9 @@ export enum MoleculaPoolVersion {
     v10 = '1.0',
     v11 = '1.1',
 }
+
+export function getMoleculaPoolVersion() {
+    return Object.values(MoleculaPoolVersion).filter(item => {
+        return isNaN(Number(item));
+    });
+}

@@ -1,4 +1,0 @@
-{
-    "extends": "@molecula-monorepo/tsconfig-shared",
-    "include": ["**/*.ts", "**/*.tsx", "**/*.json"]
-}

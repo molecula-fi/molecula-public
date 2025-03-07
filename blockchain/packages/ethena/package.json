@@ -21,6 +21,7 @@
     "dependencies": {
         "@molecula-monorepo/solidity": "*",
         "@openzeppelin/contracts": "^4.9.5",
+        "dotenv": "^16.4.7",
         "hardhat": "^2.22.19",
         "hardhat-gas-reporter": "^2.2.2",
         "node-fetch": "^2.6.7"
@@ -38,9 +39,9 @@
         "@typechain/hardhat": "^9.1.0",
         "@types/chai": "^4.3.11",
         "@types/mocha": "^10.0.6",
-        "@types/node": "^20.11.20",
+        "@types/node": "^22.12.0",
         "chai": "^4.3.7",
-        "ethers": "^6.13.4",
+        "ethers": "^6.13.5",
         "solidity-coverage": "^0.8.14",
         "typechain": "^8.3.2"
     },

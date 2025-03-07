@@ -7,12 +7,14 @@ import type {
     MainProdContractsNitrogen,
 } from '@molecula-monorepo/blockchain.addresses/deploy';
 
-import { readFromFile, verifyContract, getConfig, unitePool20And4626 } from '../utils/deployUtils';
+import { readFromFile, getNetworkConfig, unitePool20And4626 } from '../utils/deployUtils';
+
+import { verifyContract } from './verificationUtils';
 
 async function runVerify() {
     const networkType =
         network.name === 'sepolia' ? NetworkType.devnet : NetworkType['mainnet/beta'];
-    const { config } = await getConfig(networkType);
+    const config = getNetworkConfig(networkType);
 
     const contractsCore = await readFromFile(`${networkType}/contracts_core.json`);
 
@@ -37,15 +39,6 @@ async function runVerify() {
         contractsConfig.eth.poolKeeper,
     ]);
 
-    await verifyContract('MoleculaPool', contractsConfig.eth.moleculaPool, [
-        config.DEPLOYER_ADDRESS,
-        config.AUTHORIZED_REDEEMER,
-        pools20,
-        config.POOLS4626,
-        contractsConfig.eth.poolKeeper,
-        contractsConfig.eth.supplyManager,
-    ]);
-
     await verifyContract('MoleculaPoolTreasury', contractsConfig.eth.moleculaPool, [
         config.DEPLOYER_ADDRESS,
         unitePool20And4626(pools20, config.POOLS4626),
@@ -62,13 +55,6 @@ async function runVerify() {
         contractsConfig.eth.supplyManager,
         config.USDT_ADDRESS,
         config.GUARDIAN_ADDRESS,
-    ]);
-
-    await verifyContract('AgentAccountant', contractsConfig.eth.accountantAgent, [
-        config.DEPLOYER_ADDRESS,
-        contractsConfig.eth.rebaseToken,
-        contractsConfig.eth.supplyManager,
-        config.USDT_ADDRESS,
     ]);
 
     await verifyContract('SupplyManager', contractsConfig.eth.supplyManager, [

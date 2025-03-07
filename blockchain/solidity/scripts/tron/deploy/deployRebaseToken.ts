@@ -4,7 +4,7 @@ import type { Transaction } from 'tronweb/interfaces';
 import {
     abi as ABI,
     bytecode as BYTECODE,
-} from '../../artifacts/contracts/common/rebase/RebaseTokenCommon.sol/RebaseTokenCommon.json';
+} from '../../../artifacts/contracts/common/rebase/RebaseTokenCommon.sol/RebaseTokenCommon.json';
 
 import { waitForDeployment } from './waitForDeployment';
 

@@ -45,7 +45,7 @@ describe('Test Layer Zero Rebase Token solution', () => {
         expect(user).to.exist;
 
         // deploy mockSwftSwap
-        const MockSwftSwap = (await ethers.getContractFactory('SwftSwap')).connect(owner!);
+        const MockSwftSwap = (await ethers.getContractFactory('MockSwftSwap')).connect(owner!);
         const mockSwftSwap = await MockSwftSwap.deploy(owner!.address);
 
         // deploy mock LZ Endpoint

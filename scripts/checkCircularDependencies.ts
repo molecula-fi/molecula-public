@@ -7,6 +7,7 @@ const checkCircularDependencies = async () => {
     const sources = [
         './backend/evm-confirmer-evm-retail/src/index.ts',
         './backend/evm-tracker-evm-retail/src/index.ts',
+        './backend/evm-token-tracker-retail/src/index.ts',
         './backend/packages/contracts/src/index.ts',
         './backend/packages/graphql/src/index.ts',
         './backend/packages/hashicorp/src/index.ts',
@@ -33,7 +34,6 @@ const checkCircularDependencies = async () => {
         './backend/rpc-proxy/src/index.ts',
         './backend/atoms-service/src/index.ts',
         './blockchain/packages/addresses/src/index.ts',
-        './blockchain/packages/documentation/src/index.ts',
         './blockchain/packages/ethena/src/index.ts',
         './common/evm-utilities/src/index.ts',
         './common/server-connector/src/index.ts',
@@ -82,8 +82,7 @@ const checkCircularDependencies = async () => {
         const f = sources[i]!;
         const fileExists = fs.existsSync(f);
         if (!fileExists) {
-            console.error(`${f} does not exist`);
-            // throw new Error(`${f} does not exist`);
+            throw new Error(`${f} is not exist`);
         }
     }
     const extensions = [

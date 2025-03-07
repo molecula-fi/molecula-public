@@ -83,14 +83,14 @@ export async function prepareDocsForGithub() {
             inFiles: ['solutions/Nitrogen/AccountantAgent.md'],
             outFile: 'nitrogen-accountant-agent.md',
         },
-        { inFiles: ['retail/MoleculaPoolTreasury.md'], outFile: 'moleculapooltreasury.md' },
-        { inFiles: ['retail/SupplyManager.md'], outFile: 'supplymanager.md' },
+        { inFiles: ['core/MoleculaPoolTreasury.md'], outFile: 'moleculapooltreasury.md' },
+        { inFiles: ['core/SupplyManager.md'], outFile: 'supplymanager.md' },
         {
             inFiles: [
                 'solutions/Nitrogen/RebaseToken.md',
-                'retail/RebaseTokenCommon.md',
-                'retail/RebaseERC20Permit.md',
-                'retail/RebaseERC20.md',
+                'common/rebase/RebaseTokenCommon.md',
+                'common/rebase/RebaseERC20Permit.md',
+                'common/rebase/RebaseERC20.md',
             ],
             outFile: 'musdvault.md',
         },
@@ -115,29 +115,21 @@ export async function prepareDocsForGithub() {
  * Function to generate the docs for the contracts.
  */
 export async function generateDocs() {
-    const tronPath = path.resolve(__dirname, '../../../networks/tron/artifacts/build-info');
-    const tron = await getArtifactsFromLastestJson(tronPath);
-
-    const ethPath = path.resolve(__dirname, '../../../networks/ethereum/artifacts/build-info');
-    const eth = await getArtifactsFromLastestJson(ethPath);
-
-    if (tron && eth) {
-        await docgen(
-            [
-                // Add Ethereum contracts build info
-                eth!,
-                // Add Tron contracts build info
-                tron!,
-            ],
-            {
-                outputDir: path.resolve(__dirname, '../docs'),
-                exclude: ['./mock/'],
-                pages: 'files',
-            },
-        );
-        await prepareDocsForGithub();
-        return;
+    const buildInfoPath = path.resolve(__dirname, '../artifacts/build-info');
+    const artifacts = await getArtifactsFromLastestJson(buildInfoPath);
+    if (artifacts === null || artifacts === undefined) {
+        throw new Error('Failed to get build info');
     }
 
-    console.error('Error: Documents generation error!');
+    await docgen([artifacts], {
+        outputDir: path.resolve(__dirname, '../docs'),
+        exclude: ['./mock/', './test/'],
+        pages: 'files',
+    });
+    await prepareDocsForGithub();
 }
+
+generateDocs().catch(error => {
+    console.error('Failed to generate docs for contracts with error:', error);
+    process.exit(1);
+});

@@ -10,6 +10,8 @@ yarn-error.log
 
 # Env
 .env
+.env.test
+.env.production
 
 # Hardhat files
 /cache
@@ -23,3 +25,7 @@ yarn-error.log
 # solidity-coverage files
 /coverage
 /coverage.json
+
+# Ignore artifacts:
+docs/
+github-docs/

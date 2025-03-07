@@ -1,11 +1,11 @@
 import type TronWeb from 'tronweb';
 import type { Transaction } from 'tronweb/interfaces';
 
-import { abi as OAPP_ABI } from '../../artifacts/@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol/OApp.json';
+import { abi as OAPP_ABI } from '../../../artifacts/@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol/OApp.json';
 import {
     abi as ABI,
     bytecode as BYTECODE,
-} from '../../artifacts/contracts/solutions/Carbon/tron/AccountantLZ.sol/AccountantLZ.json';
+} from '../../../artifacts/contracts/solutions/Carbon/tron/AccountantLZ.sol/AccountantLZ.json';
 
 import { waitForDeployment } from './waitForDeployment';
 

@@ -1,87 +1,108 @@
-import { task, types } from 'hardhat/config';
+import { scope } from 'hardhat/config';
 
-task('deployNitrogen', 'Deploys the Nitrogen contract')
+import {
+    deployNitrogen,
+    deployAccountantAgent,
+    deployCarbon,
+    deployCore,
+    deployMoleculaPoolTreasury,
+} from '../scripts/ethereum';
+import {
+    handleError,
+    writeToFile,
+    readFromFile,
+    getEnvironment,
+} from '../scripts/utils/deployUtils';
+
+const ethereumMajorScope = scope('ethereumScope', 'Scope for major ethereum deployment flow');
+
+ethereumMajorScope
+    .task('deployNitrogen', 'Deploys the Nitrogen contracts')
     .addParam('environment', 'Deployment environment')
-    .setAction(async taskArgs => {
-        const { handleError, readFromFile, writeToFile, getEnvironment } = await import(
-            '../scripts/utils/deployUtils'
-        );
-
-        const environment = getEnvironment(taskArgs.environment);
-        const contractsCore = await readFromFile(`${environment}/contracts_core.json`);
+    .setAction(async (taskArgs, hre) => {
+        const environment = getEnvironment(hre, taskArgs.environment);
 
         try {
-            const { deployNitrogen } = await import('../scripts/deployNitrogen');
-
-            const print = writeToFile.bind(null, `${environment}/contracts_nitrogen.json`);
-            await deployNitrogen(environment, {
+            const contractsCore = await readFromFile(`${environment}/contracts_core.json`);
+            const eth = await deployNitrogen(hre, environment, {
                 mUSDe: contractsCore.eth.mUSDe,
                 moleculaPool: contractsCore.eth.moleculaPool,
                 supplyManager: contractsCore.eth.supplyManager,
-            })
-                .then(eth => {
-                    return { eth };
-                })
-                .then(print)
-                .catch(handleError);
+            });
+            const result = { eth };
 
+            writeToFile(`${environment}/contracts_nitrogen.json`, result);
             console.log('Deployment and file write completed successfully.');
         } catch (error) {
             handleError(error);
         }
     });
 
-task('deployCore', 'Deploys the Nitrogen contract')
+ethereumMajorScope
+    .task('deployCore', 'Deploys the Core contracts')
     .addParam('environment', 'Deployment environment')
-    .addParam<boolean>('nomusde', 'Deployment mUSDe flag', false, types.boolean) // Boolean param
-    .setAction(async taskArgs => {
-        const { handleError, writeToFile, getEnvironment } = await import(
-            '../scripts/utils/deployUtils'
-        );
-
-        const environment = getEnvironment(taskArgs.environment);
+    .addFlag('nomusde', 'Deployment mUSDe flag')
+    .setAction(async (taskArgs, hre) => {
+        const environment = getEnvironment(hre, taskArgs.environment);
 
         try {
-            const { deployCore } = await import('../scripts/deployCore');
+            const eth = await deployCore(hre, environment, taskArgs.nomusde);
+            const result = { eth };
 
-            const print = writeToFile.bind(null, `${environment}/contracts_core.json`);
-            await deployCore(environment, taskArgs.nomusde)
-                .then(eth => {
-                    return { eth };
-                })
-                .then(print)
-                .catch(handleError);
-
+            writeToFile(`${environment}/contracts_core.json`, result);
             console.log('Deployment and file write completed successfully.');
         } catch (error) {
             handleError(error);
         }
     });
 
-task('deployAccountantAgent', 'Deploys the Nitrogen contract')
+ethereumMajorScope
+    .task('deployAccountantAgent', 'Deploys the AccountantAgent contract')
     .addParam('environment', 'Deployment environment')
-    .setAction(async taskArgs => {
-        const { handleError, writeToFile, getEnvironment } = await import(
-            '../scripts/utils/deployUtils'
-        );
-
-        const environment = getEnvironment(taskArgs.environment);
+    .setAction(async (taskArgs, hre) => {
+        const environment = getEnvironment(hre, taskArgs.environment);
 
         try {
-            const { deployAccountantAgent } = await import('../scripts/deployAccountantAgent');
+            const result = await deployAccountantAgent(hre, environment);
 
-            const print = writeToFile.bind(null, `${environment}/accountant_agent.json`);
-            await deployAccountantAgent(environment)
-                .then(eth => {
-                    return { eth };
-                })
-                .then(print)
-                .catch(handleError);
-
+            writeToFile(`${environment}/accountant_agent.json`, result);
             console.log('Deployment and file write completed successfully.');
         } catch (error) {
             handleError(error);
         }
     });
 
-export {};
+ethereumMajorScope
+    .task('deployMoleculaPoolTreasury', 'Deploys the Nitrogen MoleculaPoolTreasury contract')
+    .addParam('environment', 'Deployment environment')
+    .setAction(async (taskArgs, hre) => {
+        const environment = getEnvironment(hre, taskArgs.environment);
+        const result = await deployMoleculaPoolTreasury(hre, environment);
+        writeToFile(`${environment}/molecula_pool_treasury.json`, result);
+        console.log('Deployment and file write completed successfully.');
+    });
+
+ethereumMajorScope
+    .task('deployCarbon', 'Deploys Carbon on Ethereum')
+    .addParam('environment', 'Deployment environment')
+    .setAction(async (taskArgs, hre) => {
+        console.log('\n Ethereum Deployment');
+        console.log('Environment:', taskArgs.environment); // Now using environment variable
+        console.log('Network:', hre.network.name);
+
+        const environment = getEnvironment(hre, taskArgs.environment);
+        try {
+            const contractsCore = await readFromFile(`${environment}/contracts_core.json`);
+            // Execute deployment
+            const eth = await deployCarbon(hre, environment, {
+                supplyManagerAddress: contractsCore.eth.supplyManager,
+                moleculaPoolAddress: contractsCore.eth.moleculaPool,
+            });
+            const result = { eth };
+
+            writeToFile(`${environment}/contracts_carbon.json`, result);
+            console.log('Deployment and file write completed successfully.');
+        } catch (error) {
+            handleError(error);
+        }
+    });

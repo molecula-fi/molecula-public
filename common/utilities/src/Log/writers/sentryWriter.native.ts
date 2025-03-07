@@ -7,6 +7,10 @@ import type { LogWriter } from '../types';
  * TODO: setup for React Native
  */
 export class SentryWriter implements LogWriter {
+    // @ts-ignore
+    // eslint-disable-next-line no-useless-constructor,@typescript-eslint/no-unused-vars,no-empty-function
+    public constructor(environment: string, dsn: string) {}
+
     public debug() {}
 
     public info() {}

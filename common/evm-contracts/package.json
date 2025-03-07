@@ -26,7 +26,7 @@
         "@molecula-monorepo/prettier-config-shared": "*",
         "@molecula-monorepo/tsconfig-shared": "*",
         "@typechain/ethers-v6": "^0.5.1",
-        "ethers": "^6.13.4",
+        "ethers": "^6.13.5",
         "typechain": "^8.3.2"
     }
 }

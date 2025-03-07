@@ -1,3 +1,5 @@
+/// @deprecated TODO delete me
+
 export const TRON_RPC_URL = 'https://api.trongrid.io/';
 export const LAYER_ZERO_TRON_ENDPOINT = 'TAy9xwjYjBBN6kutzrZJaAZJHCAejjK1V9';
 

@@ -4,7 +4,7 @@ import type { Transaction } from 'tronweb/interfaces';
 import {
     abi as ABI,
     bytecode as BYTECODE,
-} from '../../artifacts/contracts/solutions/Carbon/tron/Treasury.sol/Treasury.json';
+} from '../../../artifacts/contracts/solutions/Carbon/tron/Treasury.sol/Treasury.json';
 
 import { waitForDeployment } from './waitForDeployment';
 

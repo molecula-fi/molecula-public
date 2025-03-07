@@ -103,7 +103,12 @@
         "AUTHENTIK_AUTHORIZATION_URL",
         "AUTHENTIK_TOKEN_URL",
         "AUTHENTIK_USER_INFO_URL",
-        "AUTHENTIK_URL_PREFIX"
+        "AUTHENTIK_URL_PREFIX",
+        "JSON_RPC_URL",
+        "JSON_RPC_URL_SEPOLIA",
+        "ETHEREUM_SEED_PHRASE",
+        "ETHEREUM_API_KEY",
+        "TRON_SEED_PHRASE"
     ],
     "globalDependencies": [".env"]
 }

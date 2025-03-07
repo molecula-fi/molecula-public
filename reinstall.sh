@@ -31,7 +31,8 @@ yarn install --frozen-lockfile --network-concurrency 3 --network-timeout 300000
 
 echo "Installing slither..."
 # https://github.com/crytic/slither
-python3 -m pip install slither-analyzer
+python3 -m pip install slither-analyzer || pipx install slither-analyzer
+
 
 #echo "Revealing secrets..."
 if [ -x "$(command -v osascript)" ]

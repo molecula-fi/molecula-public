@@ -10,6 +10,7 @@ yarn-error.log
 
 # Env
 .env
+.env.test
 
 # Hardhat files
 /cache

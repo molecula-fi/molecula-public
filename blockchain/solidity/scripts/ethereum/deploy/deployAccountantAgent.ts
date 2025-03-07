@@ -1,17 +1,20 @@
-import { ethers } from 'hardhat';
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import { type NetworkType, type ContractsNitrogen } from '@molecula-monorepo/blockchain.addresses';
 
-import { DEPLOY_GAS_LIMIT } from '../configs/ethereum';
+import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
-import { getConfig, readFromFile } from './utils/deployUtils';
+import { getConfig, readFromFile } from '../../utils/deployUtils';
 
-export async function deployAccountantAgent(environment: NetworkType) {
-    const { config } = await getConfig(environment);
+export async function deployAccountantAgent(
+    hre: HardhatRuntimeEnvironment,
+    environment: NetworkType,
+) {
+    const { config } = await getConfig(hre, environment);
     const contractsNitrogen: typeof ContractsNitrogen = await readFromFile(
         `${environment}/contracts_nitrogen.json`,
     );
-    const Agent = await ethers.getContractFactory('AccountantAgent');
+    const Agent = await hre.ethers.getContractFactory('AccountantAgent');
     const agent = await Agent.deploy(
         config.OWNER, // Note: owner is not deploy wallet
         contractsNitrogen.eth.rebaseToken,

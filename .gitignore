@@ -14,8 +14,8 @@ yarn-error.log
 # Git-secret
 .gitsecret/keys/random_seed
 !*.secret
-blockchain/solidity/configs/ethereum/index.ts
-blockchain/solidity/configs/tron/index.ts
+blockchain/packages/ethena/.env.test
+blockchain/solidity/.env.test
 configs/frontend-environments/shared/.env
 configs/frontend-environments/shared/.env.production
 configs/frontend-environments/prelaunch/.env
@@ -37,3 +37,7 @@ ui-tests/integration-tests/playwright-report/
 
 # Terraform
 tfState.json
+
+# Tests
+ui-tests/transactionHash.json
+tests-results/allure-results/
