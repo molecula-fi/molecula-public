@@ -1,4 +1,4 @@
 include:
-  - project: 'datsteam/ops/deploy'
+  - project: datsteam/ops/deploy
     ref: master
     file: molecula/.gitlab-ci.yml

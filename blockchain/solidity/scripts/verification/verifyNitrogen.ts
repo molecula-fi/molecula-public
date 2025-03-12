@@ -1,4 +1,4 @@
-import { ethers, network } from 'hardhat';
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import { NetworkType } from '@molecula-monorepo/blockchain.addresses';
 import type {
@@ -11,9 +11,9 @@ import { readFromFile, getNetworkConfig, unitePool20And4626 } from '../utils/dep
 
 import { verifyContract } from './verificationUtils';
 
-async function runVerify() {
+export async function runVerify(hre: HardhatRuntimeEnvironment) {
     const networkType =
-        network.name === 'sepolia' ? NetworkType.devnet : NetworkType['mainnet/beta'];
+        hre.network.name === 'sepolia' ? NetworkType.devnet : NetworkType['mainnet/beta'];
     const config = getNetworkConfig(networkType);
 
     const contractsCore = await readFromFile(`${networkType}/contracts_core.json`);
@@ -30,43 +30,42 @@ async function runVerify() {
         pools20.push({ pool: contractsConfig.eth.mUSDe, n: 0 });
     }
 
-    await verifyContract('MUSDLock', contractsConfig.eth.mUSDLock, [
+    await verifyContract(hre, 'MUSDLock', contractsConfig.eth.mUSDLock, [
         contractsConfig.eth.rebaseToken,
     ]);
 
-    await verifyContract('MUSDE', contractsConfig.eth.mUSDe, [
+    await verifyContract(hre, 'MUSDE', contractsConfig.eth.mUSDe, [
         config.SUSDE_ADDRESS,
         contractsConfig.eth.poolKeeper,
     ]);
 
-    await verifyContract('MoleculaPoolTreasury', contractsConfig.eth.moleculaPool, [
+    await verifyContract(hre, 'MoleculaPoolTreasury', contractsConfig.eth.moleculaPool, [
         config.DEPLOYER_ADDRESS,
         unitePool20And4626(pools20, config.POOLS4626),
         contractsConfig.eth.poolKeeper,
         contractsConfig.eth.supplyManager,
         config.WHITE_LIST,
-        config.USDT_ADDRESS,
         config.GUARDIAN_ADDRESS,
     ]);
 
-    await verifyContract('AccountantAgent', contractsConfig.eth.accountantAgent, [
-        config.OWNER,
+    await verifyContract(hre, 'AccountantAgent', contractsConfig.eth.accountantAgent, [
+        config.DEPLOYER_ADDRESS,
         contractsConfig.eth.rebaseToken,
         contractsConfig.eth.supplyManager,
         config.USDT_ADDRESS,
         config.GUARDIAN_ADDRESS,
     ]);
 
-    await verifyContract('SupplyManager', contractsConfig.eth.supplyManager, [
+    await verifyContract(hre, 'SupplyManager', contractsConfig.eth.supplyManager, [
         config.DEPLOYER_ADDRESS,
         config.POOL_KEEPER,
         contractsCore.eth.moleculaPool,
         config.APY_FORMATTER.toString(),
     ]);
 
-    const INITIAL_SHARES_SUPPLY = ethers.parseUnits(config.INITIAL_USDT_SUPPLY.toString(), 12);
+    const INITIAL_SHARES_SUPPLY = hre.ethers.parseUnits(config.INITIAL_USDT_SUPPLY.toString(), 12);
 
-    await verifyContract('RebaseToken', contractsConfig.eth.rebaseToken, [
+    await verifyContract(hre, 'RebaseToken', contractsConfig.eth.rebaseToken, [
         config.DEPLOYER_ADDRESS,
         contractsConfig.eth.accountantAgent,
         INITIAL_SHARES_SUPPLY,
@@ -79,7 +78,14 @@ async function runVerify() {
     ]);
 }
 
-runVerify().catch(error => {
+async function main() {
+    const hardhat = await import('hardhat');
+    const hre: HardhatRuntimeEnvironment = hardhat.default;
+
+    await runVerify(hre);
+}
+
+main().catch(error => {
     console.error('Failed to verify:', error);
     process.exit(1);
 });

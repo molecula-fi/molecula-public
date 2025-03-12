@@ -750,6 +750,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 agent,
                 malicious,
                 USDT,
+                poolKeeper,
             } = await loadFixture(deployNitrogen);
 
             // Deploy mUSDe and add it to MoleculaPool
@@ -778,7 +779,6 @@ describe('Test Nitrogen solution v1.1', () => {
                 newPoolKeeper.address,
                 await supplyManager.getAddress(),
                 [],
-                ethMainnetBetaConfig.USDT_ADDRESS,
                 guardian,
             );
 
@@ -808,6 +808,7 @@ describe('Test Nitrogen solution v1.1', () => {
             const keeperSigner = await ethers.getImpersonatedSigner(
                 await moleculaPool.poolKeeper(),
             );
+
             expect(await USDT.balanceOf(keeperSigner)).to.be.greaterThan(0n);
             for (const t of await moleculaPool.getPools20()) {
                 const token = await ethers.getContractAt('IERC20', t[0]);
@@ -815,18 +816,35 @@ describe('Test Nitrogen solution v1.1', () => {
                     .connect(keeperSigner)
                     .approve(moleculaPoolV2.getAddress(), (1n << 256n) - 1n);
             }
+
             for (const t of await moleculaPool.getPools4626()) {
                 const token = await ethers.getContractAt('IERC4626', t[0]);
                 await token
                     .connect(keeperSigner)
                     .approve(moleculaPoolV2.getAddress(), (1n << 256n) - 1n);
             }
+
+            const poolKeeperSigner = await ethers.getImpersonatedSigner(poolKeeper);
+            await USDT.connect(poolKeeperSigner).approve(await agent.getAddress(), valueToRedeem);
+
+            // User redeems their tokens using MoleculaPoolTreasury
+            await moleculaPool.connect(poolOwner).redeem([operationId]);
+
+            // Now user does not have their tokens
+            expect(await USDT.balanceOf(user0.address)).to.be.equal(0n);
+
+            await rebaseToken.connect(malicious).confirmRedeem(operationId);
+            // User get their tokens back
+            expect(await USDT.balanceOf(user0.address)).to.be.greaterThan(0n);
+
             await supplyManager.connect(poolOwner).setMoleculaPool(moleculaPoolV2.getAddress());
-            expect((await moleculaPoolV2.poolMap(USDT)).valueToRedeem).to.be.equal(
-                valueToRedeem / 10n ** 12n,
-            );
+
+            expect((await moleculaPoolV2.poolMap(USDT)).valueToRedeem).to.be.equal(0n);
+
             expectEqual(await moleculaPoolV2.totalSupply(), totalSupply, 18n, 6n);
+
             const agents = await supplyManager.getAgents();
+
             for (const agentAddr of agents) {
                 const agentContract = await ethers.getContractAt('IAgent', agentAddr);
                 const erc20Token = await ethers.getContractAt(
@@ -839,6 +857,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 );
                 expect(allowance).to.be.equal((1n << 256n) - 1n);
             }
+
             expect(await USDT.balanceOf(keeperSigner)).to.be.equal(0n);
             for (const t of await moleculaPool.getPools20()) {
                 const erc20 = await ethers.getContractAt('IERC20', t[0]);
@@ -852,14 +871,6 @@ describe('Test Nitrogen solution v1.1', () => {
                     await erc4626.connect(keeperSigner).balanceOf(keeperSigner.address),
                 ).to.be.equal(0n);
             }
-
-            // User redeems their tokens using MoleculaPoolTreasury
-            await moleculaPoolV2.connect(malicious).redeem([operationId]);
-            // Now user does not have their tokens
-            expect(await USDT.balanceOf(user0.address)).to.be.equal(0n);
-            await rebaseToken.connect(malicious).confirmRedeem(operationId);
-            // User get their tokens back
-            expect(await USDT.balanceOf(user0.address)).to.be.greaterThan(0n);
         });
 
         it('Test modifiers reverts MoleculaPoolTreasury', async () => {
@@ -932,7 +943,6 @@ describe('Test Nitrogen solution v1.1', () => {
                     poolOwner.address,
                     poolOwner.address,
                     [ethers.ZeroAddress],
-                    ethMainnetBetaConfig.USDT_ADDRESS,
                     poolOwner.address,
                 ),
             ).to.be.rejectedWith('EZeroAddress()');

@@ -68,7 +68,7 @@ export const sepoliaConfig: EthereumNetworkConfig = {
     WHITE_LIST: [],
 
     /** Guardian address that can pause MoleculaPoolTreasury contract. */
-    GUARDIAN_ADDRESS: '0xd4e9c83EA2f1571311246920e2B1a670a8a3080A',
+    GUARDIAN_ADDRESS: '0xd4e9c83EA2f1571311246920e2B1a670a8a3080A', // TODO: change guardian address
 
     /** (APY_FORMATTER / 10_000) * 100% is the percentage of revenue retained by all mUSD holder. */
     APY_FORMATTER: 8_000,

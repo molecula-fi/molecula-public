@@ -35,6 +35,9 @@ ui-tests/integration-tests/playwright-report/
 # Turborepo logs, outputs, and other functionality.
 .turbo
 
+# ESLint cache
+.cache/eslint/
+
 # Terraform
 tfState.json
 

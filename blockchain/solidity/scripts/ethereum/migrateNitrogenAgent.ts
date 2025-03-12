@@ -18,8 +18,8 @@ async function ensureNoValueToRedeem(
     switch (version) {
         case MoleculaPoolVersion.v10: {
             const moleculaPool = await hre.ethers.getContractAt('MoleculaPool', address);
-            if ((await moleculaPool.valueToRedeem()) !== 0n) {
-                throw new Error('moleculaPool.valueToRedeem() !== 0');
+            if ((await moleculaPool.valueToRedeem()) >= 0.5 * 10 ** 18) {
+                throw new Error('Unprocessed redeem requests to migrate');
             }
             break;
         }
@@ -27,7 +27,7 @@ async function ensureNoValueToRedeem(
             const moleculaPool = await hre.ethers.getContractAt('MoleculaPoolTreasury', address);
             const tokenInfo = await moleculaPool.poolMap(token);
             if (tokenInfo.valueToRedeem !== 0n) {
-                throw new Error('tokenInfo.valueToRedeem !== 0n');
+                throw new Error('Unprocessed redeem requests to migrate');
             }
             break;
         }
@@ -41,13 +41,12 @@ export async function migrateNitrogenAgent(
     environment: NetworkType,
     version: MoleculaPoolVersion,
 ) {
-    const { account } = await getConfig(hre, environment);
-
     const accountantAgentAddress = (
         (await readFromFile(
             `${environment}/accountant_agent.json`,
         )) as typeof AccountantAgentContract
     ).accountantAgent;
+
     if (accountantAgentAddress.length === 0) {
         throw new Error('Firstly deploy accountantAgentAddress');
     }
@@ -55,6 +54,7 @@ export async function migrateNitrogenAgent(
     const contractsNitrogen: typeof ContractsNitrogen = await readFromFile(
         `${environment}/contracts_nitrogen.json`,
     );
+
     const newAgent = await hre.ethers.getContractAt('AccountantAgent', accountantAgentAddress);
     const oldAgent = await hre.ethers.getContractAt(
         'AgentAccountant',
@@ -68,24 +68,14 @@ export async function migrateNitrogenAgent(
         'SupplyManager',
         contractsNitrogen.eth.supplyManager,
     );
-    const moleculaPool = await hre.ethers.getContractAt(
-        'Ownable',
-        contractsNitrogen.eth.moleculaPool,
-    );
-    if ((await newAgent.owner()) !== account.address) {
-        throw new Error('Bad newAgent owner');
-    }
-    if ((await oldAgent.owner()) !== account.address) {
-        throw new Error('Bad oldAgent owner');
-    }
+
+    const { account } = await getConfig(hre, environment);
+
     if ((await rebaseToken.owner()) !== account.address) {
         throw new Error('Bad rebaseToken owner');
     }
     if ((await supplyManager.owner()) !== account.address) {
         throw new Error('Bad supplyManager owner');
-    }
-    if ((await moleculaPool.owner()) !== account.address) {
-        throw new Error('Bad moleculaPool owner');
     }
 
     const token = await newAgent.getERC20Token();

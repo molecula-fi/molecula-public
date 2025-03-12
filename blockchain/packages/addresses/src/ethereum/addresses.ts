@@ -64,13 +64,6 @@ export const evmMoleculaTokenAddresses = {
         },
         [EVMChainIDs.Sepolia]: ContractsNitrogen.eth.mUSDe as EVMAddress,
     },
-    wmUSDT: {
-        [EVMChainIDs.Mainnet]: {
-            beta: MainBetaContractsCarbon.eth.wmUSDT as EVMAddress,
-            prod: MainProdContractsCarbon.eth.wmUSDT as EVMAddress,
-        },
-        [EVMChainIDs.Sepolia]: ContractsCarbon.eth.wmUSDT as EVMAddress,
-    },
 } as const;
 
 /**

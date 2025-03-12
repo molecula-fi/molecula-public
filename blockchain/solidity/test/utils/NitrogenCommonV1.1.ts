@@ -44,7 +44,6 @@ export async function deployNitrogenV2Common(token: string) {
         ethMainnetBetaConfig.POOL_KEEPER,
         supplyManagerFutureAddress,
         [],
-        ethMainnetBetaConfig.USDT_ADDRESS,
         guardian,
     );
 
@@ -156,7 +155,6 @@ export async function deployMoleculaPoolV2() {
         poolKeeper.address,
         randomAccount.address,
         [ethMainnetBetaConfig.USDT_ADDRESS],
-        ethMainnetBetaConfig.USDT_ADDRESS,
         guardian,
     );
     const USDT = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.USDT_ADDRESS);

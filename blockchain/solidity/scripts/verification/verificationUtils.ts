@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { run } from 'hardhat';
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 export async function verifyContract(
+    hre: HardhatRuntimeEnvironment,
     contractName: string,
     address: string,
     constructorArguments: any[],
 ) {
     try {
-        await run('verify:verify', {
+        await hre.run('verify:verify', {
             address,
             constructorArguments,
         });

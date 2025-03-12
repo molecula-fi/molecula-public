@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
 set -e
 
-usage() { echo "Usage: $0 [-s Stand <dev|beta|alpha|prod>] [-c Component (do not specify for both) <front|back>]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-s Stand <dev|beta|alpha|prod>] [-c Component (do not specify for both) <front|back>] [-f Front part (front only <expo|admin>, do not specify for both)]" 1>&2; exit 1; }
 
-createLocalTags() { # first arg is stand, the second one is component
+createLocalTags() { # first arg is stand, the second one is component, the third one is front part
     ss="$1"
     cc="$2"
+    ff="$3"
     # Format is molecula-MAJOR.MINOR.PATCH-BUILD_NUMBER-COMPONENT-STAND
     for c in $cc; do
+
+        if [[ "$c" == 'front' ]] && [[ ! -z "$ff" ]] ; then
+            f="-$ff"
+        else
+            f=""
+        fi
         echo "- Processing stand '$ss', component '$c' ..."
-        last_tag=$(git tag -l --sort=v:refname | grep -E "^molecula-$package_version-[0-9]+-$c-$ss$" | tail -n 1)
+        last_tag=$(git tag -l --sort=v:refname | grep -E "^molecula-$package_version-[0-9]+-$c-$ss$f$" | tail -n 1)
         echo "  - Last tag: '$last_tag'"
         if [[ -z "$last_tag" ]] ; then
             new_tag="molecula-$package_version-1-$c-$ss"
@@ -19,7 +26,7 @@ createLocalTags() { # first arg is stand, the second one is component
             echo "  - Last build number: $build_number"
             build_number=$((build_number + 1))
             echo "  - New build number: $build_number"
-            new_tag="molecula-$package_version-$build_number-$c-$ss"
+            new_tag="molecula-$package_version-$build_number-$c-$ss$f"
         fi
         echo "  - New tag: '$new_tag'"
         git tag "$new_tag" 
@@ -28,7 +35,8 @@ createLocalTags() { # first arg is stand, the second one is component
 }
 
 comp='both'
-while getopts ":s:c:" o; do
+front=''
+while getopts ":s:c:f:" o; do
     case "${o}" in
         s)
             stand="${OPTARG}"
@@ -40,6 +48,12 @@ while getopts ":s:c:" o; do
         c)
             comp="${OPTARG}"
             if [[ "$comp" != "front" ]] && [[ "$comp" != "back" ]] ; then
+                usage
+            fi
+            ;;
+        f)
+            front="${OPTARG}"
+            if [[ "$front" != "expo" ]] && [[ "$front" != "admin" ]] ; then
                 usage
             fi
             ;;
@@ -75,11 +89,11 @@ echo "- Current branch: $current_branch"
 echo
 
 echo "- Fetching tags..."
-git fetch --tags &> /dev/null
+git fetch --tags -f &> /dev/null
 echo
 
 echo "- Creating git tag on branch '${current_branch}' ($current_commit)..."
-createLocalTags "$stand" "${comp//both/back front}"
+createLocalTags "$stand" "${comp//both/back front}" "$front"
 
 echo "- Push changes to gitlab ..."
 git push --tags

@@ -2,7 +2,7 @@
     "eth": {
         "supplyManager": "0xeFd445D91dBf0f3c44cC4c8d3986BB3f865020Bd",
         "moleculaPool": "0x52E12A48eA6E5BcD2B5a99bbe0748E129c7DCea7",
-        "accountantAgent": "0x1Ed162F9F01B10e5f1868d1Ba08033629645D084",
+        "accountantAgent": "0xe4C7b5F536F724d4314127f4ce40EDA0A7072DcC",
         "rebaseToken": "0x8166137a9E049897d10e7E4De73ee37FeDC9d9b7",
         "poolKeeper": "0xFA9113efcaD2e08F868b7B00dF67ed404Ec9a00c",
         "mUSDLock": "0xf0647bfD559A2D19DCb5b4CC1A8A9b2af18113F6",

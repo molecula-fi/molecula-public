@@ -81,7 +81,7 @@ export async function prepareDocsForGithub() {
     const contracts = [
         {
             inFiles: ['solutions/Nitrogen/AccountantAgent.md'],
-            outFile: 'nitrogen-accountant-agent.md',
+            outFile: 'accountantagent.md',
         },
         { inFiles: ['core/MoleculaPoolTreasury.md'], outFile: 'moleculapooltreasury.md' },
         { inFiles: ['core/SupplyManager.md'], outFile: 'supplymanager.md' },

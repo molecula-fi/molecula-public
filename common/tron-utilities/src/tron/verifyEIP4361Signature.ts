@@ -2,19 +2,12 @@ import TronWeb from 'tronweb';
 
 import { Log } from '@molecula-monorepo/common.utilities';
 
-type Options = {
-    address: string;
-    signature: string;
-    message: string;
-    fullNode: string;
-};
-
-const signTemplate = `https://molecula.io wants you to sign in with your Tron account:
+const signTemplate = `$url wants you to sign in with your Tron account:
     $account
 
     Authorization in Atoms service
 
-    URI: https://molecula.io
+    URI: $url
     Version: 1
     Chain ID: Tron
     Nonce: $nonce
@@ -22,18 +15,70 @@ const signTemplate = `https://molecula.io wants you to sign in with your Tron ac
 
 const log = new Log('Tron verify signature');
 
-export function buildEIP4361SignMessage(tronAddress: string, nonce: string): string {
+/**
+ * Build EIP4361 message options
+ */
+export interface BuildOptions {
+    /**
+     * Address for auth
+     */
+    address: string;
+    /**
+     * nonce for auth
+     */
+    nonce: string;
+    /**
+     * Client host, ie molecula.io
+     */
+    host: string;
+    /**
+     * Client protocol, ie https
+     */
+    protocol: string;
+}
+
+/**
+ * Build EIP4361 message
+ * @param options - Build options
+ */
+export function buildEIP4361SignMessage(options: BuildOptions): string {
+    const { address, nonce, host, protocol } = options;
+    const url = `${protocol}://${host}`;
+
     return signTemplate
-        .replace('$account', tronAddress)
+        .replace(/\$url/g, url)
+        .replace('$account', address)
         .replace('$nonce', nonce)
         .replace('$date', new Date().toISOString());
 }
 
 /**
- * Verify signature with message.
- * @param options - Options
+ * Verify EIP4361 signature options
  */
-export async function verifyEIP4361Signature(options: Options): Promise<void> {
+export interface VerifyOptions {
+    /**
+     * Address for verify signature
+     */
+    address: string;
+    /**
+     * Signature string for verify
+     */
+    signature: string;
+    /**
+     * The text of the message that was used to create the signature
+     */
+    message: string;
+    /**
+     * Url to tron api
+     */
+    fullNode: string;
+}
+
+/**
+ * Verify signature with message.
+ * @param options - Verify options
+ */
+export async function verifyEIP4361Signature(options: VerifyOptions): Promise<void> {
     const { message, address, signature, fullNode } = options;
 
     const tronWeb = new TronWeb({

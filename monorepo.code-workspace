@@ -1,0 +1,35 @@
+{
+    "folders": [
+        {
+            "name": "🌳 root",
+            "path": ".",
+        },
+        {
+            "name": "💰 Contracts",
+            "path": "contracts",
+        },
+        {
+            "name": "⚙️ Backend",
+            "path": "backend",
+        },
+        {
+            "name": "✨ molecula.io",
+            "path": "frontend/website",
+        },
+        {
+            "name": "🚀 Retail App (beta.molecula.io)",
+            "path": "frontend/retail",
+        },
+        {
+            "name": "🖥️ Frontend",
+            "path": "frontend",
+        },
+    ],
+    "extensions": {
+        "recommendations": [
+            "folke.vscode-monorepo-workspace",
+            "dbaeumer.vscode-eslint",
+            "esbenp.prettier-vscode",
+        ],
+    },
+}

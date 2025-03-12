@@ -32,20 +32,18 @@ export function getVersion(param: string): MoleculaPoolVersion {
 
 export function verifyEnvironment(network: string, environment: string) {
     if ((network === 'sepolia' || network === 'shasta') && environment !== 'devnet') {
-        console.error(
+        throw new Error(
             `Expected network and environment set correctly: network ${network} couldn't be used in this environment ${environment}`,
         );
-        process.exit(1);
     }
     if (
         (network === 'ethereum' || network === 'tron') &&
         environment !== 'mainnet/beta' &&
         environment !== 'mainnet/prod'
     ) {
-        console.error(
+        throw new Error(
             `Expected network and environment set correctly: network ${network} couldn't be used in this environment ${environment}`,
         );
-        process.exit(1);
     }
 }
 

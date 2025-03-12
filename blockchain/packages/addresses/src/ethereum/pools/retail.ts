@@ -35,11 +35,6 @@ export const staticPoolERC20CurrenciesRetailTestnet = {
  */
 export const poolERC20CurrenciesRetailTestnet = {
     ...staticPoolERC20CurrenciesRetailTestnet,
-
-    wmUSDT: {
-        pool: evmMoleculaTokenAddresses.wmUSDT[EVMChainIDs.Sepolia],
-        n: 12,
-    },
     mUSDe: {
         pool: evmMoleculaTokenAddresses.mUSDe[EVMChainIDs.Sepolia],
         n: 0,
@@ -111,10 +106,6 @@ export const poolERC20CurrenciesRetailMainnetProd = {
         pool: evmMoleculaTokenAddresses.mUSDe[EVMChainIDs.Mainnet].prod,
         n: 0,
     },
-    wmUSDT: {
-        pool: evmMoleculaTokenAddresses.wmUSDT[EVMChainIDs.Mainnet].prod,
-        n: 0,
-    },
 } satisfies { [token in PoolCurrency]?: PoolData };
 
 /**
@@ -125,10 +116,6 @@ export const poolERC20CurrenciesRetailMainnetBeta = {
 
     mUSDe: {
         pool: evmMoleculaTokenAddresses.mUSDe[EVMChainIDs.Mainnet].beta,
-        n: 0,
-    },
-    wmUSDT: {
-        pool: evmMoleculaTokenAddresses.wmUSDT[EVMChainIDs.Mainnet].beta,
         n: 0,
     },
 } satisfies { [token in PoolCurrency]?: PoolData };

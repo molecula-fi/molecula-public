@@ -1,7 +1,5 @@
 import { scope } from 'hardhat/config';
 
-import { getMoleculaPoolVersion } from '@molecula-monorepo/blockchain.addresses';
-
 import { migrateNitrogenAgent, migrateNitrogenMoleculaPoolTreasury } from '../scripts/ethereum';
 import { setCoreOwner } from '../scripts/ethereum/setCoreOwner';
 import { setNitrogenOwner } from '../scripts/ethereum/setNitrogenOwner';
@@ -13,14 +11,14 @@ const ethereumSetupScope = scope('ethereumSetupScope', 'Scope for set ethereum s
 ethereumSetupScope
     .task('migrateNitrogenAgent', 'Nitrogen Migration of Agent')
     .addParam('environment', 'Migration environment')
-    .addVariadicPositionalParam('mpv', 'Molecula Pool version', getMoleculaPoolVersion())
+    .addParam('mpv', 'Molecula Pool version')
     .setAction(async (taskArgs, hre) => {
         console.log('Environment:', taskArgs.environment);
         console.log('Version:', taskArgs.mpv);
         console.log('Network:', hre.network.name);
 
         const environment = getEnvironment(hre, taskArgs.environment);
-        const version = getVersion(taskArgs.mpv[1]);
+        const version = getVersion(taskArgs.mpv);
 
         await migrateNitrogenAgent(hre, environment, version);
         console.log('Migration Nitrogen Agent completed successfully.');

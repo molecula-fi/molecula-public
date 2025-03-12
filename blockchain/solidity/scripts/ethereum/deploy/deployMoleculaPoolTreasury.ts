@@ -21,7 +21,6 @@ export async function deployMoleculaPoolTreasury(
         config.POOL_KEEPER,
         contractsNitrogen.eth.supplyManager,
         config.WHITE_LIST,
-        config.USDT_ADDRESS,
         config.GUARDIAN_ADDRESS,
         { gasLimit: DEPLOY_GAS_LIMIT },
     );

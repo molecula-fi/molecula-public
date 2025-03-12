@@ -70,7 +70,7 @@ export const ethMainnetProdConfig: EthereumNetworkConfig = {
     WHITE_LIST: [],
 
     /** Guardian address that can pause MoleculaPoolTreasury contract. */
-    GUARDIAN_ADDRESS: '0x',
+    GUARDIAN_ADDRESS: '0x287C4e87840E02032D4518eF6d7E69E20B5184a4', // TODO: change guardian address
 
     /** (APY_FORMATTER / 10_000) * 100% is the percentage of revenue retained by all mUSD holder. */
     APY_FORMATTER: 8_000,

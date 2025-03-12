@@ -6,6 +6,14 @@ Use `yarn coverage` to create folder coverage
 
 In terminal you can see the table and you can run local host for ./coverage/index.html
 
+## Contracts compilation
+
+To compile contracts run:
+
+```
+yarn compile
+```
+
 ## Contracts deployment
 
 ### How to deploy contracts to ethereum (mainnet/sepolia) and tron (mainnet/shasta) networks.
@@ -67,7 +75,7 @@ In terminal you can see the table and you can run local host for ./coverage/inde
 
 3. Set new molecula pool in `SupplyManager` contract.
     ```
-    yarn migrate:nitrogen:pool:test
+    yarn migrate:nitrogen:pool:[test|beta]
     ```
 
 ### How to migrate from `AgentAccountant` to `AccountantAgent` contract.
@@ -81,7 +89,7 @@ In terminal you can see the table and you can run local host for ./coverage/inde
 2. Migrate from `AgentAccountant` to `AccountantAgent` contract.
 
     ```
-    yarn migrate:nitrogen:agent:test --mpv [1.0|1.1]
+    yarn migrate:nitrogen:agent:[test|beta] --mpv [1.0|1.1]
     ```
 
     In version 1.0 `MoleculaPool` contract is used.  
