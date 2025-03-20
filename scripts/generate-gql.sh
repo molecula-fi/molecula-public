@@ -11,4 +11,5 @@ echo 'GQL generation is not supported in public repository';
 #   "yarn workspace @molecula-monorepo/middleware.atoms-manager gql:generate" \
 #   "yarn workspace @molecula-monorepo/middleware.info-viewer gql:generate" \
 #   "yarn workspace @molecula-monorepo/middleware.operations-viewer gql:generate" \
-#   "yarn workspace @molecula-monorepo/middleware.pool-manager gql:generate"
+#   "yarn workspace @molecula-monorepo/middleware.pool-manager gql:generate" \
+#   "yarn workspace @molecula-monorepo/middleware.token-operations-viewer gql:generate" \

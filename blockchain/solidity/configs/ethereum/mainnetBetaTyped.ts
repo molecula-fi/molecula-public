@@ -65,9 +65,11 @@ export const ethMainnetBetaConfig: EthereumNetworkConfig = {
     /** Pools ERC4626 config for retail solutions. */
     POOLS4626: Object.values(poolERC4626CurrenciesRetailMainnet),
 
-    // TODO set WHITE_LIST
-    /** White list of address callable by MoleculaPoolFactory contract. */
-    WHITE_LIST: [],
+    /** Default whitelist of addresses callable by MoleculaPoolFactory contract. */
+    WHITE_LIST: [
+        '0xcf5540fffcdc3d510b18bfca6d2b9987b0772559', // ODOS router
+        '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2', // AAVE POOL v3
+    ],
 
     /** Guardian address that can pause MoleculaPoolTreasury contract. */
     GUARDIAN_ADDRESS: '0xD3C1bE6FC208270D43B64083552564955cC1120b', // TODO: change guardian address

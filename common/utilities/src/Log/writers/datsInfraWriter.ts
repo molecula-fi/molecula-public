@@ -13,7 +13,7 @@ export class DatsInfraWriter implements LogWriter {
         if (typeof args[0] === 'string') {
             message = args.shift() as string;
         } else {
-            message = `${args[0]}`;
+            message = jsonStringifyBigint(args[0]);
         }
 
         let stackTrace: string | undefined;

@@ -38,6 +38,7 @@ const contractsNames = [
     'Oracle',
     'AccountantAgent',
     'StakedUSDe',
+    'SavingsUSDS',
     'SwftSwap',
     'AavePool',
     'SparkPool',

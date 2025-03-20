@@ -23,6 +23,7 @@ import {
     SparkPool__factory,
     ERC4626__factory,
     StakedUSDe__factory,
+    SavingsUSDS__factory,
     SwftSwap__factory,
     Curve__factory,
 } from '../typechain';
@@ -45,6 +46,7 @@ import type {
     MoleculaPoolTreasury,
     SwftSwap,
     StakedUSDe,
+    SavingsUSDS,
     AavePool,
     SparkPool,
     ILayerZeroEndpointV2,
@@ -195,6 +197,15 @@ export const EvmContractSafeFactory = {
         return new EvmContractSafe<StakedUSDe>(
             {
                 factory: StakedUSDe__factory,
+                address,
+            },
+            rpcProvider,
+        );
+    },
+    SavingsUSDS: (address: string, rpcProvider: ProviderOrRunner) => {
+        return new EvmContractSafe<SavingsUSDS>(
+            {
+                factory: SavingsUSDS__factory,
                 address,
             },
             rpcProvider,

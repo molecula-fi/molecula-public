@@ -12,7 +12,7 @@ import {
     deployMoleculaPoolAndSupplyManager,
 } from '../utils/NitrogenCommon';
 import { INITIAL_SUPPLY } from '../utils/deployCarbon';
-import { findEventArgs, findRequestRedeemEvent } from '../utils/event';
+import { findRequestRedeemEvent } from '../utils/event';
 import { grantERC20 } from '../utils/grant';
 import { signERC2612Permit } from '../utils/sign';
 
@@ -94,23 +94,23 @@ describe('Test Nitrogen solution', () => {
 
             // user0 calls requestDeposit on rebaseToken
             await rebaseToken.connect(user1).requestDeposit(depositValue, user1, user1);
-            const secondSares = (depositValue * 10n ** 12n) / 2n;
+            const secondShares = (depositValue * 10n ** 12n) / 2n;
             expect(await USDT.balanceOf(await agent.getAddress())).to.equal(0);
             expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
                 depositValue * 2n + income,
             );
             expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 5n);
             expect(await supplyManager.totalSharesSupply()).to.equal(
-                INITIAL_SUPPLY + shares + secondSares,
+                INITIAL_SUPPLY + shares + secondShares,
             );
             expect(await rebaseToken.totalSupply()).to.be.equal(INITIAL_SUPPLY * 5n);
             expect(await rebaseToken.totalSharesSupply()).to.be.equal(
-                INITIAL_SUPPLY + shares + secondSares,
+                INITIAL_SUPPLY + shares + secondShares,
             );
             expect(await rebaseToken.balanceOf(user0)).to.equal(depositValue * 2n * 10n ** 12n);
             expect(await rebaseToken.sharesOf(user0)).to.equal(shares);
             expect(await rebaseToken.balanceOf(user1)).to.equal(depositValue * 10n ** 12n);
-            expect(await rebaseToken.sharesOf(user1)).to.equal(secondSares);
+            expect(await rebaseToken.sharesOf(user1)).to.equal(secondShares);
 
             expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY * 8n);
             expect(await supplyManager.totalDepositedSupply()).to.equal(INITIAL_SUPPLY * 3n);
@@ -135,7 +135,7 @@ describe('Test Nitrogen solution', () => {
             expect(await rebaseToken.balanceOf(user0)).to.equal(0);
             expect(await rebaseToken.sharesOf(user0)).to.equal(0);
             expect(await rebaseToken.balanceOf(user1)).to.equal(depositValue * 10n ** 12n);
-            expect(await rebaseToken.sharesOf(user1)).to.equal(secondSares);
+            expect(await rebaseToken.sharesOf(user1)).to.equal(secondShares);
             expect(await rebaseToken.pendingRedeemRequest(operationId, user0)).to.be.equal(
                 redeemShares,
             );
@@ -143,7 +143,7 @@ describe('Test Nitrogen solution', () => {
             expect(await moleculaPool.valueToRedeem()).to.equal(INITIAL_SUPPLY * 2n);
             expect(await supplyManager.totalSupply()).to.equal(420_000_000_000_000_000_000n);
             expect(await supplyManager.totalSharesSupply()).to.equal(
-                INITIAL_SUPPLY + secondSares + 60_000_000_000_000_000_000n,
+                INITIAL_SUPPLY + secondShares + 60_000_000_000_000_000_000n,
             );
             expect(await supplyManager.totalSupply()).to.equal(
                 (await supplyManager.totalSharesSupply()) * 2n,
@@ -176,8 +176,7 @@ describe('Test Nitrogen solution', () => {
 
             // redeem to user and user1
             // approve USDT to Agent for redeem
-            const poolKeeperSigner = await ethers.getImpersonatedSigner(poolKeeper);
-            await USDT.connect(poolKeeperSigner).approve(
+            await USDT.connect(poolKeeper).approve(
                 await agent.getAddress(),
                 redeemValue + redeemValue_1,
             );
@@ -204,10 +203,10 @@ describe('Test Nitrogen solution', () => {
             expect((await rebaseToken.redeemRequests(operationId)).status).to.equal(4);
             expect((await rebaseToken.redeemRequests(operationId)).val).to.equal(redeemValue);
             expect(await USDT.balanceOf(agent.getAddress())).to.equal(redeemValue + redeemValue_1);
-            expect(await USDT.balanceOf(user0.address)).to.equal(0n);
+            expect(await USDT.balanceOf(user0)).to.equal(0n);
             expect((await rebaseToken.redeemRequests(operationId_1)).status).to.equal(4);
             expect((await rebaseToken.redeemRequests(operationId_1)).val).to.equal(redeemValue_1);
-            expect(await USDT.balanceOf(user1.address)).to.equal(0n);
+            expect(await USDT.balanceOf(user1)).to.equal(0n);
             // check supply manager
             expect(await supplyManager.totalSupply()).to.equal(362857142857142857142n);
             expect(await supplyManager.totalSharesSupply()).to.equal(181428571428571428571n);
@@ -220,14 +219,14 @@ describe('Test Nitrogen solution', () => {
             expect((await rebaseToken.redeemRequests(operationId)).status).to.equal(2);
             expect((await rebaseToken.redeemRequests(operationId)).val).to.equal(redeemValue);
             expect(await USDT.balanceOf(agent.getAddress())).to.equal(redeemValue_1);
-            expect(await USDT.balanceOf(user0.address)).to.equal(redeemValue);
+            expect(await USDT.balanceOf(user0)).to.equal(redeemValue);
 
             // anyone call confirmRedeem for user1
             await rebaseToken.connect(user1).confirmRedeem(operationId_1);
             expect((await rebaseToken.redeemRequests(operationId_1)).status).to.equal(2);
             expect((await rebaseToken.redeemRequests(operationId_1)).val).to.equal(redeemValue_1);
             expect(await USDT.balanceOf(agent.getAddress())).to.equal(0);
-            expect(await USDT.balanceOf(user1.address)).to.equal(redeemValue_1);
+            expect(await USDT.balanceOf(user1)).to.equal(redeemValue_1);
 
             // check supply manager
             expect(await supplyManager.totalSupply()).to.equal(362857142857142857142n);
@@ -296,8 +295,7 @@ describe('Test Nitrogen solution', () => {
             expect(await USDT.balanceOf(caller)).to.equal(0);
             expect(await USDT.balanceOf(user0)).to.equal(0);
 
-            const poolKeeperSigner = await ethers.getImpersonatedSigner(poolKeeper);
-            await USDT.connect(poolKeeperSigner).approve(await agent.getAddress(), redeemValue);
+            await USDT.connect(poolKeeper).approve(await agent.getAddress(), redeemValue);
             await moleculaPool.connect(poolOwner).redeem([operationId]);
             // Anyone can call confirmRedeem
             await rebaseToken.connect(malicious).confirmRedeem(operationId);
@@ -479,7 +477,7 @@ describe('Test Nitrogen solution', () => {
             const totalLockedUsde = await susde.totalAssets();
             await grantUSDe(await susde.getAddress(), usde, usdeMinter, totalLockedUsde);
             // Shares (sUSDe) is not changed
-            expect(await susde.balanceOf(agent.address)).to.be.equal(agentDepositValue);
+            expect(await susde.balanceOf(agent)).to.be.equal(agentDepositValue);
             // Assets (USDe) is increased
             expect(await susde.convertToAssets(agentDepositValue)).to.be.greaterThan(
                 agentDepositValue,
@@ -505,25 +503,20 @@ describe('Test Nitrogen solution', () => {
 
             // Print stake
             const totalDepositedSupply = await supplyManager.totalDepositedSupply();
-            const agentDepositeFormated18 = totalDepositedSupply - startTotalDepositedSupply;
-            expect(agentDepositeFormated18).to.be.greaterThan(agentDepositValue);
+            const agentDepositFormated18 = totalDepositedSupply - startTotalDepositedSupply;
+            expect(agentDepositFormated18).to.be.greaterThan(agentDepositValue);
 
             // Agent deposits `agentDepositValue` (in StakedUSDe)
             const tx = await supplyManager
                 .connect(agent)
-                .requestRedeem(await susde.getAddress(), 123, agentDepositeFormated18);
+                .requestRedeem(await susde.getAddress(), 123, agentDepositFormated18);
             const valueToRedeem = await moleculaPool.valueToRedeem();
-            expect(valueToRedeem).to.be.equal(agentDepositeFormated18);
-            const depositResult = await tx.wait();
-            const redeemRequestEvent = findEventArgs(depositResult!.logs, 'RedeemRequest');
-            if (redeemRequestEvent === null) {
-                throw Error();
-            }
-            // event RedeemRequest(uint256 indexed requestId, address agent, uint256 shares, uint256 value);
-            expect(redeemRequestEvent[0]).to.equal(123);
-            expect(redeemRequestEvent[1]).to.equal(agent.address);
-            expect(redeemRequestEvent[2]).to.equal(agentDepositeFormated18);
-            expect(redeemRequestEvent[3]).to.equal(agentDepositValue - 1n); // It was 100500. But now it's 100499
+            expect(valueToRedeem).to.be.equal(agentDepositFormated18);
+            const redeemRequestEvent = await findRequestRedeemEvent(tx);
+            expect(redeemRequestEvent.operationId).to.equal(123);
+            expect(redeemRequestEvent.agentAddress).to.equal(agent.address);
+            expect(redeemRequestEvent.redeemShares).to.equal(agentDepositFormated18);
+            expect(redeemRequestEvent.redeemValue).to.equal(agentDepositValue - 1n); // It was 100500. But now it's 100499
         });
 
         it('Test RebaseToken.requestRedeem', async () => {

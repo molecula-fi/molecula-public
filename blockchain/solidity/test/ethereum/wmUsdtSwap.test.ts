@@ -21,22 +21,21 @@ describe('Test Swap USDT <-> WMUSDT for carbon solution', () => {
             expect(await wmUSDT.AGENT()).to.equal(await agentLZ!.getAddress());
         });
         it('Swap USDT <-> WMUSDT', async () => {
-            const { moleculaPool, mockLZEndpoint, wmUSDT, owner, USDT } =
+            const { moleculaPool, mockLZEndpoint, wmUSDT, owner, USDT, poolKeeper } =
                 await loadFixture(deployCarbon);
 
             // User swap USDT to WMUSDT
             const depositValue = 100_000_000n;
             const minReturnValue = 90_000_000n;
             // Grant USDT to pool
-            await grantERC20(ethMainnetBetaConfig.POOL_KEEPER, USDT, depositValue);
+            await grantERC20(poolKeeper.address, USDT, depositValue);
 
             // check balances
             expect(await moleculaPool.totalSupply()).to.equal(200_000_000_000_000_000_000n);
-            expect(await USDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(depositValue);
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(0n);
+            expect(await USDT.balanceOf(poolKeeper)).to.equal(depositValue);
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(0n);
 
             // Approve to wmUSDT
-            const poolKeeper = await ethers.getImpersonatedSigner(ethMainnetBetaConfig.POOL_KEEPER);
             await USDT.connect(poolKeeper).approve(await wmUSDT.getAddress(), depositValue);
             // Call wmUSDT
             const swapUsdtTx = await wmUSDT
@@ -47,8 +46,8 @@ describe('Test Swap USDT <-> WMUSDT for carbon solution', () => {
                 .withArgs(depositValue, minReturnValue);
             // check balances
             expect(await moleculaPool.totalSupply()).to.equal(200_000_000_000_000_000_000n);
-            expect(await USDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(0);
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(depositValue);
+            expect(await USDT.balanceOf(poolKeeper)).to.equal(0);
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(depositValue);
             // tokens go to SWFT bridge
             // Receive confirm over Layer Zero
             await mockLZEndpoint.lzReceiveConfirmToSwapUSDT(
@@ -60,10 +59,8 @@ describe('Test Swap USDT <-> WMUSDT for carbon solution', () => {
 
             // check balances
             expect(await moleculaPool.totalSupply()).to.equal(190_000_000_000_000_000_000n);
-            expect(await USDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(0);
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(
-                minReturnValue,
-            );
+            expect(await USDT.balanceOf(poolKeeper)).to.equal(0);
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(minReturnValue);
 
             /// ///////////////////////////////////
             // User swap WMUSDT to USDT
@@ -82,30 +79,24 @@ describe('Test Swap USDT <-> WMUSDT for carbon solution', () => {
                 .requestToSwapWmUSDT(wmUsdtValue, { value: quote.nativeFee });
             // check balances
             expect(await moleculaPool.totalSupply()).to.equal(190_000_000_000_000_000_000n);
-            expect(await USDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(0);
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(
-                minReturnValue,
-            );
+            expect(await USDT.balanceOf(poolKeeper)).to.equal(0);
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(minReturnValue);
             expect(await wmUSDT.swapValue()).to.equal(wmUsdtValue);
 
             // From tron we receive only 40 USDT
             await grantERC20(await wmUSDT.getAddress(), USDT, usdtValue);
             // check balances
             expect(await moleculaPool.totalSupply()).to.equal(190_000_000_000_000_000_000n);
-            expect(await USDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(0);
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(
-                minReturnValue,
-            );
+            expect(await USDT.balanceOf(poolKeeper)).to.equal(0);
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(minReturnValue);
             expect(await wmUSDT.swapValue()).to.equal(wmUsdtValue);
 
             // Call confirmSwap
             await wmUSDT.connect(owner).confirmSwapWmUSDT();
             // check balances
             expect(await moleculaPool.totalSupply()).to.equal(180_000_000_000_000_000_000n);
-            expect(await USDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(usdtValue);
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(
-                minReturnValue - wmUsdtValue,
-            );
+            expect(await USDT.balanceOf(poolKeeper)).to.equal(usdtValue);
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(minReturnValue - wmUsdtValue);
             expect(await wmUSDT.swapValue()).to.equal(0n);
         });
     });

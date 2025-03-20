@@ -14,6 +14,7 @@ import {
     UPDATE_ORACLE,
 } from '../../scripts/utils/lzMsgTypes';
 
+import { generateRandomWallet } from './Common';
 import { grantERC20, grantETH } from './grant';
 
 export const INITIAL_SUPPLY = 100_000_000_000_000_000_000n;
@@ -21,20 +22,21 @@ export const INITIAL_SUPPLY = 100_000_000_000_000_000_000n;
 export async function deployCarbon() {
     // Contracts are deployed using the first signer/account by default
     const [owner, user] = await ethers.getSigners();
+    const poolKeeper = await generateRandomWallet();
     expect(owner).to.exist;
     expect(user).to.exist;
 
     // if POOL_KEEPER do not have DAI then transfer it
     const DAI = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.DAI_ADDRESS);
-    const initBalance = await DAI.balanceOf(ethMainnetBetaConfig.POOL_KEEPER);
+    const initBalance = await DAI.balanceOf(poolKeeper);
     if (initBalance < INITIAL_SUPPLY) {
         const val = INITIAL_SUPPLY - initBalance;
         // grant DAI for initial supply
-        await grantERC20(ethMainnetBetaConfig.POOL_KEEPER, DAI, val);
+        await grantERC20(poolKeeper.address, DAI, val);
     }
-    expect(await DAI.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(INITIAL_SUPPLY);
+    expect(await DAI.balanceOf(poolKeeper)).to.equal(INITIAL_SUPPLY);
     // Grant ETH to POOL_KEEPER
-    await grantETH(ethMainnetBetaConfig.POOL_KEEPER, ethers.parseEther('20'));
+    await grantETH(poolKeeper.address, ethers.parseEther('20'));
 
     // deploy mockSwftSwap
     const MockSwftSwap = (await ethers.getContractFactory('MockSwftSwap')).connect(owner!);
@@ -43,7 +45,7 @@ export async function deployCarbon() {
     // calc supply manager future address
     const transactionCount = await owner!.getNonce();
     const addr = owner!.address;
-    const smFutureAddress = await ethers.getCreateAddress({
+    const smFutureAddress = ethers.getCreateAddress({
         from: addr,
         nonce: transactionCount + 1,
     });
@@ -55,7 +57,7 @@ export async function deployCarbon() {
         owner!.address,
         ethMainnetBetaConfig.POOLS20,
         ethMainnetBetaConfig.POOLS4626,
-        ethMainnetBetaConfig.POOL_KEEPER,
+        poolKeeper.address,
         smFutureAddress,
     );
 
@@ -77,7 +79,7 @@ export async function deployCarbon() {
 
     // calc agent LZ future address
     const trxCount = await owner!.getNonce();
-    const agentLZFutureAddress = await ethers.getCreateAddress({
+    const agentLZFutureAddress = ethers.getCreateAddress({
         from: owner!.address,
         nonce: trxCount + 1,
     });
@@ -86,7 +88,7 @@ export async function deployCarbon() {
     const addressesConfig = {
         initialOwner: owner!.address,
         agentAddress: agentLZFutureAddress,
-        poolKeeperAddress: ethMainnetBetaConfig.POOL_KEEPER,
+        poolKeeperAddress: poolKeeper.address,
         server: owner!.address,
     };
     const layerZeroConfig = {
@@ -165,5 +167,6 @@ export async function deployCarbon() {
         user,
         lzMessageDecoder,
         USDT,
+        poolKeeper,
     };
 }

@@ -16,6 +16,10 @@ export const staticPoolERC20CurrenciesRetailTestnet = {
         pool: evmStaticTokenAddresses.USDT[EVMChainIDs.Sepolia],
         n: 12,
     },
+    USDC: {
+        pool: evmStaticTokenAddresses.USDC[EVMChainIDs.Sepolia],
+        n: 12,
+    },
     DAI: {
         pool: evmStaticTokenAddresses.DAI[EVMChainIDs.Sepolia],
         n: 0,
@@ -26,6 +30,14 @@ export const staticPoolERC20CurrenciesRetailTestnet = {
     },
     aEthUSDT: {
         pool: evmStaticTokenAddresses.aEthUSDT[EVMChainIDs.Sepolia],
+        n: 12,
+    },
+    aEthUSDC: {
+        pool: evmStaticTokenAddresses.aEthUSDC[EVMChainIDs.Sepolia],
+        n: 12,
+    },
+    aEthDAI: {
+        pool: evmStaticTokenAddresses.aEthDAI[EVMChainIDs.Sepolia],
         n: 12,
     },
 } satisfies { [token in PoolCurrency]?: PoolData };
@@ -82,6 +94,10 @@ export const staticPoolERC20CurrenciesRetailMainnet = {
         pool: evmStaticTokenAddresses.USDT[EVMChainIDs.Mainnet],
         n: 12,
     },
+    USDC: {
+        pool: evmStaticTokenAddresses.USDC[EVMChainIDs.Mainnet],
+        n: 12,
+    },
     spDAI: {
         pool: evmStaticTokenAddresses.spDAI[EVMChainIDs.Mainnet],
         n: 0,
@@ -92,6 +108,22 @@ export const staticPoolERC20CurrenciesRetailMainnet = {
     },
     aEthUSDT: {
         pool: evmStaticTokenAddresses.aEthUSDT[EVMChainIDs.Mainnet],
+        n: 12,
+    },
+    aEthUSDC: {
+        pool: evmStaticTokenAddresses.aEthUSDC[EVMChainIDs.Mainnet],
+        n: 12,
+    },
+    aEthDAI: {
+        pool: evmStaticTokenAddresses.aEthDAI[EVMChainIDs.Mainnet],
+        n: 12,
+    },
+    FRAX: {
+        pool: evmStaticTokenAddresses.FRAX[EVMChainIDs.Mainnet],
+        n: 12,
+    },
+    USDS: {
+        pool: evmStaticTokenAddresses.USDS[EVMChainIDs.Mainnet],
         n: 12,
     },
 } satisfies { [token in PoolCurrency]?: PoolData };
@@ -134,6 +166,10 @@ export const poolERC4626CurrenciesRetailMainnet = {
     },
     sFRAX: {
         pool: evmStaticTokenAddresses.sFRAX[EVMChainIDs.Mainnet],
+        n: 0,
+    },
+    sUSDS: {
+        pool: evmStaticTokenAddresses.sUSDS[EVMChainIDs.Mainnet],
         n: 0,
     },
 } satisfies { [token in PoolCurrency]?: PoolData };

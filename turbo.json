@@ -26,7 +26,17 @@
             "dependsOn": ["transitNode"]
         },
         "unitTests": {},
-        "hardhatUnitTests": {}
+        "hardhatUnitTests": {},
+
+        "back:build": {
+            "dependsOn": ["^back:build"],
+            "outputs": ["dist/**"]
+        },
+        "back:dev": {
+            "dependsOn": ["^back:build"],
+            "cache": false,
+            "persistent": true
+        }
     },
     "globalEnv": [
         "NODE_ENV",
@@ -95,7 +105,6 @@
         "ETH_PRIVATE_KEY",
         "RPC_URL",
         "usdtContract",
-        "AUTH_ENABLED",
         "AUTHENTIK_CLIENT_ID",
         "AUTHENTIK_CLIENT_SECRET",
         "AUTHENTIK_CALLBACK_URL",

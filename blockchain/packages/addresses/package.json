@@ -1,7 +1,7 @@
 {
     "name": "@molecula-monorepo/blockchain.addresses",
     "description": "A package containing the contract addresses registry",
-    "version": "0.13.0",
+    "version": "0.14.0",
     "private": true,
     "main": "src/index.ts",
     "scripts": {

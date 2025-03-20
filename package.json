@@ -1,9 +1,11 @@
 {
-    "version": "0.13.0",
+    "version": "0.14.0",
     "private": true,
     "workspaces": [
         "backend/*",
         "backend/packages/*",
+        "backend-nest/*",
+        "backend-nest/packages/*",
         "blockchain/*",
         "blockchain/packages/*",
         "common/*",
@@ -57,6 +59,7 @@
         "tron-confirmer-evm-retail:build": "docker build --tag tron-confirmer-evm-retail:$npm_package_version -f backend/tron-confirmer-evm-retail/.Dockerfile .",
         "evm-confirmer-evm-retail:build": "docker build --tag evm-confirmer-evm-retail:$npm_package_version -f backend/evm-confirmer-evm-retail/.Dockerfile .",
         "ton-pool-evm-total:build": "docker build --tag ton-pool-evm-total:$npm_package_version -f backend/ton-pool-evm-total/.Dockerfile .",
+        "info-service:build": "docker build --tag info-service:$npm_package_version -f backend/info-service/.Dockerfile .",
         "rpc-proxy:build": "docker build --tag rpc-proxy:$npm_package_version -f backend/rpc-proxy/.Dockerfile .",
         "terraform:fmt": "dotenvx run --env-file=./configs/frontend-environments/shared/.env --quiet -- terraform -chdir=./frontend/web-infrustructure fmt",
         "terraform:init": "dotenvx run --env-file=./configs/frontend-environments/shared/.env --quiet -- terraform -chdir=./frontend/web-infrustructure init",

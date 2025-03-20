@@ -91,6 +91,7 @@ describe('Test Carbon', () => {
                 owner,
                 lzMessageDecoder,
                 USDT,
+                poolKeeper,
             } = await loadFixture(deployCarbon);
             // We have LZ query from Tron after requestDeposit call
             // We receive requestId and minted mUSD depositValue from Tron
@@ -110,7 +111,7 @@ describe('Test Carbon', () => {
             await expect(txDeposit)
                 .to.emit(agentLZ, 'Deposit')
                 .withArgs(requestId, depositValue, shares);
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(depositValue);
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(depositValue);
             expect(await wmUSDT.totalSupply()).to.equal(depositValue);
             expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 2n);
             expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY * 2n);
@@ -126,7 +127,7 @@ describe('Test Carbon', () => {
             await agentLZ
                 .connect(user!)
                 .confirmDeposit(requestId, { value: quoteConfirmDeposit.nativeFee });
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(depositValue);
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(depositValue);
             expect(await wmUSDT.totalSupply()).to.equal(depositValue);
             expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 2n);
             expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY * 2n);
@@ -172,9 +173,7 @@ describe('Test Carbon', () => {
             await expect(txSecondDeposit)
                 .to.emit(agentLZ, 'Deposit')
                 .withArgs(secondRequestId, depositValue, secondSares);
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(
-                depositValue * 2n,
-            );
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(depositValue * 2n);
             expect(await wmUSDT.totalSupply()).to.equal(depositValue * 2n);
             expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 5n);
             expect(await supplyManager.totalSharesSupply()).to.equal(
@@ -192,9 +191,7 @@ describe('Test Carbon', () => {
             await agentLZ
                 .connect(user!)
                 .confirmDeposit(secondRequestId, { value: quoteConfirmDeposit.nativeFee });
-            expect(await wmUSDT.balanceOf(ethMainnetBetaConfig.POOL_KEEPER)).to.equal(
-                depositValue * 2n,
-            );
+            expect(await wmUSDT.balanceOf(poolKeeper)).to.equal(depositValue * 2n);
             expect(await wmUSDT.totalSupply()).to.equal(depositValue * 2n);
             expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 5n);
             expect(await supplyManager.totalSharesSupply()).to.equal(

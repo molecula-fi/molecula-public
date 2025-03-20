@@ -43,13 +43,33 @@ export const evmStaticTokenAddresses = {
         [EVMChainIDs.Mainnet]: '0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a',
         [EVMChainIDs.Sepolia]: '0xAF0F6e8b0Dc5c913bbF4d14c22B4E78Dd14310B6',
     },
+    aEthUSDC: {
+        [EVMChainIDs.Mainnet]: '0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c',
+        [EVMChainIDs.Sepolia]: '0x16dA4541aD1807f4443d92D26044C1147406EB80',
+    },
+    aEthDAI: {
+        [EVMChainIDs.Mainnet]: '0x018008bfb33d285247a21d44e50697654f754e63',
+        [EVMChainIDs.Sepolia]: '0x29598b72eb5CeBd806C5dCD549490FdA35B13cD8',
+    },
     sFRAX: {
         [EVMChainIDs.Mainnet]: '0xa663b02cf0a4b149d2ad41910cb81e23e1c41c32',
         [EVMChainIDs.Sepolia]: undefined,
     },
+    FRAX: {
+        [EVMChainIDs.Mainnet]: '0x853d955acef822db058eb8505911ed77f175b99e',
+        [EVMChainIDs.Sepolia]: undefined,
+    },
     USDC: {
-        [EVMChainIDs.Mainnet]: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-        [EVMChainIDs.Sepolia]: '0x13fA158A117b93C27c55b8216806294a0aE88b6D',
+        [EVMChainIDs.Mainnet]: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        [EVMChainIDs.Sepolia]: '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8',
+    },
+    USDS: {
+        [EVMChainIDs.Mainnet]: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
+        [EVMChainIDs.Sepolia]: undefined,
+    },
+    sUSDS: {
+        [EVMChainIDs.Mainnet]: '0xa3931d71877c0e7a3148cb7eb4463524fec27fbd',
+        [EVMChainIDs.Sepolia]: undefined,
     },
 } as const;
 
@@ -137,4 +157,12 @@ export const evmMoleculaContractAddresses = {
         [EVMChainIDs.Mainnet]: undefined,
         [EVMChainIDs.Sepolia]: ContractsCarbon.eth.swftBridge as EVMAddress,
     },
+} as const;
+
+/**
+ * Aave static lending pool addresses.
+ */
+export const aaveStaticLendingPoolAddresses = {
+    [EVMChainIDs.Mainnet]: '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2' as EVMAddress,
+    [EVMChainIDs.Sepolia]: '0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951' as EVMAddress,
 } as const;

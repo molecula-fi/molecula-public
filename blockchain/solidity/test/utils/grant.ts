@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import type { BigNumberish, AddressLike, Addressable } from 'ethers';
+import type { BigNumberish, AddressLike } from 'ethers';
 import { ethers } from 'hardhat';
 
 import type { IERC20 } from '../../typechain-types';
@@ -28,34 +28,13 @@ export async function grantERC20(
 }
 
 export async function grantETH(wallet: AddressLike, amount: BigNumberish) {
-    // Prepare an impersonated signer to work as a faucet in the test
-    const faucet = FAUCET.ETH;
-    const faucetSigner = await ethers.getImpersonatedSigner(faucet);
-    // Get ETH for the wallet
-    const tx = {
+    const signers = await ethers.getSigners();
+    const signer = signers.at(0)!;
+    const nativeBalance0 = await ethers.provider.getBalance(wallet);
+    await signer.sendTransaction({
         to: wallet,
         value: amount,
-    };
-    const nativeBalance0 = await ethers.provider.getBalance(wallet);
-    await faucetSigner.sendTransaction(tx);
+    });
     const nativeBalance = await ethers.provider.getBalance(wallet);
     expect(nativeBalance - nativeBalance0).to.be.equal(amount);
-}
-
-export async function removeERC20(
-    vault: string,
-    tokenAddress: string | Addressable,
-    expectedBalance: bigint,
-) {
-    // user who needs to reduce the token balance
-    const vaultSigner = await ethers.getImpersonatedSigner(vault);
-
-    const token = await ethers.getContractAt('IERC20', tokenAddress);
-    const amountToDecrease = (await token.balanceOf(vaultSigner.address)) - expectedBalance;
-
-    if (amountToDecrease !== 0n) {
-        await token
-            .connect(vaultSigner)
-            .transfer('0x0000000000000000000000000000000000000001', amountToDecrease);
-    }
 }

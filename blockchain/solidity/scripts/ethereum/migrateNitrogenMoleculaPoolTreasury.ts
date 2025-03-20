@@ -61,6 +61,6 @@ export async function migrateNitrogenMoleculaPoolTreasury(
     await tx.wait();
 
     // 3. Update deploy file.
-    contractsNitrogen.eth.accountantAgent = moleculaPoolTreasuryAddress;
+    contractsNitrogen.eth.moleculaPool = moleculaPoolTreasuryAddress;
     writeToFile(`${environment}/contracts_nitrogen.json`, contractsNitrogen);
 }

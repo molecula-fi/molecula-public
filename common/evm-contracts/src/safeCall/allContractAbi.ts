@@ -27,6 +27,7 @@ import {
     SparkPool__factory,
     StakedUSDe__factory,
     SwftSwap__factory,
+    SavingsUSDS__factory,
 } from '../../typechain';
 
 import type { ContractNameType } from '../types';
@@ -47,6 +48,7 @@ const EvmAllContractsAbi: Record<ContractNameType, readonly JsonFragment[]> = {
     Oracle: Oracle__factory.abi,
     AccountantAgent: AccountantAgent__factory.abi,
     StakedUSDe: StakedUSDe__factory.abi,
+    SavingsUSDS: SavingsUSDS__factory.abi,
     SwftSwap: SwftSwap__factory.abi,
     AavePool: AavePool__factory.abi,
     SparkPool: SparkPool__factory.abi,

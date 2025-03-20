@@ -6,17 +6,19 @@ import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 
 import { unitePool20And4626 } from '../../scripts/utils/deployUtils';
 
+import { generateRandomWallet } from './Common';
 import { findRequestRedeemEvent } from './event';
-import { grantERC20, grantETH, removeERC20 } from './grant';
+import { grantERC20 } from './grant';
 
 const INITIAL_SUPPLY = 100n * 10n ** 18n;
 
 export async function deployNitrogenV2Common(token: string) {
     // Contracts are deployed using the first signer/account by default
     const signers = await ethers.getSigners();
+    const poolKeeper = await generateRandomWallet();
     const poolOwner = signers.at(0)!;
     const rebaseTokenOwner = signers.at(1)!;
-    const user0 = signers.at(2)!;
+    const user0 = await generateRandomWallet();
     const user1 = signers.at(3)!;
     const caller = signers.at(4)!;
     const malicious = signers.at(5)!;
@@ -41,14 +43,11 @@ export async function deployNitrogenV2Common(token: string) {
     const moleculaPool = await MoleculaPool.connect(poolOwner).deploy(
         poolOwner.address,
         unitePool20And4626(ethMainnetBetaConfig.POOLS20, ethMainnetBetaConfig.POOLS4626),
-        ethMainnetBetaConfig.POOL_KEEPER,
+        poolKeeper,
         supplyManagerFutureAddress,
         [],
         guardian,
     );
-
-    await removeERC20(await moleculaPool.poolKeeper(), ethMainnetBetaConfig.USDT_ADDRESS, 0n);
-    await removeERC20(user0.address, ethMainnetBetaConfig.USDT_ADDRESS, 0n);
 
     // if moleculaPool does not have DAI then transfer them
     const DAI = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.DAI_ADDRESS);
@@ -57,9 +56,6 @@ export async function deployNitrogenV2Common(token: string) {
     // grant DAI for initial supply
     await grantERC20(moleculaPool.getAddress(), DAI, INITIAL_SUPPLY);
     expect(await DAI.balanceOf(moleculaPool.getAddress())).to.equal(INITIAL_SUPPLY);
-
-    // Grant ETH to POOL_KEEPER
-    await grantETH(ethMainnetBetaConfig.POOL_KEEPER, ethers.parseEther('20'));
 
     // deploy pausable agent accountant
     const Agent = await ethers.getContractFactory('AccountantAgent');
@@ -131,11 +127,11 @@ export async function deployNitrogenV2Common(token: string) {
     };
 }
 
-export async function deployNitrogenV2WithUSDT() {
+export function deployNitrogenV2WithUSDT() {
     return deployNitrogenV2Common(ethMainnetBetaConfig.USDT_ADDRESS);
 }
 
-export async function deployNitrogenV2WithStakedUSDe() {
+export function deployNitrogenV2WithStakedUSDe() {
     return deployNitrogenV2Common(ethMainnetBetaConfig.SUSDE_ADDRESS);
 }
 

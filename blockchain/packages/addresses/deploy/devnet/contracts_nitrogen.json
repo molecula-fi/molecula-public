@@ -1,12 +1,12 @@
 {
     "eth": {
-        "supplyManager": "0x227A4DF5CEb4Db4550006C3a929851b98B0Ca9AD",
-        "moleculaPool": "0xDC8a81aBdf402A942E1Abed7Ea5e962d38Be4965",
-        "accountantAgent": "0x79c2573Ed820883075fBC228D509f80DCfD02F4F",
-        "rebaseToken": "0x220A8B6b89799120E6c0001A5d7058d8A4dE078C",
+        "supplyManager": "0x263ca7c176d6A695F9C5f0ED9A9F69d66Ae11A0c",
+        "moleculaPool": "0x689C9a3C9c163C4fA85fba573e6c2772552Ea276",
+        "accountantAgent": "0x910862aC883B232D7E3d6714dA35337C5FD7fdEE",
+        "rebaseToken": "0x86e400c1771BB97cb2483CCe85422E96cbA606AF",
         "poolKeeper": "0x51fFFb7a28734D7Abb70a30012ce86646E39E269",
-        "mUSDLock": "0x9eD7099d6d0F9Da81A5a936e30F353B22974b802",
-        "mUSDe": "0x17CdA55010C874f000Bfd55B2C2835f70A1EC7c9",
+        "mUSDLock": "0xb2615cF1e8C284b6F45EDceEF4bD21Df2bBf31cB",
+        "mUSDe": "0x8b76f5b8470C3acCF8956b9859d36372EAB51f81",
         "ethena": {
             "USDe": "0x3882Ef2d84B0aA75b1565Bb99A8fb90e52612b92",
             "sUSDe": "0x572d3e6b50BB4B2CB4061db7aa233Ae50d9ab258"

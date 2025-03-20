@@ -16,6 +16,7 @@ import type {
     ERC20,
     ERC4626,
     StakedUSDe,
+    SavingsUSDS,
     AavePool,
     SwftSwap,
     PostfixOverrides,
@@ -23,6 +24,7 @@ import type {
     ICurveStableSwapFactoryNG,
     ICurveStableSwapNG,
     IERC20Metadata,
+    SparkPool,
 } from '../types';
 
 type AnyFunction = () => void;
@@ -67,10 +69,12 @@ export type AllEvmContracts =
     | Oracle
     | WmUsdtToken
     | StakedUSDe
+    | SavingsUSDS
     | ILayerZeroEndpointV2
     | MUSDE
     | SwftSwap
     | AavePool
+    | SparkPool
     | ICurveStableSwapFactoryNG
     | ICurveStableSwapNG;
 

@@ -41,7 +41,7 @@ describe('mUSDLock', () => {
 
         // Mint shares for user
         await mUsd.connect(admin).mint(user.address, 35); // 35 - shares
-        expect(await mUsd.balanceOf(user.address)).to.equal(350); // 350 - asset
+        expect(await mUsd.balanceOf(user)).to.equal(350); // 350 - asset
 
         // User approves 300 mUSD for mUSD Lock contract
         await mUsd.connect(user).approve(await mUsdLock.getAddress(), 300); // 300 - asset
@@ -67,7 +67,7 @@ describe('mUSDLock', () => {
         const arg1 = txLogs1.args.at(1);
         expect(arg1).to.equal(`0x${lockPayload.toString('hex')}`);
         expect(await mUsdLock.getLockIds(user.address)).eql([lockId]);
-        expect(await mUsd.balanceOf(user.address)).to.equal(50); // 50 - asset
+        expect(await mUsd.balanceOf(user)).to.equal(50); // 50 - asset
         expect(await mUsd.balanceOf(await mUsdLock.getAddress())).to.equal(300); // 300 - asset
 
         const unlockPayload = Buffer.from('Goodbye, Lock!');
@@ -83,7 +83,7 @@ describe('mUSDLock', () => {
         await expect(txResponse)
             .to.emit(mUsdLock, 'Unlock')
             .withArgs(lockId, `0x${unlockPayload.toString('hex')}`);
-        expect(await mUsd.balanceOf(user.address)).to.equal(350); // 350 - asset
+        expect(await mUsd.balanceOf(user)).to.equal(350); // 350 - asset
         expect(await mUsd.balanceOf(await mUsdLock.getAddress())).to.equal(0);
 
         // User unlocks the funds that is already unlocked

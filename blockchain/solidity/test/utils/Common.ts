@@ -12,6 +12,15 @@ import type { MUSDE } from '../../typechain-types';
 
 import { grantETH } from './grant';
 
+export async function generateRandomWallet() {
+    const wallet = ethers.Wallet.createRandom().connect(ethers.provider);
+    await ethers.provider.send('hardhat_setBalance', [
+        wallet.address,
+        '0x21e19e0c9bab2400000', //  (10000 ETH)
+    ]);
+    return wallet;
+}
+
 export async function getEthena() {
     const signers = await ethers.getSigners();
     const signer = signers.at(0)!;

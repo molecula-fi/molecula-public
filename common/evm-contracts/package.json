@@ -1,7 +1,7 @@
 {
     "name": "@molecula-monorepo/common.evm-contracts",
     "description": "Molecula-monorepo EVM network smart contracts",
-    "version": "0.13.0",
+    "version": "0.14.0",
     "private": true,
     "scripts": {
         "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version",

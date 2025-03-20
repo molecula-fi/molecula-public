@@ -175,10 +175,10 @@ describe('Test Nitrogen solution v1.1', () => {
             expect((await rebaseToken.redeemRequests(operationId)).status).to.equal(4);
             expect((await rebaseToken.redeemRequests(operationId)).val).to.equal(redeemValue);
             expect(await USDT.balanceOf(agent.getAddress())).to.equal(redeemValue + redeemValue_1);
-            expect(await USDT.balanceOf(user0.address)).to.equal(0n);
+            expect(await USDT.balanceOf(user0)).to.equal(0n);
             expect((await rebaseToken.redeemRequests(operationId_1)).status).to.equal(4);
             expect((await rebaseToken.redeemRequests(operationId_1)).val).to.equal(redeemValue_1);
-            expect(await USDT.balanceOf(user1.address)).to.equal(0n);
+            expect(await USDT.balanceOf(user1)).to.equal(0n);
             // check supply manager
             expect(await supplyManager.totalSupply()).to.equal(362857142857142857142n);
             expect(await supplyManager.totalSharesSupply()).to.equal(181428571428571428571n);
@@ -191,14 +191,14 @@ describe('Test Nitrogen solution v1.1', () => {
             expect((await rebaseToken.redeemRequests(operationId)).status).to.equal(2);
             expect((await rebaseToken.redeemRequests(operationId)).val).to.equal(redeemValue);
             expect(await USDT.balanceOf(agent.getAddress())).to.equal(redeemValue_1);
-            expect(await USDT.balanceOf(user0.address)).to.equal(redeemValue);
+            expect(await USDT.balanceOf(user0)).to.equal(redeemValue);
 
             // anyone call confirmRedeem for user1
             await rebaseToken.connect(user1).confirmRedeem(operationId_1);
             expect((await rebaseToken.redeemRequests(operationId_1)).status).to.equal(2);
             expect((await rebaseToken.redeemRequests(operationId_1)).val).to.equal(redeemValue_1);
             expect(await USDT.balanceOf(agent.getAddress())).to.equal(0);
-            expect(await USDT.balanceOf(user1.address)).to.equal(redeemValue_1);
+            expect(await USDT.balanceOf(user1)).to.equal(redeemValue_1);
 
             // check supply manager
             expect(await supplyManager.totalSupply()).to.equal(362857142857142857142n);
@@ -823,19 +823,17 @@ describe('Test Nitrogen solution v1.1', () => {
                     .connect(keeperSigner)
                     .approve(moleculaPoolV2.getAddress(), (1n << 256n) - 1n);
             }
-
-            const poolKeeperSigner = await ethers.getImpersonatedSigner(poolKeeper);
-            await USDT.connect(poolKeeperSigner).approve(await agent.getAddress(), valueToRedeem);
+            await USDT.connect(poolKeeper).approve(await agent.getAddress(), valueToRedeem);
 
             // User redeems their tokens using MoleculaPoolTreasury
             await moleculaPool.connect(poolOwner).redeem([operationId]);
 
             // Now user does not have their tokens
-            expect(await USDT.balanceOf(user0.address)).to.be.equal(0n);
+            expect(await USDT.balanceOf(user0)).to.be.equal(0n);
 
             await rebaseToken.connect(malicious).confirmRedeem(operationId);
             // User get their tokens back
-            expect(await USDT.balanceOf(user0.address)).to.be.greaterThan(0n);
+            expect(await USDT.balanceOf(user0)).to.be.greaterThan(0n);
 
             await supplyManager.connect(poolOwner).setMoleculaPool(moleculaPoolV2.getAddress());
 
@@ -861,15 +859,11 @@ describe('Test Nitrogen solution v1.1', () => {
             expect(await USDT.balanceOf(keeperSigner)).to.be.equal(0n);
             for (const t of await moleculaPool.getPools20()) {
                 const erc20 = await ethers.getContractAt('IERC20', t[0]);
-                expect(
-                    await erc20.connect(keeperSigner).balanceOf(keeperSigner.address),
-                ).to.be.equal(0n);
+                expect(await erc20.connect(keeperSigner).balanceOf(keeperSigner)).to.be.equal(0n);
             }
             for (const t of await moleculaPool.getPools4626()) {
                 const erc4626 = await ethers.getContractAt('IERC4626', t[0]);
-                expect(
-                    await erc4626.connect(keeperSigner).balanceOf(keeperSigner.address),
-                ).to.be.equal(0n);
+                expect(await erc4626.connect(keeperSigner).balanceOf(keeperSigner)).to.be.equal(0n);
             }
         });
 
@@ -1250,8 +1244,6 @@ describe('Test Nitrogen solution v1.1', () => {
                 USDT,
                 poolKeeper,
             } = await loadFixture(deployNitrogen);
-            const poolKeeperSigner = await ethers.getImpersonatedSigner(poolKeeper);
-
             const depositValue = 100_000_000n;
 
             // Grant user wallet with tokens
@@ -1298,15 +1290,12 @@ describe('Test Nitrogen solution v1.1', () => {
             const { operationId, redeemValue } = await findRequestRedeemEvent(tx);
 
             // User redeems their tokens using MoleculaPool
-            await USDT.connect(poolKeeperSigner).approve(
-                await pausableAgent.getAddress(),
-                redeemValue,
-            );
+            await USDT.connect(poolKeeper).approve(await pausableAgent.getAddress(), redeemValue);
             await moleculaPool.connect(poolOwner).redeem([operationId]);
             await rebaseToken.connect(malicious).confirmRedeem(operationId);
             // User get their tokens back
-            expect(await USDT.balanceOf(user0.address)).to.be.greaterThan(0n);
-            expect(await USDT.balanceOf(user0.address)).to.be.equal(redeemValue);
+            expect(await USDT.balanceOf(user0)).to.be.greaterThan(0n);
+            expect(await USDT.balanceOf(user0)).to.be.equal(redeemValue);
         });
     });
 });
