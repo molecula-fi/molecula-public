@@ -9,10 +9,12 @@ export type EthereumNetworkConfig = {
     LAYER_ZERO_ENDPOINT: EVMAddress;
     LAYER_ZERO_TRON_EID: number;
     LAYER_ZERO_ETHEREUM_EID: number;
+    LAYER_ZERO_ARBITRUM_EID: number;
+    LAYER_ZERO_CELO_EID: number;
     LAYER_ZERO_TRON_MAINNET_OAPP_MOCK: string;
 
-    // Bridge address
-    SWFT_BRIDGE: EVMAddress;
+    // USDT_OFT address
+    USDT_OFT: EVMAddress;
 
     // Token addresses
     USDT_ADDRESS: EVMAddress;
@@ -47,5 +49,4 @@ export type EthereumNetworkConfig = {
     AUTHORIZED_AGENT_SERVER: EVMAddress;
     AUTHORIZED_WMUSDT_SERVER: EVMAddress;
     AGENT_AUTHORIZED_LZ_CONFIGURATOR: EVMAddress;
-    WMUSDT_AUTHORIZED_LZ_CONFIGURATOR: EVMAddress;
 };

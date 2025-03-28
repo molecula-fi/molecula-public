@@ -28,12 +28,18 @@ export const ethMainnetProdConfig: EthereumNetworkConfig = {
     /** Layer Zero EID Ethereum Mainnet. */
     LAYER_ZERO_ETHEREUM_EID: 30101,
 
+    /** ARBITRUM EID. */
+    LAYER_ZERO_ARBITRUM_EID: 30110,
+
+    /** CELO EID. */
+    LAYER_ZERO_CELO_EID: 30125,
+
     /** MOCK Layer Zero OAPP Tron Mainnet */
     LAYER_ZERO_TRON_MAINNET_OAPP_MOCK:
         '0x51408ca3b420462a5b3f0bf75b6934a521ea3fe4dc2dce5614a995a89f54fcef',
 
-    /** SWFT Bridge address. */
-    SWFT_BRIDGE: '0xb685760ebd368a891f27ae547391f4e2a289895b',
+    /** USDT_OFT address. */
+    USDT_OFT: '0x811ed79dB9D34E83BDB73DF6c3e07961Cfb0D5c0',
 
     /** USDT token address on Ethereum Mainnet. */
     USDT_ADDRESS: evmStaticTokenAddresses.USDT[EVMChainIDs.Mainnet],
@@ -110,8 +116,4 @@ export const ethMainnetProdConfig: EthereumNetworkConfig = {
     /** Agent Authorized lz configurator address. */
     AGENT_AUTHORIZED_LZ_CONFIGURATOR:
         evmAuthorizedAddresses.AGENT_AUTHORIZED_LZ_CONFIGURATOR[EVMChainIDs.Mainnet].prod,
-
-    /** WmUSDT Authorized lz configurator address. */
-    WMUSDT_AUTHORIZED_LZ_CONFIGURATOR:
-        evmAuthorizedAddresses.WMUSDT_AUTHORIZED_LZ_CONFIGURATOR[EVMChainIDs.Mainnet].prod,
 };

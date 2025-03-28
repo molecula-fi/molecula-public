@@ -31,6 +31,8 @@ ui-tests/.husky/
 test-results/
 ui-tests/integration-tests/tests-results/
 ui-tests/integration-tests/playwright-report/
+ui-tests/api-tests/tests-results/
+ui-tests/api-tests/playwright-report/
 
 # Turborepo logs, outputs, and other functionality.
 .turbo

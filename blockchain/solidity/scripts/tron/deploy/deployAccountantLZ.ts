@@ -1,51 +1,44 @@
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import type TronWeb from 'tronweb';
-import type { Transaction } from 'tronweb/interfaces';
-
-import { abi as OAPP_ABI } from '../../../artifacts/@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol/OApp.json';
-import {
-    abi as ABI,
-    bytecode as BYTECODE,
-} from '../../../artifacts/contracts/solutions/Carbon/tron/AccountantLZ.sol/AccountantLZ.json';
+import type { Transaction, TriggerConstantContractResult } from 'tronweb/interfaces';
 
 import { waitForDeployment } from './waitForDeployment';
 
 export async function deployAccountantLZ(
+    hre: HardhatRuntimeEnvironment,
     tronWeb: TronWeb,
     privateKey: string,
     params: {
         initialOwner: string;
-        authorizedLZConfigurator: string;
-        authorizedServer: string;
-        lzEndpoint: string;
+        authorizedLZConfiguratorAddress: string;
+        endpoint: string;
         lzDstEid: number;
-        token: string;
-        treasuryAddress: string;
-        erc20Address: string;
-        lzOptions: string;
-        oracle: string;
+        usdtAddress: string;
+        usdtOFTAddress: string;
+        agentAddress: string;
+        oracleAddress: string;
     },
 ): Promise<string> {
     // Find an account address corresponding to the given PRIVATE_KEY
     const issuerAddress = tronWeb.address.fromPrivateKey(privateKey);
+    const artifact = await hre.artifacts.readArtifact('AccountantLZ');
 
     const transaction = (await tronWeb.transactionBuilder.createSmartContract(
         {
             feeLimit: 5000000000, // The maximum TRX burns for resource consumption（1TRX = 1,000,000SUN
             // @ts-ignore (probably wrong type annotation)
-            abi: ABI,
-            bytecode: BYTECODE,
+            abi: artifact.abi,
+            bytecode: artifact.bytecode,
             // @ts-ignore (probably wrong type annotation)
             parameters: [
                 params.initialOwner,
-                params.authorizedLZConfigurator,
-                params.authorizedServer,
-                params.lzEndpoint,
+                params.authorizedLZConfiguratorAddress,
+                params.endpoint,
                 params.lzDstEid,
-                params.token,
-                params.treasuryAddress,
-                params.erc20Address,
-                params.lzOptions,
-                params.oracle,
+                params.usdtAddress,
+                params.usdtOFTAddress,
+                params.agentAddress,
+                params.oracleAddress,
             ],
         },
         issuerAddress,
@@ -57,145 +50,33 @@ export async function deployAccountantLZ(
     return waitForDeployment(tronWeb, transaction);
 }
 
-export async function setPeer(
+export async function setUnderlyingToken(
     tronWeb: TronWeb,
-    params: {
-        oApp: string;
-        eid: number;
-        peer: string;
-    },
-) {
-    const accountant = tronWeb.contract(OAPP_ABI, params.oApp);
-    // Set peer for OApp
-    await accountant
-        // @ts-ignore (Missing types for contracts)
-        .setPeer(params.eid, params.peer)
-        .send();
-}
-
-export async function peers(
-    tronWeb: TronWeb,
-    params: {
-        accountantLZ: string;
-        eid: number;
-    },
-) {
-    const accountant = tronWeb.contract(ABI, params.accountantLZ);
-    // Get peer
-    return (
-        accountant
-            // @ts-ignore (Missing types for contracts)
-            .peers(params.eid)
-            .call()
-    );
-}
-
-export async function setLzOptions(
-    tronWeb: TronWeb,
-    params: {
-        accountantLZ: string;
-        lzOpt: string;
-    },
-) {
-    const accountant = tronWeb.contract(ABI, params.accountantLZ);
-    // Set options
-    await accountant
-        // @ts-ignore (Missing types for contracts)
-        .setLzOptions(params.lzOpt)
-        .send();
-}
-
-export async function setMoleculaToken(
-    tronWeb: TronWeb,
+    privateKey: string,
     params: {
         accountantLZ: string;
         moleculaToken: string;
     },
 ) {
-    const accountant = tronWeb.contract(ABI, params.accountantLZ);
-    // Set molecula token
-    await accountant
-        // @ts-ignore (Missing types for contracts)
-        .setMoleculaToken(params.moleculaToken)
-        .send();
-}
+    const senderAddress = tronWeb.address.fromPrivateKey(privateKey);
 
-export async function setTreasury(
-    tronWeb: TronWeb,
-    params: {
-        accountantLZ: string;
-        treasury: string;
-    },
-) {
-    const accountant = tronWeb.contract(ABI, params.accountantLZ);
-    // Set trasury address
-    await accountant
-        // @ts-ignore (Missing types for contracts)
-        .setTreasury(params.treasury)
-        .send();
-}
+    const functionSelector = 'setUnderlyingToken(address)';
+    const parameter = [{ type: 'address', value: params.moleculaToken }];
 
-export async function setServerEnabled(
-    tronWeb: TronWeb,
-    params: {
-        accountantLZ: string;
-        enable: boolean;
-    },
-) {
-    const accountant = tronWeb.contract(ABI, params.accountantLZ);
-    // call setServerEnable
-    return (
-        accountant
-            // @ts-ignore (Missing types for contracts)
-            .setServerEnable(params.enable)
-            .send()
-    );
-}
+    // Build transaction
+    const response = (await tronWeb.transactionBuilder.triggerSmartContract(
+        tronWeb.address.toHex(params.accountantLZ), // Contract address in hex
+        functionSelector,
+        { feeLimit: 1000000000 }, // Set fee limit
+        parameter,
+        senderAddress,
+    )) as TriggerConstantContractResult;
 
-export async function getServerEnabled(
-    tronWeb: TronWeb,
-    params: {
-        accountantLZ: string;
-    },
-) {
-    const accountant = tronWeb.contract(ABI, params.accountantLZ);
-    // get serverEnable
-    return (
-        accountant
-            // @ts-ignore (Missing types for contracts)
-            .serverEnabled()
-            .call()
-    );
-}
+    const { transaction } = response;
 
-export async function setGasLimit(
-    tronWeb: TronWeb,
-    params: {
-        accountantLZ: string;
-        msgType: number;
-        baseValue: number;
-        unitValue: number;
-    },
-) {
-    const accountant = tronWeb.contract(ABI, params.accountantLZ);
-    // Set treasury address
-    await accountant
-        // @ts-ignore (Missing types for contracts)
-        .setGasLimit(params.msgType, params.baseValue, params.unitValue)
-        .send();
-}
+    // Sign the transaction
+    const signedTransaction = await tronWeb.trx.sign(transaction, privateKey);
 
-export async function setAuthorizedLZConfigurator(
-    tronWeb: TronWeb,
-    params: {
-        accountantLZ: string;
-        authorizedLZConfigurator: string;
-    },
-) {
-    const accountant = tronWeb.contract(ABI, params.accountantLZ);
-    // Set treasury address
-    await accountant
-        // @ts-ignore (Missing types for contracts)
-        .setAuthorizedLZConfigurator(params.authorizedLZConfigurator)
-        .send();
+    // Send transaction
+    await tronWeb.trx.sendRawTransaction(signedTransaction);
 }

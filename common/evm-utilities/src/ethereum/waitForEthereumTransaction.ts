@@ -2,21 +2,41 @@ import type { ethers, Provider, TransactionReceipt } from 'ethers';
 
 import { Async, Log } from '@molecula-monorepo/common.utilities';
 
+import {
+    EvmTransactionRuntimeError,
+    EvmTransactionRuntimeErrors,
+} from './waitForEthereumTransactionError';
+
 const log = new Log('waitForEthereumTransaction');
+
+interface Options {
+    /**
+     * Use it to silent debug info.
+     *
+     * @defaultValue - false
+     */
+    silent?: boolean;
+    /**
+     * The external signal that tells to stop listening for transaction.
+     */
+    signal?: AbortSignal | undefined;
+}
 
 /**
  * A utility to wait for the Tron transaction to succeed.
  * @param rpcProvider - a rpc provider to interact with Ethereum.
  * @param transactionId - an Id of the transaction to wait for.
- * @param silent - a flag to silent the debug info.
+ * @param options - additional configuration.
  * @returns a transaction info once it's succeeded.
  * @throws an error in case the transaction hasn't succeeded.
  */
 export async function waitForEthereumTransaction(
     rpcProvider: Provider,
     transactionId: string,
-    silent?: boolean,
+    options: Options = {},
 ): Promise<ethers.TransactionReceipt> {
+    const { silent = false, signal } = options;
+
     // Get the transaction info
     let info: TransactionReceipt | null | undefined;
     try {
@@ -36,16 +56,21 @@ export async function waitForEthereumTransaction(
 
         // Check if the transaction has succeeded
         if (info.status !== 1 /** Success */) {
-            throw new Error("Transaction has't succeeded");
+            throw new EvmTransactionRuntimeError(EvmTransactionRuntimeErrors.Unsuccessful);
         }
 
         // Return the transaction info
         return info;
     }
 
+    // Check if the signal is aborted
+    if (signal?.aborted) {
+        throw new EvmTransactionRuntimeError(EvmTransactionRuntimeErrors.Aborted);
+    }
+
     // Try again in 3 seconds if no
     await Async.timeout(3000);
 
     // Call again recursively
-    return waitForEthereumTransaction(rpcProvider, transactionId);
+    return waitForEthereumTransaction(rpcProvider, transactionId, options);
 }

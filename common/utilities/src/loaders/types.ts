@@ -61,16 +61,13 @@ export interface DocumentLoader<Document> {
  */
 export type BaseCollectionItem = { time: number; key: string };
 
-export type CollectionLoaderListener<Item extends BaseCollectionItem> = (
-    error: Error | undefined,
-    items?: Item[],
-) => void;
+export type CollectionLoaderListener<Item> = (error: Error | undefined, items?: Item[]) => void;
 
 /**
  * Collection loader should provide an ability to fetch the items in descending order (by time)
  * and subscribe on their updates.
  */
-export interface CollectionLoader<Item extends BaseCollectionItem> {
+export interface CollectionLoader<Item> {
     /**
      * Resets the collection loader by unsubscribing from all events
      * and setting the loader to its initial state.
@@ -108,6 +105,9 @@ export interface CollectionLoader<Item extends BaseCollectionItem> {
 
     /**
      * Get the indicator if the top items of the collection have been loaded with the fetcher.
+     *
+     * Might be useful if you want to distinguish the first load
+     * (ie to show skeletons) from other items loading (like pull-to-refresh)
      */
     readonly hasLoadedTopItems: boolean;
 

@@ -1,0 +1,78 @@
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
+import type { Transaction } from 'tronweb/interfaces';
+
+import { type NetworkType } from '@molecula-monorepo/blockchain.addresses';
+
+import { getTronWeb } from './deployCarbonTron';
+import { waitForDeployment } from './waitForDeployment';
+
+export async function deployMockUSDT(
+    hre: HardhatRuntimeEnvironment,
+    mnemonic: string,
+    path: string,
+    network: NetworkType,
+) {
+    const { tronWeb, privateKey } = await getTronWeb(mnemonic, path, network);
+    // Find an account address corresponding to the given PRIVATE_KEY
+    const issuerAddress = tronWeb.address.fromPrivateKey(privateKey);
+
+    const artifact = await hre.artifacts.readArtifact('MockUsdtTron');
+
+    const transaction = (await tronWeb.transactionBuilder.createSmartContract(
+        {
+            feeLimit: 1000000000, // The maximum TRX burns for resource consumption（1TRX = 1,000,000SUN
+            // @ts-ignore (probably wrong type annotation)
+            abi: artifact.abi,
+            bytecode: artifact.bytecode,
+            // @ts-ignore (probably wrong type annotation)
+            parameters: [],
+        },
+        issuerAddress,
+    )) as Transaction;
+
+    // Send the transactions
+    await tronWeb.trx.sendRawTransaction(await tronWeb.trx.sign(transaction, privateKey));
+
+    const usdtAddress = await waitForDeployment(tronWeb, transaction);
+    console.log(`Mock USDT address is : ${usdtAddress}`);
+}
+
+export async function deployUsdtOFT(
+    hre: HardhatRuntimeEnvironment,
+    mnemonic: string,
+    path: string,
+    network: NetworkType,
+) {
+    const { config, tronWeb, privateKey } = await getTronWeb(mnemonic, path, network);
+    // Find an account address corresponding to the given PRIVATE_KEY
+    const issuerAddress = tronWeb.address.fromPrivateKey(privateKey);
+
+    const artifact = await hre.artifacts.readArtifact('UsdtOFT');
+
+    const transaction = (await tronWeb.transactionBuilder.createSmartContract(
+        {
+            feeLimit: 1000000000, // The maximum TRX burns for resource consumption（1TRX = 1,000,000SUN
+            // @ts-ignore (probably wrong type annotation)
+            abi: artifact.abi,
+            bytecode: artifact.bytecode,
+            // @ts-ignore (probably wrong type annotation)
+            parameters: [
+                config.LAYER_ZERO_ARBITRUM_EID,
+                config.LAYER_ZERO_CELO_EID,
+                config.LAYER_ZERO_ETHEREUM_EID,
+                config.LAYER_ZERO_TRON_EID, // for ton testnet layerzero don't have eid
+                config.LAYER_ZERO_TRON_EID,
+                config.USDT_ADDRESS,
+                config.LAYER_ZERO_TRON_ENDPOINT,
+                issuerAddress,
+            ],
+        },
+        issuerAddress,
+    )) as Transaction;
+
+    // Send the transactions
+    await tronWeb.trx.sendRawTransaction(await tronWeb.trx.sign(transaction, privateKey));
+
+    const usdtAddress = await waitForDeployment(tronWeb, transaction);
+    console.log(`Mock UsdtOFT address is : ${usdtAddress}`);
+}

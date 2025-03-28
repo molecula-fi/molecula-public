@@ -1,4 +1,4 @@
-/* eslint-disable camelcase, max-lines */
+/* eslint-disable camelcase */
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 

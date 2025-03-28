@@ -168,6 +168,10 @@ export const poolERC4626CurrenciesRetailMainnet = {
         pool: evmStaticTokenAddresses.sFRAX[EVMChainIDs.Mainnet],
         n: 0,
     },
+    sFrxUSD: {
+        pool: evmStaticTokenAddresses.sFrxUSD[EVMChainIDs.Mainnet],
+        n: 0,
+    },
     sUSDS: {
         pool: evmStaticTokenAddresses.sUSDS[EVMChainIDs.Mainnet],
         n: 0,

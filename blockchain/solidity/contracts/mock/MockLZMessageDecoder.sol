@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import {LZMessage} from "../common/layerzero/LZMessage.sol";
+import {LZMsgCodec} from "../common/layerzero/LZMsgCodec.sol";
 
-/// @notice MockLZMessageDecoder contract.
-contract MockLZMessageDecoder is LZMessage {
+/// @notice MockLZMsgCodecDecoder contract.
+contract MockLZMessageDecoder {
     /// @dev Error wrong message type.
     error EWrongMessageType();
 
@@ -19,8 +19,8 @@ contract MockLZMessageDecoder is LZMessage {
         bytes calldata message
     ) external pure returns (uint256 requestId, uint256 value) {
         uint8 msgType = uint8(message[0]);
-        if (msgType == REQUEST_DEPOSIT) {
-            return LZMessage.lzDecodeRequestDepositMessage(message[1:]);
+        if (msgType == LZMsgCodec.REQUEST_DEPOSIT) {
+            return LZMsgCodec.lzDecodeUint256Pair(message[1:]);
         } else {
             revert EWrongMessageType();
         }
@@ -36,8 +36,8 @@ contract MockLZMessageDecoder is LZMessage {
         bytes calldata message
     ) external pure returns (uint256 requestId, uint256 shares) {
         uint8 msgType = uint8(message[0]);
-        if (msgType == CONFIRM_DEPOSIT) {
-            return LZMessage.lzDecodeConfirmDepositMessage(message[1:]);
+        if (msgType == LZMsgCodec.CONFIRM_DEPOSIT) {
+            return LZMsgCodec.lzDecodeUint256Pair(message[1:]);
         } else {
             revert EWrongMessageType();
         }
@@ -59,8 +59,8 @@ contract MockLZMessageDecoder is LZMessage {
         returns (uint256 requestId, uint256 shares, uint256 totalValue, uint256 totalShares)
     {
         uint8 msgType = uint8(message[0]);
-        if (msgType == CONFIRM_DEPOSIT_AND_UPDATE_ORACLE) {
-            return LZMessage.lzDecodeConfirmDepositMessageAndUpdateOracle(message[1:]);
+        if (msgType == LZMsgCodec.CONFIRM_DEPOSIT_AND_UPDATE_ORACLE) {
+            return LZMsgCodec.lzDecodeConfirmDepositMessageAndUpdateOracle(message[1:]);
         } else {
             revert EWrongMessageType();
         }
@@ -76,8 +76,8 @@ contract MockLZMessageDecoder is LZMessage {
         bytes calldata message
     ) public pure returns (uint256 totalValue, uint256 totalShares) {
         uint8 msgType = uint8(message[0]);
-        if (msgType == UPDATE_ORACLE) {
-            return LZMessage.lzDecodeUpdateOracle(message[1:]);
+        if (msgType == LZMsgCodec.UPDATE_ORACLE) {
+            return LZMsgCodec.lzDecodeUint256Pair(message[1:]);
         } else {
             revert EWrongMessageType();
         }

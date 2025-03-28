@@ -10,7 +10,6 @@ import type { RebaseTokenCommon as RebaseToken } from '@molecula-monorepo/solidi
 import type {
     AccountantLZ,
     TronOracle as Oracle,
-    Treasury,
 } from '@molecula-monorepo/solidity/typechain-types/contracts/solutions/Carbon/tron';
 
 export type AllTronContracts =
@@ -18,7 +17,6 @@ export type AllTronContracts =
     | MUSDLock
     | Oracle
     | AccountantLZ
-    | Treasury
     | TRC20
     | ILayerZeroEndpointV2;
 

@@ -16,7 +16,6 @@ import {
     Oracle__factory,
     RebaseToken__factory,
     SupplyManager__factory,
-    WmUsdtToken__factory,
 } from '@molecula-monorepo/solidity/typechain-types';
 
 import {
@@ -28,6 +27,7 @@ import {
     StakedUSDe__factory,
     SwftSwap__factory,
     SavingsUSDS__factory,
+    SFrxUSD__factory,
 } from '../../typechain';
 
 import type { ContractNameType } from '../types';
@@ -41,7 +41,6 @@ const EvmAllContractsAbi: Record<ContractNameType, readonly JsonFragment[]> = {
     IERC20Basic: IERC20Basic__factory.abi,
     IERC20Metadata: IERC20Metadata__factory.abi,
     MUSDE: MUSDE__factory.abi,
-    WmUsdtToken: WmUsdtToken__factory.abi,
     MoleculaPool: MoleculaPool__factory.abi,
     MoleculaPoolTreasury: MoleculaPoolTreasury__factory.abi,
     MUSDLock: MUSDLock__factory.abi,
@@ -49,6 +48,7 @@ const EvmAllContractsAbi: Record<ContractNameType, readonly JsonFragment[]> = {
     AccountantAgent: AccountantAgent__factory.abi,
     StakedUSDe: StakedUSDe__factory.abi,
     SavingsUSDS: SavingsUSDS__factory.abi,
+    SFrxUSD: SFrxUSD__factory.abi,
     SwftSwap: SwftSwap__factory.abi,
     AavePool: AavePool__factory.abi,
     SparkPool: SparkPool__factory.abi,

@@ -2,7 +2,6 @@
     "eth": {
         "moleculaPool": "",
         "agentLZ": "",
-        "wmUSDT": "",
         "supplyManager": "",
         "poolKeeper": "",
         "swftBridge": "",
@@ -16,7 +15,6 @@
         "rebaseToken": "",
         "oracle": "",
         "accountantLZ": "",
-        "treasury": "",
         "mUSDLock": "",
         "swftBridge": ""
     }

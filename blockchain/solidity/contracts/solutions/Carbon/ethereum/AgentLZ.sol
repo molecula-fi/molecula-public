@@ -2,66 +2,89 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import {OApp, Origin, MessagingFee} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
-
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import {IAgent} from "../../../common/interfaces/IAgent.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IOracle} from "../../../common/interfaces/IOracle.sol";
 import {ISupplyManager} from "../../../common/interfaces/ISupplyManager.sol";
-import {LZMessage} from "../../../common/layerzero/LZMessage.sol";
+
+import {LZMsgCodec} from "../../../common/layerzero/LZMsgCodec.sol";
+import {OApp, Origin, MessagingFee} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
 import {OptionsLZ} from "../../../common/layerzero/OptionsLZ.sol";
-import {ServerControlled} from "../../../common/ServerControlled.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../../../common/UsdtOFT.sol";
+import {ZeroValueChecker} from "../../../common/ZeroValueChecker.sol";
 
-import {WmUsdtToken} from "./WmUsdtToken.sol";
-
-enum DepositStatus {
-    None,
-    ReadyToConfirm,
-    Executed
-}
-
-struct DepositInfo {
-    DepositStatus status;
-    uint256 queryId;
-    uint256 shares;
-}
-
-/// @notice Agent contract to call LayerZero.
-contract AgentLZ is OApp, IAgent, ServerControlled, OptionsLZ, LZMessage {
+/// @title AgentLZ - Agent contract for LayerZero cross-chain communication.
+contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
     using SafeERC20 for IERC20;
 
     /// @dev LayerZero destination chain ID.
     uint32 public immutable DST_EID;
 
-    /// @dev Mapping of executed deposits.
-    mapping(uint256 => DepositInfo) public deposits;
-
-    /// @dev SupplyManager interface.
+    /// @dev Address of the SupplyManager contract.
     address public immutable SUPPLY_MANAGER;
 
-    /// @dev WmUSDT token's address.
-    address public immutable WM_USDT;
+    /// @dev Interface for USDT token.
+    IERC20 public immutable USDT;
 
-    /// @dev Boolean flag indicating whether the oracle data is sent via LayerZero.
+    /// @dev Interface for UsdtOFT token.
+    UsdtOFT public immutable USDT_OFT;
+
+    /// @dev Address of the Accountant contract on Tron.
+    address public accountant;
+
+    /// @dev Flag indicating whether oracle data should be sent via LayerZero.
     bool public updateOracleData;
 
-    /// @dev Error: Operation already exists.
-    error EOperationAlreadyExists();
-
-    /// @dev Error: Operation not ready.
-    error EOperationNotReady();
-
-    /// @dev Error: Not my Supply Manager.
-    error ENotMySupplyManager();
+    /// @dev Mapping of executed deposit requests.
+    mapping(uint256 => DepositInfo) public deposits;
 
     /**
-     * @dev Event emitted when the redeem operation is executed.
+     * @dev Enum representing the status of a deposit.
+     * @param None No deposit recorded
+     * @param ReadyToConfirm Deposit recorded, awaiting confirmation
+     * @param Executed Deposit executed
      */
+    enum DepositStatus {
+        None,
+        ReadyToConfirm,
+        Executed
+    }
+
+    /**
+     * @dev Struct for storing deposit information.
+     * @param status Current status of the deposit.
+     * @param queryId Query ID associated with the deposit.
+     * @param value Amount deposited.
+     * @param shares Number of shares allocated.
+     */
+    struct DepositInfo {
+        DepositStatus status;
+        uint256 queryId;
+        uint256 value;
+        uint256 shares;
+    }
+
+    /// @dev Error: Operation with the given request ID already exists.
+    error EOperationAlreadyExists();
+
+    /// @dev Error: Operation is not yet ready for confirmation.
+    error EOperationNotReady();
+
+    /// @dev Error: Caller is not the authorized Supply Manager.
+    error ENotMySupplyManager();
+
+    /// @dev Error: Insufficient USDT balance in contract.
+    error EInsufficientBalance();
+
+    /// @dev Error: Insufficient fees provided to cover transaction.
+    error EInsufficientFees();
+
+    /// @notice Event emitted when a redeem operation is executed.
     event Redeem();
 
-    /// @dev Modifier that checks whether the caller is the Supply Manager.
+    /// @dev Modifier ensuring that only the Supply Manager can call a function.
     modifier onlySupplyManager() {
         if (msg.sender != SUPPLY_MANAGER) {
             revert ENotMySupplyManager();
@@ -70,33 +93,28 @@ contract AgentLZ is OApp, IAgent, ServerControlled, OptionsLZ, LZMessage {
     }
 
     /**
-     * @dev Initializes the contract setting the initializer's address.
+     * @notice Constructs the AgentLZ contract.
      * @param initialOwner Owner's address.
-     * @param authorizedLZConfiguratorAddress Authorized LayerZero configurator's address.
-     * @param server Authorized Server's address.
-     * @param endpoint LayerZero endpoint contract's address.
-     * @param supplyManagerAddress Supply Manager's contract address.
+     * @param authorizedLZConfiguratorAddress Address of the authorized LayerZero configurator.
+     * @param endpoint Address of the LayerZero endpoint contract.
+     * @param supplyManagerAddress Address of the Supply Manager contract.
      * @param lzDstEid LayerZero destination chain ID.
-     * @param wmUSDTAddress WmUSDT token address.
-     * @param lzOpt LayerZero's call options.
+     * @param usdtAddress Address of the USDT token.
+     * @param usdtOFTAddress Address of the UsdtOFT token.
      */
     constructor(
         address initialOwner,
         address authorizedLZConfiguratorAddress,
-        address server,
         address endpoint,
         address supplyManagerAddress,
         uint32 lzDstEid,
-        address wmUSDTAddress,
-        bytes memory lzOpt
-    )
-        OApp(endpoint, initialOwner)
-        OptionsLZ(initialOwner, authorizedLZConfiguratorAddress, lzOpt)
-        ServerControlled(server)
-    {
+        address usdtAddress,
+        address usdtOFTAddress
+    ) OApp(endpoint, initialOwner) OptionsLZ(initialOwner, authorizedLZConfiguratorAddress) {
         SUPPLY_MANAGER = supplyManagerAddress;
         DST_EID = lzDstEid;
-        WM_USDT = wmUSDTAddress;
+        USDT = IERC20(usdtAddress);
+        USDT_OFT = UsdtOFT(usdtOFTAddress);
         updateOracleData = true;
     }
 
@@ -115,43 +133,26 @@ contract AgentLZ is OApp, IAgent, ServerControlled, OptionsLZ, LZMessage {
         bytes calldata payload,
         address _executor, // Executor address as specified by the OApp.
         bytes calldata _options // Extra data or options to trigger on receipt.
-    ) internal override serverIsDisabled {
+    ) internal override {
         _origin;
         _guid;
         _executor;
         _options;
         // Decode the payload to get the message. Get the message type.
         uint8 msgType = uint8(payload[0]);
-        if (msgType == REQUEST_DEPOSIT) {
+        if (msgType == LZMsgCodec.REQUEST_DEPOSIT) {
             // Decode the payload.
-            (uint256 requestId, uint256 value) = LZMessage.lzDecodeRequestDepositMessage(
-                payload[1:]
-            );
+            (uint256 requestId, uint256 value) = LZMsgCodec.lzDecodeUint256Pair(payload[1:]);
             // Call the `deposit` method.
             _deposit(requestId, value);
-        } else if (msgType == REQUEST_REDEEM) {
+        } else if (msgType == LZMsgCodec.REQUEST_REDEEM) {
             // Decode the payload.
-            (uint256 requestId, uint256 value) = LZMessage.lzDecodeRequestRedeemMessage(
-                payload[1:]
-            );
+            (uint256 requestId, uint256 value) = LZMsgCodec.lzDecodeUint256Pair(payload[1:]);
             // Call the `requestRedeem` method.
             _requestRedeem(requestId, value);
         } else {
-            revert LZMessage.ELzUnknownMessage();
+            revert LZMsgCodec.ELzUnknownMessage();
         }
-    }
-
-    /**
-     * @dev Deposit method called by the server.
-     * @param requestId Deposit request ID.
-     * @param value Deposit amount.
-     */
-    function requestDeposit(
-        uint256 requestId,
-        uint256 value
-    ) external serverIsEnabled onlyAuthorizedServer {
-        // Call the `deposit` method.
-        _deposit(requestId, value);
     }
 
     /**
@@ -165,168 +166,30 @@ contract AgentLZ is OApp, IAgent, ServerControlled, OptionsLZ, LZMessage {
             revert EOperationAlreadyExists();
         }
 
-        // Call the Supply Manager's deposit method.
-        // slither-disable-next-line reentrancy-no-eth
-        uint256 shares = ISupplyManager(SUPPLY_MANAGER).deposit(WM_USDT, requestId, value);
-
-        // Mint wmUSDT tokens.
-        // slither-disable-next-line reentrancy-no-eth
-        WmUsdtToken(WM_USDT).mint(value);
-
         // Store the deposit operation in the `deposits` mapping.
-        deposits[requestId] = DepositInfo(DepositStatus.ReadyToConfirm, requestId, shares);
+        deposits[requestId] = DepositInfo(DepositStatus.ReadyToConfirm, requestId, value, 0);
 
         // Emit an event to log the deposit operation.
-        emit Deposit(requestId, value, shares);
+        // At this point, the shares have not been calculated yet.
+        // Set the shares amount to zero, until the deposit is confirmed.
+        emit Deposit(requestId, value, 0);
     }
 
     /**
-     * @notice Sends a message from the source to the destination chain.
-     * @param requestId Deposit request ID.
-     */
-    function confirmDeposit(uint256 requestId) external payable {
-        // Check if the deposit operation already exists.
-        if (deposits[requestId].status != DepositStatus.ReadyToConfirm) {
-            revert EOperationNotReady();
-        }
-
-        // Send a cross-chain message to the Accountant.
-        if (!serverEnabled) {
-            bytes memory lzOptions;
-            // Encodes the message before invoking `_lzSend`. Must be replaced with the relevant data you want to send.
-            bytes memory payload = "";
-            if (updateOracleData) {
-                // Get the LayerZero options.
-                lzOptions = getLzOptions(CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 0);
-                // Get `totalValue` and `totalShares`.
-                (uint256 totalValue, uint256 totalShares) = IOracle(SUPPLY_MANAGER)
-                    .getTotalSupply();
-                // Get the payload for LayerZero.
-                payload = LZMessage.lzEncodeConfirmDepositMessageAndUpdateOracle(
-                    requestId,
-                    deposits[requestId].shares,
-                    totalValue,
-                    totalShares
-                );
-            } else {
-                // Get the LayerZero options.
-                lzOptions = getLzOptions(CONFIRM_DEPOSIT, 0);
-                // Get the payload for LayerZero.
-                payload = LZMessage.lzEncodeConfirmDepositMessage(
-                    requestId,
-                    deposits[requestId].shares
-                );
-            }
-            // Use LayerZero.
-            _lzSend(
-                DST_EID,
-                payload,
-                lzOptions,
-                // Fee in the native gas and ZRO token.
-                MessagingFee(msg.value, 0),
-                // Refund address in case of a failed source message.
-                payable(msg.sender)
-            );
-        } /* else {
-            // Use the Server.
-
-            // Do nothing when using the server.
-            // Emit the `DepositConfirm` event bellow.
-        } */
-
-        // Set the status to `Executed`.
-        deposits[requestId].status = DepositStatus.Executed;
-
-        // Emit an event to log the deposit confirmation operation.
-        emit DepositConfirm(requestId, deposits[requestId].shares);
-    }
-
-    /**
-     * @notice `requestRedeem` for server.
-     * @param requestId Redeem operation request ID.
-     * @param shares Redeem operation amount.
-     */
-    function requestRedeem(
-        uint256 requestId,
-        uint256 shares
-    ) external serverIsEnabled onlyAuthorizedServer {
-        _requestRedeem(requestId, shares);
-    }
-
-    /**
-     * @notice Calls the Supply Manager's `requestRedeem` method.
+     * @notice Requests a redemption from the Supply Manager.
+     * @dev Calls the Supply Manager's `requestRedeem` method.
      * @param requestId Redeem operation request ID.
      * @param shares Redeem operation amount.
      */
     function _requestRedeem(uint256 requestId, uint256 shares) internal {
         // Call the Supply Manager's `requestRedeem` method.
         uint256 value = ISupplyManager(SUPPLY_MANAGER).requestRedeem(
-            address(WM_USDT),
+            address(USDT),
             requestId,
             shares
         );
         // Emit an event to log the redeem operation.
         emit RedeemRequest(requestId, shares, value);
-    }
-
-    /** @dev Quotes the gas needed to pay for the full omnichain transaction.
-     * @param msgType Message type.
-     * @param arrLen Length of the array for `CONFIRM_REDEEM` and `DISTRIBUTE_YIELD` messages. For other types, pass 0.
-     * @return nativeFee Estimated gas fee in the native gas.
-     * @return lzTokenFee Estimated gas fee in the ZRO token.
-     * @return lzOptions LayerZero options.
-     */
-    function quote(
-        uint8 msgType,
-        uint256 arrLen
-    ) public view returns (uint256 nativeFee, uint256 lzTokenFee, bytes memory lzOptions) {
-        // Check whether the quote is applied for making requests, which require cross-chain transporting.
-        if (serverEnabled) {
-            // No quote is applied.
-            return (0, 0, lzOptions);
-        }
-        bytes memory payload = "";
-        if (msgType == CONFIRM_DEPOSIT || msgType == CONFIRM_DEPOSIT_AND_UPDATE_ORACLE) {
-            if (updateOracleData) {
-                payload = LZMessage.lzDefaultConfirmDepositMessageAndUpdateOracle();
-                lzOptions = getLzOptions(CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 0);
-            } else {
-                payload = LZMessage.lzDefaultConfirmDepositMessage();
-                lzOptions = getLzOptions(CONFIRM_DEPOSIT, 0);
-            }
-        } else if (msgType == CONFIRM_REDEEM) {
-            payload = LZMessage.lzDefaultConfirmRedeemMessage(arrLen);
-            lzOptions = getLzOptions(CONFIRM_REDEEM, arrLen);
-        } else if (msgType == DISTRIBUTE_YIELD || msgType == DISTRIBUTE_YIELD_AND_UPDATE_ORACLE) {
-            if (updateOracleData) {
-                payload = LZMessage.lzDefaultDistributeYieldMessageAndUpdateOracle(arrLen);
-                lzOptions = getLzOptions(DISTRIBUTE_YIELD_AND_UPDATE_ORACLE, arrLen);
-            } else {
-                payload = LZMessage.lzDefaultDistributeYieldMessage(arrLen);
-                lzOptions = getLzOptions(DISTRIBUTE_YIELD, arrLen);
-            }
-        } else if (msgType == UPDATE_ORACLE) {
-            payload = LZMessage.lzDefaultUpdateOracleMessage();
-            lzOptions = getLzOptions(UPDATE_ORACLE, 0);
-        } else {
-            revert LZMessage.ELzUnknownMessage();
-        }
-        MessagingFee memory fee = _quote(DST_EID, payload, lzOptions, false);
-        return (fee.nativeFee, fee.lzTokenFee, lzOptions);
-    }
-
-    /// @inheritdoc ServerControlled
-    function setServerEnable(bool enable) external override onlyOwner {
-        serverEnabled = enable;
-        // If the server is enabled, `updateOracleData` must be disabled as it requires LayerZero.
-        if (serverEnabled) {
-            updateOracleData = false;
-        }
-    }
-
-    /// @inheritdoc ServerControlled
-    function setAuthorizedServer(address server) external override onlyOwner {
-        authorizedServer = server;
     }
 
     /**
@@ -335,10 +198,112 @@ contract AgentLZ is OApp, IAgent, ServerControlled, OptionsLZ, LZMessage {
      */
     function setSendOracleData(bool isSend) external onlyOwner {
         updateOracleData = isSend;
-        // If we enable `updateOracleData` that requires LayerZero, we should also disable the server.
-        if (updateOracleData && serverEnabled) {
-            serverEnabled = false;
+    }
+
+    /**
+     * @dev Sets the AccontantLZ contract's address.
+     * @param accontantAddress Address of AccountantLZ contract on TRON.
+     */
+    function setAccountant(
+        address accontantAddress
+    ) external onlyOwner checkNotZero(accontantAddress) {
+        accountant = accontantAddress;
+    }
+
+    /**
+     * @notice Sends a message from the source to the destination chain.
+     * @dev This function confirms a deposit operation by executing the deposit on the Supply Manager,
+     *      encoding the confirmation message, and sending it via LayerZero. If the user overpays,
+     *      excess gas is refunded using inline assembly.
+     * @param requestId The unique identifier of the deposit request.
+     */
+    function confirmDeposit(uint256 requestId) external payable nonReentrant {
+        // Ensure that the deposit operation exists and is in the correct state for confirmation.
+        if (deposits[requestId].status != DepositStatus.ReadyToConfirm) {
+            revert EOperationNotReady();
         }
+
+        // Retrieve the deposit amount from the mapping.
+        uint256 value = deposits[requestId].value;
+
+        // Ensure the contract has sufficient USDT balance to complete the deposit.
+        if (USDT.balanceOf(address(this)) < value) {
+            revert EInsufficientBalance();
+        }
+
+        // Approve the deposit amount to be transferred to the Molecula Pool via the Supply Manager.
+        USDT.forceApprove(ISupplyManager(SUPPLY_MANAGER).getMoleculaPool(), value);
+
+        // Execute the deposit on the Supply Manager and receive the corresponding number of shares.
+        uint256 shares = ISupplyManager(SUPPLY_MANAGER).deposit(address(USDT), requestId, value);
+
+        // Declare LayerZero options and payload variables.
+        bytes memory lzOptions;
+        bytes memory payload;
+
+        // Check whether oracle data needs to be updated along with the deposit confirmation.
+        if (updateOracleData) {
+            // Retrieve the total value and total shares from the Oracle.
+            (uint256 totalValue, uint256 totalShares) = IOracle(SUPPLY_MANAGER).getTotalSupply();
+
+            // Encode the deposit confirmation message along with updated oracle data.
+            payload = LZMsgCodec.lzEncodeConfirmDepositMessageAndUpdateOracle(
+                requestId,
+                shares,
+                totalValue,
+                totalShares
+            );
+
+            // Retrieve LayerZero options specific to this message type.
+            lzOptions = getLzOptions(LZMsgCodec.CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 0);
+        } else {
+            // Encode the deposit confirmation message without updating oracle data.
+            payload = LZMsgCodec.lzEncodeConfirmDepositMessage(requestId, shares);
+
+            // Retrieve LayerZero options specific to this message type.
+            lzOptions = getLzOptions(LZMsgCodec.CONFIRM_DEPOSIT, 0);
+        }
+
+        // Estimate the LayerZero messaging fee required to send the payload.
+        MessagingFee memory sendFee = _quote(DST_EID, payload, lzOptions, false);
+
+        // Extract the native fee from the sendFee struct for use in assembly.
+        uint256 nativeFee = sendFee.nativeFee;
+
+        // Ensure the sender has provided enough native gas to cover the messaging fee.
+        if (msg.value < nativeFee) {
+            revert EInsufficientFees();
+        }
+
+        // Send the LayerZero message, providing the necessary gas fee.
+        _lzSend(
+            DST_EID,
+            payload,
+            lzOptions,
+            sendFee,
+            payable(msg.sender) // Refund any unspent gas back to the sender.
+        );
+
+        // Refund any excess gas back to the caller using inline assembly.
+        // slither-disable-next-line assembly
+        assembly {
+            let refundAmount := sub(callvalue(), nativeFee) // Calculate excess gas.
+            if gt(refundAmount, 0) {
+                // Proceed only if there's an excess.
+                let success := call(gas(), caller(), refundAmount, 0, 0, 0, 0) // Transfer refund to the caller.
+                if iszero(success) {
+                    // If transfer fails, revert.
+                    revert(0, 0)
+                }
+            }
+        }
+
+        // Update the deposit status in the mapping to mark it as executed.
+        deposits[requestId].shares = shares;
+        deposits[requestId].status = DepositStatus.Executed;
+
+        // Emit an event to log the successful deposit confirmation.
+        emit DepositConfirm(requestId, deposits[requestId].shares);
     }
 
     /// @inheritdoc IAgent
@@ -348,40 +313,76 @@ contract AgentLZ is OApp, IAgent, ServerControlled, OptionsLZ, LZMessage {
         uint256[] memory values,
         uint256 totalValue
     ) external payable onlySupplyManager {
-        fromAddress;
-        // Burn wmUSDT tokens.
-        // Note: Burn is not possible while a wmUSDT <-> USDT swap is in progress.
-        // As a result, the operation will be internally reverted.
-        // Refer to the `burn` function implementation for details.
-        WmUsdtToken(WM_USDT).burn(totalValue);
+        // Transfer USDT tokens from the MoleculaPool to the AgentLZ contract.
+        // This ensures the contract has enough funds for the cross-chain transfer.
+        // slither-disable-next-line arbitrary-send-erc20
+        USDT.safeTransferFrom(fromAddress, address(this), totalValue);
 
-        // Send to LayerZero if there is no server available.
-        if (!serverEnabled) {
-            // Get options for LayerZero.
-            bytes memory lzOptions = getLzOptions(CONFIRM_REDEEM, requestIds.length);
+        // Approve the total USDT amount for spending by the UsdtOFT contract.
+        USDT.forceApprove(address(USDT_OFT), totalValue);
 
-            // Get the payload for LayerZero.
-            bytes memory payload = LZMessage.lzEncodeConfirmRedeemMessage(requestIds, values);
+        // Prepare structured parameters for the cross-chain USDT transfer using the UsdtOFT contract.
+        SendParam memory sendParam = SendParam({
+            dstEid: DST_EID, // Destination LayerZero Endpoint ID (Tron in this case)
+            to: bytes32(uint256(uint160(accountant))), // Recipient on the destination chain (converted to bytes32)
+            amountLD: totalValue, // Total USDT amount being sent
+            minAmountLD: (totalValue -
+                ((totalValue * USDT_OFT.feeBps()) / USDT_OFT.BPS_DENOMINATOR())), // Minimum acceptable amount after fees
+            extraOptions: "", // No extra options provided
+            composeMsg: "", // No additional message composition needed
+            oftCmd: "" // No special OFT command required
+        });
 
-            // Use LayerZero.
-            _lzSend(
-                DST_EID,
-                payload,
-                lzOptions,
-                // Fee in the native gas and ZRO token.
-                MessagingFee(msg.value, 0),
-                // Refund address in case of a failed source message.
-                payable(msg.sender)
-            );
+        // Quote the fee required for sending USDT across chains using UsdtOFT.
+        MessagingFee memory usdtFee = USDT_OFT.quoteSend(sendParam, false);
+
+        // Retrieve LayerZero messaging options based on the number of requests being processed.
+        bytes memory lzOptions = getLzOptions(LZMsgCodec.CONFIRM_REDEEM, requestIds.length);
+
+        // Encode the payload that will be sent via LayerZero.
+        // This payload contains details of the redemption request.
+        bytes memory payload = LZMsgCodec.lzEncodeConfirmRedeemMessage(requestIds, values);
+
+        // Quote the fee required for the LayerZero message transmission.
+        MessagingFee memory sendFee = _quote(DST_EID, payload, lzOptions, false);
+
+        // Calculate the total required fee (sum of USDT-OFT transfer fee and LayerZero message fee).
+        uint256 totalRequiredFee = usdtFee.nativeFee + sendFee.nativeFee;
+
+        // Ensure that the sender has provided enough ETH to cover all fees.
+        if (msg.value < totalRequiredFee) {
+            revert EInsufficientFees();
         }
 
-        // Emit an event to log the redeem operation.
-        emit Redeem();
-    }
+        // Execute the USDT transfer across chains using UsdtOFT.
+        // slither-disable-next-line unused-return
+        USDT_OFT.send{value: usdtFee.nativeFee}(sendParam, usdtFee, msg.sender);
 
-    /// @inheritdoc IAgent
-    function getERC20Token() external view returns (address token) {
-        return WM_USDT;
+        // Use LayerZero to send the confirmation payload to the destination chain.
+        _lzSend(
+            DST_EID, // Destination LayerZero Endpoint ID
+            payload, // Encoded LayerZero payload containing redemption details
+            lzOptions, // LayerZero options for processing the message
+            sendFee, // The required fee in native gas and ZRO token (if applicable)
+            payable(tx.origin) // Refund any unused gas to the original transaction sender
+        );
+
+        // Refund any excess ETH sent by the caller back to tx.origin using assembly.
+        // slither-disable-next-line assembly
+        assembly {
+            let refundAmount := sub(callvalue(), totalRequiredFee) // Calculate the excess ETH amount
+            if gt(refundAmount, 0) {
+                // If there is any excess amount
+                let success := call(gas(), origin(), refundAmount, 0, 0, 0, 0) // Attempt to refund to tx.origin
+                if iszero(success) {
+                    // If the refund fails, revert the transaction
+                    revert(0, 0)
+                }
+            }
+        }
+
+        // Emit an event to log the redemption operation.
+        emit Redeem();
     }
 
     /// @inheritdoc IAgent
@@ -389,68 +390,213 @@ contract AgentLZ is OApp, IAgent, ServerControlled, OptionsLZ, LZMessage {
         address[] memory users,
         uint256[] memory shares
     ) external payable onlySupplyManager {
-        // Send to LayerZero if there is no server available.
-        if (!serverEnabled) {
-            bytes memory lzOptions;
-            bytes memory payload;
-            if (updateOracleData) {
-                // Get options for LayerZero.
-                lzOptions = getLzOptions(DISTRIBUTE_YIELD_AND_UPDATE_ORACLE, users.length);
-                // Get `totalValue` and `totalShares`.
-                (uint256 oracleTotalValue, uint256 totalShares) = IOracle(SUPPLY_MANAGER)
-                    .getTotalSupply();
-                // Get the payload for LayerZero.
-                payload = LZMessage.lzEncodeDistributeYieldMessageAndUpdateOracle(
-                    users,
-                    shares,
-                    oracleTotalValue,
-                    totalShares
-                );
-            } else {
-                // Get options for LayerZero.
-                lzOptions = getLzOptions(DISTRIBUTE_YIELD, users.length);
-                // Get the payload for LayerZero.
-                payload = LZMessage.lzEncodeDistributeYieldMessage(users, shares);
-            }
-            // Use LayerZero.
-            _lzSend(
-                DST_EID,
-                payload,
-                lzOptions,
-                // Fee in the native gas and ZRO token.
-                MessagingFee(msg.value, 0),
-                // Refund address in case of a failed source message.
-                payable(msg.sender)
+        // Declare LayerZero options and payload variables.
+        bytes memory lzOptions;
+        bytes memory payload;
+
+        // Check whether oracle data needs to be updated along with yield distribution.
+        if (updateOracleData) {
+            // Retrieve LayerZero options for updating oracle data.
+            lzOptions = getLzOptions(LZMsgCodec.DISTRIBUTE_YIELD_AND_UPDATE_ORACLE, users.length);
+
+            // Retrieve the total value and total shares from the Oracle.
+            (uint256 oracleTotalValue, uint256 totalShares) = IOracle(SUPPLY_MANAGER)
+                .getTotalSupply();
+
+            // Encode the yield distribution message along with updated oracle data.
+            payload = LZMsgCodec.lzEncodeDistributeYieldMessageAndUpdateOracle(
+                users,
+                shares,
+                oracleTotalValue,
+                totalShares
             );
+        } else {
+            // Retrieve LayerZero options without updating oracle data.
+            lzOptions = getLzOptions(LZMsgCodec.DISTRIBUTE_YIELD, users.length);
+
+            // Encode the yield distribution message without oracle updates.
+            payload = LZMsgCodec.lzEncodeDistributeYieldMessage(users, shares);
         }
 
-        // Emit an event to log operation.
-        // TODO Decrease the gas cost.
+        // Quote the LayerZero messaging fee required for sending the payload.
+        MessagingFee memory sendFee = _quote(DST_EID, payload, lzOptions, false);
+
+        // Extract the native fee from the sendFee struct for use in assembly.
+        uint256 nativeFee = sendFee.nativeFee;
+
+        // Ensure that the sender has provided enough native gas to cover the messaging fee.
+        if (msg.value < nativeFee) {
+            revert EInsufficientFees();
+        }
+
+        // Use LayerZero to send the yield distribution message to the destination chain.
+        _lzSend(
+            DST_EID, // Destination LayerZero Endpoint ID
+            payload, // Encoded LayerZero payload containing yield distribution details
+            lzOptions, // LayerZero options for processing the message
+            sendFee, // The required fee in native gas and ZRO token (if applicable)
+            payable(tx.origin) // Refund any unused gas to the original transaction sender
+        );
+
+        // Refund any excess ETH sent by the caller back to tx.origin using inline assembly.
+        // slither-disable-next-line assembly
+        assembly {
+            let refundAmount := sub(callvalue(), nativeFee) // Calculate the excess ETH amount
+            if gt(refundAmount, 0) {
+                // If there is any excess amount
+                let success := call(gas(), origin(), refundAmount, 0, 0, 0, 0) // Attempt to refund to tx.origin
+                if iszero(success) {
+                    // If the refund fails, revert the transaction
+                    revert(0, 0)
+                }
+            }
+        }
+
+        // Emit an event to log the yield distribution operation.
         emit DistributeYield(users, shares);
     }
 
     /**
-     * @dev Updates the Oracle on the TRON network.
+     * @notice Updates the Oracle on the TRON network by retrieving the latest total value and shares,
+     *         encoding them into a LayerZero message, and sending it to the destination chain.
+     * @dev Ensures the sender has provided enough gas for LayerZero messaging and refunds any excess.
      */
-    function updateOracle() external payable {
-        // Send to LayerZero if there is no server available.
-        if (!serverEnabled) {
-            // Get `totalValue` and `totalShares`.
-            (uint256 totalValue, uint256 totalShares) = IOracle(SUPPLY_MANAGER).getTotalSupply();
-            // Get options for LayerZero.
-            bytes memory lzOptions = getLzOptions(UPDATE_ORACLE, 0);
-            // Get the payload for LayerZero.
-            bytes memory payload = LZMessage.lzEncodeUpdateOracle(totalValue, totalShares);
-            // Use LayerZero.
-            _lzSend(
-                DST_EID,
-                payload,
-                lzOptions,
-                // Fee in the native gas and ZRO token.
-                MessagingFee(msg.value, 0),
-                // Refund address in case of a failed source message.
-                payable(msg.sender)
-            );
+    function updateOracle() external payable nonReentrant {
+        // Retrieve the latest total value and total shares from the Supply Manager's Oracle.
+        (uint256 totalValue, uint256 totalShares) = IOracle(SUPPLY_MANAGER).getTotalSupply();
+
+        // Retrieve LayerZero options specific to the updateOracle message.
+        bytes memory lzOptions = getLzOptions(LZMsgCodec.UPDATE_ORACLE, 0);
+
+        // Encode the total value and total shares into the LayerZero payload.
+        bytes memory payload = LZMsgCodec.lzEncodeUpdateOracle(totalValue, totalShares);
+
+        // Quote the LayerZero messaging fee required for sending the payload.
+        MessagingFee memory sendFee = _quote(DST_EID, payload, lzOptions, false);
+
+        // Extract the native fee from the sendFee struct for use in assembly.
+        uint256 nativeFee = sendFee.nativeFee;
+
+        // Ensure the sender has provided enough ETH to cover the LayerZero messaging fee.
+        if (msg.value < nativeFee) {
+            revert EInsufficientFees();
         }
+
+        // Use LayerZero to send the Oracle update message to the destination chain.
+        _lzSend(
+            DST_EID, // Destination LayerZero Endpoint ID (Tron network)
+            payload, // Encoded payload containing updated oracle data
+            lzOptions, // LayerZero options for processing the message
+            sendFee, // The required fee in native gas and ZRO token (if applicable)
+            payable(msg.sender) // Refund any unused gas to the original transaction sender
+        );
+
+        // Refund any excess ETH sent by the caller back to msg.sender using inline assembly.
+        // slither-disable-next-line assembly
+        assembly {
+            let refundAmount := sub(callvalue(), nativeFee) // Calculate excess ETH amount
+            if gt(refundAmount, 0) {
+                // If there is any excess amount
+                let success := call(gas(), caller(), refundAmount, 0, 0, 0, 0) // Attempt to refund
+                if iszero(success) {
+                    // If refund fails, revert transaction
+                    revert(0, 0)
+                }
+            }
+        }
+    }
+
+    /// @inheritdoc IAgent
+    function getERC20Token() external view returns (address token) {
+        return address(USDT);
+    }
+
+    /**
+     * @notice Estimates the gas fees required for executing an omnichain transaction.
+     * @dev This function calculates the estimated LayerZero fees for a given message type
+     *      and, if applicable, includes the USDT_OFT fees for cross-chain transfers.
+     * @param msgType The message type being quoted (e.g., REQUEST_DEPOSIT, CONFIRM_REDEEM).
+     * @param arrLen The length of the array for certain message types (e.g., CONFIRM_REDEEM, DISTRIBUTE_YIELD).
+     * @return nativeFee The estimated gas fee required in the native blockchain token (e.g., ETH).
+     * @return lzTokenFee The estimated gas fee in the LayerZero ZRO token (if applicable).
+     * @return lzOptions The LayerZero options that would be used in the actual transaction.
+     */
+    function quote(
+        uint8 msgType,
+        uint256 arrLen
+    ) external view returns (uint256 nativeFee, uint256 lzTokenFee, bytes memory lzOptions) {
+        // slither-disable-next-line uninitialized-local
+        bytes memory payload;
+
+        // Check the message type and determine the appropriate payload and LayerZero options
+        if (
+            msgType == LZMsgCodec.CONFIRM_DEPOSIT ||
+            msgType == LZMsgCodec.CONFIRM_DEPOSIT_AND_UPDATE_ORACLE
+        ) {
+            if (updateOracleData) {
+                // If updating oracle data, include total supply details
+                payload = LZMsgCodec.lzEncodeConfirmDepositMessageAndUpdateOracle(1, 2, 3, 4);
+                lzOptions = getLzOptions(LZMsgCodec.CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 0);
+            } else {
+                // Standard deposit confirmation message
+                payload = LZMsgCodec.lzEncodeConfirmDepositMessage(2, 2);
+                lzOptions = getLzOptions(LZMsgCodec.CONFIRM_DEPOSIT, 0);
+            }
+        } else if (msgType == LZMsgCodec.CONFIRM_REDEEM) {
+            // Confirm redeem request for multiple deposit IDs
+            payload = LZMsgCodec.lzDefaultConfirmRedeemMessage(arrLen);
+            lzOptions = getLzOptions(LZMsgCodec.CONFIRM_REDEEM, arrLen);
+        } else if (
+            msgType == LZMsgCodec.DISTRIBUTE_YIELD ||
+            msgType == LZMsgCodec.DISTRIBUTE_YIELD_AND_UPDATE_ORACLE
+        ) {
+            if (updateOracleData) {
+                // Include updated oracle data in the yield distribution message
+                payload = LZMsgCodec.lzDefaultDistributeYieldMessageAndUpdateOracle(arrLen);
+                lzOptions = getLzOptions(LZMsgCodec.DISTRIBUTE_YIELD_AND_UPDATE_ORACLE, arrLen);
+            } else {
+                // Standard yield distribution message
+                payload = LZMsgCodec.lzDefaultDistributeYieldMessage(arrLen);
+                lzOptions = getLzOptions(LZMsgCodec.DISTRIBUTE_YIELD, arrLen);
+            }
+        } else if (msgType == LZMsgCodec.UPDATE_ORACLE) {
+            // Oracle update request
+            payload = LZMsgCodec.lzEncodeUpdateOracle(1, 2);
+            lzOptions = getLzOptions(LZMsgCodec.UPDATE_ORACLE, 0);
+        } else if (msgType == LZMsgCodec.REQUEST_DEPOSIT) {
+            // Estimate fees for a deposit request, which includes both LayerZero and USDT_OFT fees
+            lzOptions = getLzOptions(LZMsgCodec.REQUEST_DEPOSIT, 0);
+            payload = LZMsgCodec.lzEncodeRequestDepositMessage(1, 1);
+
+            // Create a mock SendParam struct for fee estimation with minimal values
+            SendParam memory sendParam = SendParam({
+                dstEid: DST_EID, // Destination LayerZero Endpoint ID (e.g., Ethereum)
+                to: bytes32(uint256(uint160(accountant))), // Mock recipient address on the destination chain
+                amountLD: 1e6, // 1 USDT for estimation
+                minAmountLD: 1, // Minimum acceptable amount (mocked)
+                extraOptions: "", // No additional options provided
+                composeMsg: "", // No additional message composition
+                oftCmd: "" // No special OFT command used
+            });
+
+            // Estimate the gas fee required for the cross-chain USDT transfer via UsdtOFT
+            MessagingFee memory usdtFee = USDT_OFT.quoteSend(sendParam, false);
+
+            // Add USDT_OFT fees to total estimated fees
+            nativeFee += usdtFee.nativeFee;
+            lzTokenFee += usdtFee.lzTokenFee;
+        } else {
+            // If an unknown message type is provided, revert the transaction
+            revert LZMsgCodec.ELzUnknownMessage();
+        }
+
+        // Estimate the LayerZero messaging fee based on the payload
+        MessagingFee memory fee = _quote(DST_EID, payload, lzOptions, false);
+
+        // Sum LayerZero fees and USDT_OFT fees (if applicable)
+        nativeFee += fee.nativeFee;
+        lzTokenFee += fee.lzTokenFee;
+
+        return (nativeFee, lzTokenFee, lzOptions);
     }
 }

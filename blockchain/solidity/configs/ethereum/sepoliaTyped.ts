@@ -28,11 +28,17 @@ export const sepoliaConfig: EthereumNetworkConfig = {
     /** SEPOLIA EID. */
     LAYER_ZERO_ETHEREUM_EID: 40161,
 
+    /** ARBITRUM SEPOLIA EID. */
+    LAYER_ZERO_ARBITRUM_EID: 40231,
+
+    /** CELO TESTNET EID. */
+    LAYER_ZERO_CELO_EID: 40125,
+
     /** Shashta test layerzero contract. */
     LAYER_ZERO_TRON_MAINNET_OAPP_MOCK: '0x7ac3dfc5ebee8fae7282553ffc6c36f373952614',
 
-    /** Swift bridge address. */
-    SWFT_BRIDGE: '0xee0B035c9B9d97F69Ae207be6AE342319Cc94387', // Mock address
+    /** USDT_OFT address. */
+    USDT_OFT: '0x101760Fd9486AcC415f6f8c52f78f1cC1318A41a',
 
     /** USDT token address on Ethereum Sepolia. */
     USDT_ADDRESS: evmStaticTokenAddresses.USDT[EVMChainIDs.Sepolia],
@@ -106,8 +112,4 @@ export const sepoliaConfig: EthereumNetworkConfig = {
     /** Agent Authorized lz configurator address. */
     AGENT_AUTHORIZED_LZ_CONFIGURATOR:
         evmAuthorizedAddresses.AGENT_AUTHORIZED_LZ_CONFIGURATOR[EVMChainIDs.Sepolia],
-
-    /** WmUSDT Authorized lz configurator address. */
-    WMUSDT_AUTHORIZED_LZ_CONFIGURATOR:
-        evmAuthorizedAddresses.WMUSDT_AUTHORIZED_LZ_CONFIGURATOR[EVMChainIDs.Sepolia],
 };

@@ -59,6 +59,10 @@ export const evmStaticTokenAddresses = {
         [EVMChainIDs.Mainnet]: '0x853d955acef822db058eb8505911ed77f175b99e',
         [EVMChainIDs.Sepolia]: undefined,
     },
+    sFrxUSD: {
+        [EVMChainIDs.Mainnet]: '0xcf62F905562626CfcDD2261162a51fd02Fc9c5b6',
+        [EVMChainIDs.Sepolia]: undefined,
+    },
     USDC: {
         [EVMChainIDs.Mainnet]: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
         [EVMChainIDs.Sepolia]: '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8',
@@ -157,12 +161,4 @@ export const evmMoleculaContractAddresses = {
         [EVMChainIDs.Mainnet]: undefined,
         [EVMChainIDs.Sepolia]: ContractsCarbon.eth.swftBridge as EVMAddress,
     },
-} as const;
-
-/**
- * Aave static lending pool addresses.
- */
-export const aaveStaticLendingPoolAddresses = {
-    [EVMChainIDs.Mainnet]: '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2' as EVMAddress,
-    [EVMChainIDs.Sepolia]: '0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951' as EVMAddress,
 } as const;

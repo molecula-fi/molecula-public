@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { scope } from 'hardhat/config';
 
 import { deployCarbon } from '../scripts/tron/deploy/deployCarbonTron';
+import { deployMockUSDT, deployUsdtOFT } from '../scripts/tron/deploy/deployMockTron';
 import {
     handleError,
     writeToFile,
@@ -8,31 +10,77 @@ import {
     getEnvironment,
 } from '../scripts/utils/deployUtils';
 
-const tronMajorScope = scope('tronMajorScope', 'Scope for major ethereum deployment flow');
+const tronMajorScope = scope('tronScope', 'Scope for major ethereum deployment flow');
 
 tronMajorScope
     .task('deployCarbon', 'Deploys Carbon on Tron')
     .addParam('environment', 'Deployment environment')
-    .addParam('privatekey', 'Deployer private key')
     .setAction(async (taskArgs, hre) => {
         console.log('\n TRON Deployment');
         console.log('Environment:', taskArgs.environment);
         console.log('Network:', hre.network.name);
 
+        const accounts: any = await hre.network.config.accounts;
         const environment = getEnvironment(hre, taskArgs.environment);
 
         try {
-            const contractsCore = await readFromFile(`${environment}/contracts_carbon.json`);
-            // Execute deployment
-            const tron = await deployCarbon(taskArgs.privateKey, environment, {
-                agentLZ: contractsCore.eth.agentLZ,
-                wmUSDT: contractsCore.eth.wmUSDT,
-            });
-            const result = { tron };
+            const contractsCarbon = await readFromFile(`${environment}/contracts_carbon.json`);
 
-            writeToFile(`${environment}/contracts_carbon.json`, result);
+            // Execute deployment
+            const tron = await deployCarbon(
+                hre,
+                accounts.mnemonic,
+                accounts.path,
+                environment,
+                contractsCarbon.eth.agentLZ,
+            );
+
+            writeToFile(`${environment}/contracts_carbon.json`, {
+                eth: contractsCarbon.eth,
+                tron: tron.tron,
+            });
 
             console.log('Deployment and file write completed successfully.');
+        } catch (error) {
+            handleError(error);
+        }
+    });
+
+tronMajorScope
+    .task('deployUsdtMock', 'Deploys USDT mock contract on Tron')
+    .addParam('environment', 'Deployment environment')
+    .setAction(async (taskArgs, hre) => {
+        console.log('\n TRON Deployment');
+        console.log('Environment:', taskArgs.environment);
+        console.log('Network:', hre.network.name);
+
+        const accounts: any = await hre.network.config.accounts;
+        const environment = getEnvironment(hre, taskArgs.environment);
+        try {
+            // Execute deployment
+            await deployMockUSDT(hre, accounts.mnemonic, accounts.path, environment);
+
+            console.log('Deployment USDT Mock completed successfully.');
+        } catch (error) {
+            handleError(error);
+        }
+    });
+
+tronMajorScope
+    .task('deployUsdtOFT', 'Deploys UsdtOFT mock contract on Tron')
+    .addParam('environment', 'Deployment environment')
+    .setAction(async (taskArgs, hre) => {
+        console.log('\n TRON Deployment');
+        console.log('Environment:', taskArgs.environment);
+        console.log('Network:', hre.network.name);
+
+        const accounts: any = await hre.network.config.accounts;
+        const environment = getEnvironment(hre, taskArgs.environment);
+        try {
+            // Execute deployment
+            await deployUsdtOFT(hre, accounts.mnemonic, accounts.path, environment);
+
+            console.log('Deployment UsdtOFT mock completed successfully.');
         } catch (error) {
             handleError(error);
         }

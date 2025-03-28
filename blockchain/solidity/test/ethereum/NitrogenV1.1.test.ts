@@ -1,11 +1,12 @@
-/* eslint-disable camelcase, max-lines, no-await-in-loop, no-restricted-syntax, no-bitwise */
+/* eslint-disable camelcase, max-lines, no-await-in-loop, no-restricted-syntax, no-bitwise, no-plusplus */
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 
-import { expectEqual, getEthena, grantStakedUSDE, grantUSDe, mintmUSDe } from '../utils/Common';
+import { expectEqual, getEthena, mintmUSDe, grantStakedUSDE, grantUSDe } from '../utils/Common';
+
 import { deployNitrogen } from '../utils/NitrogenCommon';
 import {
     deployMoleculaPoolV2,
@@ -753,8 +754,8 @@ describe('Test Nitrogen solution v1.1', () => {
                 poolKeeper,
             } = await loadFixture(deployNitrogen);
 
-            // Deploy mUSDe and add it to MoleculaPool
             const { usdeMinter, usde, susde } = await getEthena();
+
             const musde = await ethers.deployContract('MUSDE', [
                 await susde.getAddress(),
                 await moleculaPool.poolKeeper(),
@@ -865,6 +866,150 @@ describe('Test Nitrogen solution v1.1', () => {
                 const erc4626 = await ethers.getContractAt('IERC4626', t[0]);
                 expect(await erc4626.connect(keeperSigner).balanceOf(keeperSigner)).to.be.equal(0n);
             }
+        });
+
+        it('Test migration from MoleculaPool to MoleculaPoolTreasury with non zero redeem value bug', async () => {
+            const {
+                moleculaPool,
+                supplyManager,
+                rebaseToken,
+                agent,
+                user0,
+                user1,
+                poolOwner,
+                USDT,
+                poolKeeper,
+                rebaseTokenOwner,
+            } = await loadFixture(deployNitrogen);
+
+            const { usdeMinter, usde, susde } = await getEthena();
+
+            const musde = await ethers.deployContract('MUSDE', [
+                await susde.getAddress(),
+                await moleculaPool.poolKeeper(),
+            ]);
+            await moleculaPool.addPool20(musde.getAddress(), 0n);
+            await mintmUSDe(
+                await moleculaPool.poolKeeper(),
+                usdeMinter,
+                usde,
+                susde,
+                musde,
+                123n * 10n ** 18n,
+            );
+
+            const signers = await ethers.getSigners();
+            const newPoolKeeper = signers.at(10)!;
+            const guardian = signers.at(11)!;
+            const MoleculaPoolTreasury = await ethers.getContractFactory('MoleculaPoolTreasury');
+            const moleculaPoolV2 = await MoleculaPoolTreasury.connect(poolOwner).deploy(
+                poolOwner.address,
+                [],
+                newPoolKeeper.address,
+                await supplyManager.getAddress(),
+                [],
+                guardian,
+            );
+
+            const depositValue = 200_000_000n;
+            const redeemiterations = 2n;
+
+            await rebaseToken
+                .connect(rebaseTokenOwner)
+                .setMinRedeemValue(1_000_000_000_000_000_000n);
+            // // Grant user1 wallet with 100 USDT and 2 ETH
+            await grantERC20(user1, USDT, depositValue);
+            expect(await USDT.balanceOf(user1)).to.equal(depositValue);
+
+            // approve USDT to agent
+            await USDT.connect(user1).approve(await agent.getAddress(), depositValue);
+
+            // user0 call requestDeposit on rebaseToken
+            await rebaseToken.connect(user1).requestDeposit(depositValue, user1, user1);
+
+            // Grant user wallet with 100 USDT and 2 ETH
+            await grantERC20(user0, USDT, depositValue);
+            expect(await USDT.balanceOf(user0)).to.equal(depositValue);
+
+            // approve USDT to agent
+            await USDT.connect(user0).approve(await agent.getAddress(), depositValue);
+
+            // user0 call requestDeposit on rebaseToken
+            await rebaseToken.connect(user0).requestDeposit(depositValue, user0, user0);
+
+            const totalUserShares = await rebaseToken.sharesOf(user0);
+
+            const redeemShares = totalUserShares / redeemiterations;
+            const operationIds = [];
+            // eslint-disable-next-line
+            for (let i = 0n; i < redeemiterations; i++) {
+                const tx = await rebaseToken
+                    .connect(user0)
+                    .requestRedeem(redeemShares + i * 88n, user0, user0);
+                const eventData = await findRequestRedeemEvent(tx);
+
+                const { operationId } = eventData;
+                operationIds.push(operationId);
+            }
+
+            const poolKeeperSigner = await ethers.getImpersonatedSigner(
+                await poolKeeper.getAddress(),
+            );
+            await USDT.connect(poolKeeperSigner).approve(
+                await agent.getAddress(),
+                depositValue * 2n,
+            );
+
+            await moleculaPool.connect(poolOwner).redeem(operationIds);
+
+            for (let i = 0; i < redeemiterations; ++i) {
+                await rebaseToken.connect(user0).confirmRedeem(operationIds[i] || 0);
+            }
+            expect(await moleculaPool.valueToRedeem()).to.be.greaterThan(0n);
+            expect(await USDT.balanceOf(user0)).to.equal(depositValue - 1n);
+
+            const operationIds2 = [];
+            // eslint-disable-next-line
+            for (let i = 0n; i < redeemiterations; i++) {
+                const tx = await rebaseToken
+                    .connect(user1)
+                    .requestRedeem(redeemShares + i * 55n, user1, user1);
+                const eventData = await findRequestRedeemEvent(tx);
+
+                const { operationId } = eventData;
+                operationIds2.push(operationId);
+            }
+
+            await moleculaPool.connect(poolOwner).redeem(operationIds2);
+
+            for (let i = 0; i < redeemiterations; ++i) {
+                await rebaseToken.connect(user1).confirmRedeem(operationIds2[i] || 0);
+            }
+            expect(await moleculaPool.valueToRedeem()).to.be.greaterThan(0n);
+            expect(await USDT.balanceOf(user1)).to.equal(depositValue);
+
+            // Migrate from moleculaPool to moleculaPoolV2
+            const keeperSigner = await ethers.getImpersonatedSigner(
+                await moleculaPool.poolKeeper(),
+            );
+
+            expect(await USDT.balanceOf(keeperSigner)).to.be.greaterThan(0n);
+            for (const t of await moleculaPool.getPools20()) {
+                const token = await ethers.getContractAt('IERC20', t[0]);
+                await token
+                    .connect(keeperSigner)
+                    .approve(moleculaPoolV2.getAddress(), (1n << 256n) - 1n);
+            }
+
+            for (const t of await moleculaPool.getPools4626()) {
+                const token = await ethers.getContractAt('IERC4626', t[0]);
+                await token
+                    .connect(keeperSigner)
+                    .approve(moleculaPoolV2.getAddress(), (1n << 256n) - 1n);
+            }
+
+            await supplyManager.connect(poolOwner).setMoleculaPool(moleculaPoolV2.getAddress());
+            expect((await moleculaPoolV2.poolMap(USDT)).valueToRedeem).to.be.equal(0n);
         });
 
         it('Test modifiers reverts MoleculaPoolTreasury', async () => {

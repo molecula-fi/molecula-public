@@ -1,23 +1,21 @@
 {
     "eth": {
-        "moleculaPool": "0x3D5536A48f11E8FDB1eD60869C3F8E696a595233",
-        "agentLZ": "0x2b9C719187217C1B07b6c736D2b91bA1a73172F5",
-        "wmUSDT": "0xfc5bdF735De939F8C09187DDeEEb3d60f14871D4",
-        "supplyManager": "0x775aD8E7e15e48a366DaEcE3D8a74367a87DE50E",
+        "moleculaPool": "0x689C9a3C9c163C4fA85fba573e6c2772552Ea276",
+        "agentLZ": "0x37c5081045C3Eebc9D32dF32afD15fF8475a9841",
+        "supplyManager": "0x263ca7c176d6A695F9C5f0ED9A9F69d66Ae11A0c",
         "poolKeeper": "0x51fFFb7a28734D7Abb70a30012ce86646E39E269",
         "swftBridge": "0xee0B035c9B9d97F69Ae207be6AE342319Cc94387",
         "ethena": {
             "USDe": "0x3882Ef2d84B0aA75b1565Bb99A8fb90e52612b92",
             "sUSDe": "0x572d3e6b50BB4B2CB4061db7aa233Ae50d9ab258"
         },
-        "mUSDe": "0xef3B9337Aa0b4b1F75232079a211014678047ddf"
+        "mUSDe": "0x8b76f5b8470C3acCF8956b9859d36372EAB51f81"
     },
     "tron": {
-        "rebaseToken": "TKgFSKXkRF5oS33yweniALEX2kyvT1mBZ1",
-        "oracle": "TYMiuT7whdxkcbHJWQVU41k2aMRnLP422f",
-        "accountantLZ": "TLwEtfca9iL9tjsFRJ4GaxPsxKcnnvqZbx",
-        "treasury": "TFnDMZRXkbqjivj9BrsPkqdRJQJEuLuhms",
-        "mUSDLock": "TLS25zT5DoHVp7gVoSopTXhd847YgqW3wM",
+        "rebaseToken": "TPaeJjX4rVWZD9j9j3fdmSkhN7cHiiKrcx",
+        "oracle": "TGMgkcvUKkWc5WwVaCJUwv3hbFeTQwaDgN",
+        "accountantLZ": "TDAqSojoNmEE97gm1Y6zr6FHJyLfEo47qm",
+        "mUSDLock": "TNX78xY9yi5crbTSjGJWxwVYN4jGM1ZdvP",
         "swftBridge": "TSB8wbUZYCRa6MdVixwsja38priMhCwZhy"
     }
 }

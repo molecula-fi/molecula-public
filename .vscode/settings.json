@@ -42,7 +42,6 @@
         "./backend/swft-bridge",
         "./backend/ton-exchanger-evm-manual",
         "./backend/ton-pool-evm-total",
-        "./backend/tron-bridge-evm-retail",
         "./backend/tron-confirmer-evm-retail",
         "./backend/tron-exchanger-evm-retail",
         "./backend/tron-pool-evm-retail",
@@ -110,7 +109,9 @@
         "./middleware/packages/solutions-governance",
         "./middleware/sdk",
         "./tests",
-        "./ui-tests"
+        "./ui-tests",
+        "./ui-tests/integration-tests",
+        "./ui-tests/api-tests"
     ],
     "[scss]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"

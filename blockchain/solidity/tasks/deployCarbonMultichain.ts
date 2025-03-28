@@ -24,7 +24,7 @@ task('deployCarbonMultichain', 'Deploys Carbon to multiple networks')
                 network === 'sepolia' ? 'ethereum' : network === 'shasta' ? 'tron' : network;
 
             console.log(
-                `Running: npx hardhat ${taskName}MajorScope deployCarbon --network ${network}`,
+                `Running: npx hardhat ${taskName}Scope deployCarbon --network ${network} --environment ${deployEnvFlag}`,
             );
 
             await new Promise((resolve, reject) => {
@@ -32,7 +32,7 @@ task('deployCarbonMultichain', 'Deploys Carbon to multiple networks')
                     'npx',
                     [
                         'hardhat',
-                        `${taskName}MajorScope`,
+                        `${taskName}Scope`,
                         `deployCarbon`,
                         '--network',
                         network,

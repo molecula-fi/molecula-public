@@ -93,14 +93,23 @@ ethereumMajorScope
         const environment = getEnvironment(hre, taskArgs.environment);
         try {
             const contractsCore = await readFromFile(`${environment}/contracts_core.json`);
+            const contractsCarbon = await readFromFile(`${environment}/contracts_carbon.json`);
+
             // Execute deployment
-            const eth = await deployCarbon(hre, environment, {
+            const data = await deployCarbon(hre, environment, {
                 supplyManagerAddress: contractsCore.eth.supplyManager,
                 moleculaPoolAddress: contractsCore.eth.moleculaPool,
             });
-            const result = { eth };
+            const eth = {
+                ...data,
+                ethena: contractsCore.eth.ethena,
+                mUSDe: contractsCore.eth.mUSDe,
+            };
 
-            writeToFile(`${environment}/contracts_carbon.json`, result);
+            writeToFile(`${environment}/contracts_carbon.json`, {
+                eth,
+                tron: contractsCarbon.tron,
+            });
             console.log('Deployment and file write completed successfully.');
         } catch (error) {
             handleError(error);

@@ -24,7 +24,3 @@ export const TREASURY_AUTHORIZED_SERVER = 'TCf1PaTafDXDfDv8UMaaddZo1aTnqXostD';
 export const ACCOUNTANT_AUTHORIZED_LZ_CONFIGURATOR = 'TCf1PaTafDXDfDv8UMaaddZo1aTnqXostD';
 // Treasury authorized LZ configurator
 export const TREASURY_AUTHORIZED_LZ_CONFIGURATOR = 'TCf1PaTafDXDfDv8UMaaddZo1aTnqXostD';
-// Token name
-export const MUSDT_TOKEN_NAME = 'mUSDre test v0.10';
-// Token symbol
-export const MUSDT_TOKEN_SYMBOL = 'mUSDret';

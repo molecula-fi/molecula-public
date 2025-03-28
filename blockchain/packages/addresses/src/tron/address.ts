@@ -39,13 +39,6 @@ export const tronMoleculaContractAddresses = {
         },
         [TronChainIDs.Shasta]: ContractsCarbon.tron.accountantLZ as TronAddress,
     },
-    Treasury: {
-        [TronChainIDs.Mainnet]: {
-            prod: MainProdContractsCarbon.tron.treasury as TronAddress,
-            beta: MainBetaContractsCarbon.tron.treasury as TronAddress,
-        },
-        [TronChainIDs.Shasta]: ContractsCarbon.tron.treasury as TronAddress,
-    },
     MUSDLock: {
         [TronChainIDs.Mainnet]: {
             prod: MainProdContractsCarbon.tron.mUSDLock as TronAddress,

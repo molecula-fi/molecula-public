@@ -38,14 +38,4 @@ export const evmAuthorizedAddresses = {
         [EVMChainIDs.Sepolia]: authorizedAddresses.devnet
             .AGENT_AUTHORIZED_LZ_CONFIGURATOR as EVMAddress,
     },
-    WMUSDT_AUTHORIZED_LZ_CONFIGURATOR: {
-        [EVMChainIDs.Mainnet]: {
-            prod: authorizedAddresses['mainnet/prod']
-                .WMUSDT_AUTHORIZED_LZ_CONFIGURATOR as EVMAddress,
-            beta: authorizedAddresses['mainnet/beta']
-                .WMUSDT_AUTHORIZED_LZ_CONFIGURATOR as EVMAddress,
-        },
-        [EVMChainIDs.Sepolia]: authorizedAddresses.devnet
-            .WMUSDT_AUTHORIZED_LZ_CONFIGURATOR as EVMAddress,
-    },
 } as const;

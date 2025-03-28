@@ -4,7 +4,6 @@ import {
     RebaseToken__factory,
     SupplyManager__factory,
     MUSDE__factory,
-    WmUsdtToken__factory,
     MoleculaPool__factory,
     MUSDLock__factory,
     Oracle__factory,
@@ -24,6 +23,7 @@ import {
     ERC4626__factory,
     StakedUSDe__factory,
     SavingsUSDS__factory,
+    SFrxUSD__factory,
     SwftSwap__factory,
     Curve__factory,
 } from '../typechain';
@@ -38,7 +38,6 @@ import type {
     SupplyManager,
     ERC4626,
     MUSDE,
-    WmUsdtToken,
     MUSDLock,
     Oracle,
     AccountantAgent,
@@ -47,6 +46,7 @@ import type {
     SwftSwap,
     StakedUSDe,
     SavingsUSDS,
+    SFrxUSD,
     AavePool,
     SparkPool,
     ILayerZeroEndpointV2,
@@ -136,16 +136,6 @@ export const EvmContractSafeFactory = {
             rpcProvider,
         );
     },
-    WmUsdtToken: (address: string, rpcProvider: ProviderOrRunner) => {
-        return new EvmContractSafe<WmUsdtToken>(
-            {
-                factory: WmUsdtToken__factory,
-                address,
-            },
-            rpcProvider,
-        );
-    },
-
     MoleculaPool: (address: string, rpcProvider: ProviderOrRunner) => {
         return new EvmContractSafe<MoleculaPool>(
             {
@@ -206,6 +196,15 @@ export const EvmContractSafeFactory = {
         return new EvmContractSafe<SavingsUSDS>(
             {
                 factory: SavingsUSDS__factory,
+                address,
+            },
+            rpcProvider,
+        );
+    },
+    SFrxUSD: (address: string, rpcProvider: ProviderOrRunner) => {
+        return new EvmContractSafe<SFrxUSD>(
+            {
+                factory: SFrxUSD__factory,
                 address,
             },
             rpcProvider,

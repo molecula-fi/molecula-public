@@ -3,22 +3,46 @@ import type { Transaction, BlockTransaction } from 'tronweb/interfaces';
 
 import { Async, Log } from '@molecula-monorepo/common.utilities';
 
+import {
+    TronTransactionRuntimeError,
+    TronTransactionRuntimeErrors,
+} from './waitForTronTransactionErrors';
+
 const log = new Log('waitForTronTransaction');
+
+interface Options {
+    /**
+     * Use it to silent debug info.
+     *
+     * @defaultValue - false
+     */
+    silent?: boolean;
+    /**
+     * Whether to print energy info or not.
+     *
+     * @defaultValue - false
+     */
+    printEnergyInfo?: boolean;
+    /**
+     * The external signal that tells to stop listening for transaction.
+     */
+    signal?: AbortSignal | undefined;
+}
 
 /**
  * A utility to wait for the Tron transaction to succeed.
  * @param tronWeb - a TronWeb provider to interact with Tron.
  * @param transactionId - an Id of the transaction to wait for.
- * @param silent - a flag to silent the debug info.
+ * @param options - additional configuration.
  * @returns a transaction info once it's succeeded.
  * @throws an error in case the transaction hasn't succeeded.
  */
 export async function waitForTronTransaction(
     tronWeb: TronWeb,
     transactionId: string,
-    silent?: boolean,
-    printEnergyInfo?: boolean,
+    options: Options = {},
 ): Promise<Transaction | BlockTransaction> {
+    const { silent = false, printEnergyInfo = false, signal } = options;
     // Note: the transaction is supposed to succeed if one of two conditions is met:
     // 1. Either the transaction info's "receipt" object has a "SUCCESS" "result"
     // 2. Or the transaction data's "ret" array has an item with a "SUCCESS" "contractRet"
@@ -48,9 +72,9 @@ export async function waitForTronTransaction(
         // Check if the transaction has succeeded
         if (info.receipt.result !== 'SUCCESS') {
             if (info.receipt.result === 'OUT_OF_ENERGY') {
-                throw new Error('TRON_ERROR: Out of energy');
+                throw new TronTransactionRuntimeError(TronTransactionRuntimeErrors.OutOfEnergy);
             }
-            throw new Error("Transaction has't succeeded");
+            throw new TronTransactionRuntimeError(TronTransactionRuntimeErrors.Unsuccessful);
         }
 
         // Print transaction energy consumption
@@ -77,18 +101,22 @@ export async function waitForTronTransaction(
         // Check if the transaction has succeeded
         if (data.ret[0].contractRet !== 'SUCCESS') {
             if (data.ret[0].contractRet === 'OUT_OF_ENERGY') {
-                throw new Error('TRON_ERROR: Out of energy');
+                throw new TronTransactionRuntimeError(TronTransactionRuntimeErrors.OutOfEnergy);
             }
-            throw new Error("Transaction has't succeeded");
+            throw new TronTransactionRuntimeError(TronTransactionRuntimeErrors.Unsuccessful);
         }
 
         // Return the transaction data
         return data;
     }
 
+    if (signal?.aborted) {
+        throw new TronTransactionRuntimeError(TronTransactionRuntimeErrors.Aborted);
+    }
+
     // Try again in 3 seconds if no condition is met above
     await Async.timeout(3000);
 
     // Call again recursively
-    return waitForTronTransaction(tronWeb, transactionId);
+    return waitForTronTransaction(tronWeb, transactionId, options);
 }

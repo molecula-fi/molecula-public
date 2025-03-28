@@ -23,7 +23,6 @@ const checkCircularDependencies = async () => {
         './backend/swft-bridge/src/index.ts',
         './backend/ton-exchanger-evm-manual/src/index.ts',
         './backend/ton-pool-evm-total/src/index.ts',
-        './backend/tron-bridge-evm-retail/src/index.ts',
         './backend/tron-confirmer-evm-retail/src/index.ts',
         './backend/tron-exchanger-evm-retail/src/index.ts',
         './backend/tron-pool-evm-retail/src/index.ts',

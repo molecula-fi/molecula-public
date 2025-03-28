@@ -8,6 +8,7 @@ import 'hardhat-gas-reporter';
 
 // import tasks
 import './tasks';
+// TODO resolve artifacts problem with tron deploy scripts
 import { tronMainnetProdConfig } from './configs/tron/mainnetProdTyped';
 import { shastaConfig } from './configs/tron/shastaTyped';
 
@@ -17,7 +18,17 @@ const config: HardhatUserConfig = {
     solidity: {
         compilers: [
             {
-                version: '0.8.28',
+                version: '0.8.28', // using in evm contracts
+                settings: {
+                    evmVersion: 'cancun',
+                    optimizer: {
+                        enabled: true,
+                        runs: 400,
+                    },
+                },
+            },
+            {
+                version: '0.8.23', // using in tron contracts
                 settings: {
                     optimizer: {
                         enabled: true,
@@ -26,7 +37,7 @@ const config: HardhatUserConfig = {
                 },
             },
             {
-                version: '0.8.22',
+                version: '0.4.18', // using in mock tether token contracts
                 settings: {
                     optimizer: {
                         enabled: true,

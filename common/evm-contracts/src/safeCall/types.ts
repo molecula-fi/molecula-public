@@ -9,7 +9,6 @@ import type {
     RebaseToken,
     SupplyManager,
     Oracle,
-    WmUsdtToken,
     AccountantAgent,
     ILayerZeroEndpointV2,
     MUSDE,
@@ -17,6 +16,7 @@ import type {
     ERC4626,
     StakedUSDe,
     SavingsUSDS,
+    SFrxUSD,
     AavePool,
     SwftSwap,
     PostfixOverrides,
@@ -67,9 +67,9 @@ export type AllEvmContracts =
     | MUSDLock
     | SupplyManager
     | Oracle
-    | WmUsdtToken
     | StakedUSDe
     | SavingsUSDS
+    | SFrxUSD
     | ILayerZeroEndpointV2
     | MUSDE
     | SwftSwap

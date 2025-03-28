@@ -1,5 +1,5 @@
 {
-    "$schema": "https://turbo.build/schema.json",
+    "$schema": "./node_modules/turbo/schema.json",
     "tasks": {
         "compile": {
             "dependsOn": ["transitNode"],
@@ -80,10 +80,6 @@
         "AMLBOT_ACCESS_KEY",
         "POOL_SERVICE_AUTHORIZED_REDEEMER",
         "NITROGEN_CONFIRMER_KEY",
-        "CARBON_EXCHANGER_AUTHORIZED_LZ_CONFIGURATOR",
-        "CARBON_BRIDGE_AUTHORIZED_LZ_CONFIGURATOR",
-        "CARBON_EXCHANGER_AUTHORIZED_SERVER",
-        "CARBON_BRIDGE_AUTHORIZED_SERVER",
         "CARBON_ORACLE_AUTHORIZED_UPDATER",
         "CARBON_CONFIRMER_KEY",
         "CARBON_EXCHANGER_KEY",
@@ -107,6 +103,7 @@
         "usdtContract",
         "AUTHENTIK_CLIENT_ID",
         "AUTHENTIK_CLIENT_SECRET",
+        "AUTHENTIK_CLIENT_SECRET_DEV",
         "AUTHENTIK_CALLBACK_URL",
         "AUTHENTIK_SESSION_SECRET",
         "AUTHENTIK_AUTHORIZATION_URL",
@@ -117,7 +114,10 @@
         "JSON_RPC_URL_SEPOLIA",
         "ETHEREUM_SEED_PHRASE",
         "ETHEREUM_API_KEY",
-        "TRON_SEED_PHRASE"
+        "TRON_SEED_PHRASE",
+        "MAVA_WIDGET_TOKEN",
+        "API_TESTS_AUTH_TOKEN",
+        "API_TESTS_TARGET"
     ],
     "globalDependencies": [".env"]
 }

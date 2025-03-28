@@ -10,6 +10,7 @@ export * from './walletFromSeed';
 export * from './signWithWallet';
 export * from './decodeParams';
 export * from './ethereumSubscriber';
+export * from './normalizeAddress';
 
 // Export types
 export * from './types';

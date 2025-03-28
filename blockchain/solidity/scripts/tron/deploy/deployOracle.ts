@@ -1,14 +1,11 @@
+import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import type TronWeb from 'tronweb';
-import type { Transaction } from 'tronweb/interfaces';
-
-import {
-    abi as ORACLE_ABI,
-    bytecode as ORACLE_BYTECODE,
-} from '../../../artifacts/contracts/solutions/Carbon/tron/TronOracle.sol/TronOracle.json';
+import type { Transaction, TriggerConstantContractResult } from 'tronweb/interfaces';
 
 import { waitForDeployment } from './waitForDeployment';
 
 export async function deployOracle(
+    hre: HardhatRuntimeEnvironment,
     tronWeb: TronWeb,
     privateKey: string,
     initialShares: bigint,
@@ -20,12 +17,14 @@ export async function deployOracle(
     // Find an account address corresponding to the given PRIVATE_KEY
     const issuerAddress = tronWeb.address.fromPrivateKey(privateKey);
 
+    const artifact = await hre.artifacts.readArtifact('TronOracle');
+
     const transaction = (await tronWeb.transactionBuilder.createSmartContract(
         {
             feeLimit: 1000000000, // The maximum TRX burns for resource consumption（1TRX = 1,000,000SUN
             // @ts-ignore (probably wrong type annotation)
-            abi: ORACLE_ABI,
-            bytecode: ORACLE_BYTECODE,
+            abi: artifact.abi,
+            bytecode: artifact.bytecode,
             // @ts-ignore (probably wrong type annotation)
             parameters: [
                 initialShares,
@@ -46,10 +45,29 @@ export async function deployOracle(
 
 export async function setOracleAccountant(
     tronWeb: TronWeb,
+    privateKey: string,
     oracleAddress: string,
     accountantAddress: string,
 ) {
-    const oracleContract = await tronWeb.contract(ORACLE_ABI, oracleAddress);
-    // @ts-ignore (Missing types for contracts)
-    await oracleContract.setAccountant(accountantAddress).send();
+    const senderAddress = tronWeb.address.fromPrivateKey(privateKey);
+
+    const functionSelector = 'setAccountant(address)';
+    const parameter = [{ type: 'address', value: accountantAddress }];
+
+    // Build transaction
+    const response = (await tronWeb.transactionBuilder.triggerSmartContract(
+        tronWeb.address.toHex(oracleAddress), // Contract address in hex
+        functionSelector,
+        { feeLimit: 1000000000 }, // Set fee limit
+        parameter,
+        senderAddress,
+    )) as TriggerConstantContractResult;
+
+    const { transaction } = response;
+
+    // Sign the transaction
+    const signedTransaction = await tronWeb.trx.sign(transaction, privateKey);
+
+    // Send transaction
+    await tronWeb.trx.sendRawTransaction(signedTransaction);
 }

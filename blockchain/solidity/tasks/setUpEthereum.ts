@@ -1,12 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { scope } from 'hardhat/config';
 
 import { migrateNitrogenAgent, migrateNitrogenMoleculaPoolTreasury } from '../scripts/ethereum';
+import { setAccountant } from '../scripts/ethereum/deploy/deployCarbon';
 import { setCoreOwner } from '../scripts/ethereum/setCoreOwner';
 import { setNitrogenOwner } from '../scripts/ethereum/setNitrogenOwner';
+import { setCarbonOwner } from '../scripts/tron/setCarbonOwner';
 
-import { getEnvironment, getVersion } from '../scripts/utils/deployUtils';
+import { getEnvironment, getVersion, readFromFile } from '../scripts/utils/deployUtils';
 
-const ethereumSetupScope = scope('ethereumSetupScope', 'Scope for set ethereum sript flow'); // TODO sript?
+const ethereumSetupScope = scope('ethereumSetupScope', 'Scope for set ethereum script flow');
+const multichainSetupScope = scope(
+    'multichainSetupScope',
+    'Scope for set in ethereum and tron script flow',
+);
 
 ethereumSetupScope
     .task('migrateNitrogenAgent', 'Nitrogen Migration of Agent')
@@ -75,6 +82,58 @@ ethereumSetupScope
         await setCoreOwner(hre, environment)
             .then(() => {
                 console.log('Set Core owner completed successfully.');
+            })
+            .catch(error => {
+                console.error('Set failed:', error.message);
+                console.error(error.stack); // Log full error stack trace for debugging
+                process.exit(1); // Exit with an error code to indicate failure
+            });
+    });
+
+ethereumSetupScope
+    .task('setCarbonAccountantLZ', 'Carbon set accountantLZ')
+    .addParam('environment', 'Set accountantLZ environment') // Required parameter for specifying the set script environment
+    .setAction(async (taskArgs, hre) => {
+        console.log('Environment:', taskArgs.environment); // Log the selected migration environment
+        console.log('Network:', hre.network.name); // Log the Hardhat network being used
+
+        // Retrieve environment details using the helper function
+        const environment = getEnvironment(hre, taskArgs.environment);
+
+        const contractsCarbon = await readFromFile(`${environment}/contracts_carbon.json`);
+
+        // Execute the migration function with the retrieved parameters
+        await setAccountant(hre, environment, {
+            agentLZ: contractsCarbon.eth.agentLZ,
+            accountantLZ: contractsCarbon.tron.accountantLZ,
+        })
+            .then(() => {
+                console.log('Set Carbon accountantLZ completed successfully.');
+            })
+            .catch(error => {
+                console.error('Set failed:', error.message);
+                console.error(error.stack); // Log full error stack trace for debugging
+                process.exit(1); // Exit with an error code to indicate failure
+            });
+    });
+
+multichainSetupScope
+    .task('setCarbonOwner', 'Carbon set owner')
+    .addParam('environment', 'Set owner environment') // Required parameter for specifying the set script environment
+    .setAction(async (taskArgs, hre) => {
+        console.log('Environment:', taskArgs.environment); // Log the selected migration environment
+        console.log('Network:', hre.network.name); // Log the Hardhat network being used
+
+        // Get deployer account for Tron
+        const accounts: any = await hre.network.config.accounts;
+
+        // Retrieve environment details using the helper function
+        const environment = getEnvironment(hre, taskArgs.environment);
+
+        // Execute the migration function with the retrieved parameters
+        await setCarbonOwner(hre, environment, accounts.mnemonic, accounts.path)
+            .then(() => {
+                console.log('Set Carbon owner completed successfully.');
             })
             .catch(error => {
                 console.error('Set failed:', error.message);

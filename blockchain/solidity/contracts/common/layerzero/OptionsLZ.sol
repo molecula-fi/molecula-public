@@ -1,15 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.22;
+pragma solidity ^0.8.23;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
 
 uint16 constant BASE = 0x100;
 uint16 constant UNIT = 0x200;
 
 contract OptionsLZ is Ownable {
-    /// @dev Base `lzOptions`.
-    bytes public base;
+    using OptionsBuilder for bytes;
 
     /// @dev Authorized LayerZero configurator.
     address public authorizedLZConfigurator;
@@ -32,23 +32,12 @@ contract OptionsLZ is Ownable {
      * @dev Constructor.
      * @param initialOwner Smart contract owner address.
      * @param authorizedLZConfiguratorAddress Authorized LZ configurator address.
-     * @param baseBytes Base bytes.
      */
     constructor(
         address initialOwner,
-        address authorizedLZConfiguratorAddress,
-        bytes memory baseBytes
+        address authorizedLZConfiguratorAddress
     ) Ownable(initialOwner) {
         authorizedLZConfigurator = authorizedLZConfiguratorAddress;
-        base = baseBytes;
-    }
-
-    /**
-     * @dev Sets the base bytes.
-     * @param baseBytes Base bytes.
-     */
-    function setLZOptionsBase(bytes memory baseBytes) public onlyAuthorizedLZConfigurator {
-        base = baseBytes;
     }
 
     /**
@@ -77,8 +66,10 @@ contract OptionsLZ is Ownable {
         uint256 count
     ) public view returns (bytes memory lzOptions) {
         uint256 gasLimitTotal = gasLimit[BASE | msgType] + gasLimit[UNIT | msgType] * count;
-        lzOptions = base;
-        lzOptions = abi.encodePacked(lzOptions, uint128(gasLimitTotal));
+        lzOptions = OptionsBuilder.newOptions().addExecutorLzReceiveOption(
+            uint128(gasLimitTotal),
+            0
+        );
     }
 
     /**
