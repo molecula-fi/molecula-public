@@ -1,6 +1,7 @@
 /* eslint-disable camelcase, max-lines, no-await-in-loop, no-restricted-syntax, no-bitwise, no-plusplus */
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { expect } from 'chai';
+import { keccak256 } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
@@ -10,9 +11,10 @@ import { expectEqual, getEthena, mintmUSDe, grantStakedUSDE, grantUSDe } from '.
 import { deployNitrogen } from '../utils/NitrogenCommon';
 import {
     deployMoleculaPoolV11,
-    deployMoleculaPoolV2,
-    deployNitrogenV2WithStakedUSDe,
-    deployNitrogenV2WithUSDT,
+    deployMoleculaPoolV11WithParams,
+    deployNitrogenV11WithRouter,
+    deployNitrogenV11WithStakedUSDe,
+    deployNitrogenV11WithUSDT,
     initNitrogenAndRequestDeposit,
     initNitrogenForPause,
 } from '../utils/NitrogenCommonV1.1';
@@ -24,14 +26,14 @@ describe('Test Nitrogen solution v1.1', () => {
     describe('General solution tests', () => {
         it('Should set the right owner', async () => {
             const { moleculaPool, supplyManager, agent, rebaseToken, poolOwner, rebaseTokenOwner } =
-                await loadFixture(deployNitrogenV2WithUSDT);
+                await loadFixture(deployNitrogenV11WithUSDT);
 
             expect(await moleculaPool.owner()).to.equal(await poolOwner.getAddress());
             expect(await supplyManager.owner()).to.equal(await poolOwner.getAddress());
             expect(await agent.owner()).to.equal(await poolOwner.getAddress());
             expect(await rebaseToken.owner()).to.equal(rebaseTokenOwner.address);
-            expect(await moleculaPool.totalSupply()).to.equal(100_000_000_000_000_000_000n);
-            expect(await supplyManager.totalSupply()).to.equal(100_000_000_000_000_000_000n);
+            expect(await moleculaPool.totalSupply()).to.equal(100n * 10n ** 18n);
+            expect(await supplyManager.totalSupply()).to.equal(100n * 10n ** 18n);
         });
 
         it('Deposit and Income Flow', async () => {
@@ -44,7 +46,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 user1,
                 malicious,
                 USDT,
-            } = await loadFixture(deployNitrogenV2WithUSDT);
+            } = await loadFixture(deployNitrogenV11WithUSDT);
             // deposit 100 USDT
             const depositValue = 100_000_000n;
             // Grant user wallet with 100 USDT and 2 ETH
@@ -126,9 +128,9 @@ describe('Test Nitrogen solution v1.1', () => {
             expect((await moleculaPool.poolMap(USDT)).valueToRedeem).to.equal(
                 (INITIAL_SUPPLY * 2n) / 10n ** 12n,
             );
-            expect(await supplyManager.totalSupply()).to.equal(420_000_000_000_000_000_000n);
+            expect(await supplyManager.totalSupply()).to.equal(420n * 10n ** 18n);
             expect(await supplyManager.totalSharesSupply()).to.equal(
-                INITIAL_SUPPLY + secondShares + 60_000_000_000_000_000_000n,
+                INITIAL_SUPPLY + secondShares + 60n * 10n ** 18n,
             );
             expect(await supplyManager.totalSupply()).to.equal(
                 (await supplyManager.totalSharesSupply()) * 2n,
@@ -209,7 +211,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
         async function depositAndRequestRedeem() {
             const { moleculaPool, rebaseToken, agent, user0, malicious, USDT } =
-                await loadFixture(deployNitrogenV2WithUSDT);
+                await loadFixture(deployNitrogenV11WithUSDT);
             // deposit 100 USDT
             const depositValue = 100n * 10n ** 6n - 1n;
             // Grant user wallet with 100 USDT and 2 ETH
@@ -280,7 +282,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 controller,
                 randAccount,
                 USDT,
-            } = await loadFixture(deployNitrogenV2WithUSDT);
+            } = await loadFixture(deployNitrogenV11WithUSDT);
             // deposit 100 USDT
             const depositValue = 100_000_000n;
             // Grant userAgent wallet with 100 USDT and 2 ETH
@@ -341,9 +343,9 @@ describe('Test Nitrogen solution v1.1', () => {
 
         it('Distribute yield', async () => {
             const { moleculaPool, supplyManager, agent, user1, rebaseToken, malicious } =
-                await loadFixture(deployNitrogenV2WithUSDT);
+                await loadFixture(deployNitrogenV11WithUSDT);
 
-            const val = 100_000_000_000_000_000_000n;
+            const val = 100n * 10n ** 18n;
             expect(await supplyManager.totalSupply()).to.equal(val);
             expect(await supplyManager.totalSharesSupply()).to.equal(val);
             const DAI = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.DAI_ADDRESS);
@@ -363,7 +365,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 parties: [
                     {
                         party: user1,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent,
@@ -392,7 +394,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 parties: [
                     {
                         party: user1,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent: malicious.address,
@@ -408,7 +410,7 @@ describe('Test Nitrogen solution v1.1', () => {
                     parties: [
                         {
                             party: user1,
-                            portion: 250_000_000_000_000_000n,
+                            portion: 250n * 10n ** 15n,
                         },
                     ],
                     agent: malicious.address,
@@ -418,7 +420,7 @@ describe('Test Nitrogen solution v1.1', () => {
                     parties: [
                         {
                             party: user1,
-                            portion: 250_000_000_000_000_000n,
+                            portion: 250n * 10n ** 15n,
                         },
                     ],
                     agent: malicious.address,
@@ -428,7 +430,7 @@ describe('Test Nitrogen solution v1.1', () => {
                     parties: [
                         {
                             party: user1,
-                            portion: 250_000_000_000_000_000n,
+                            portion: 250n * 10n ** 15n,
                         },
                     ],
                     agent: malicious.address,
@@ -438,7 +440,7 @@ describe('Test Nitrogen solution v1.1', () => {
                     parties: [
                         {
                             party: user1,
-                            portion: 250_000_000_000_000_000n,
+                            portion: 250n * 10n ** 15n,
                         },
                     ],
                     agent: malicious.address,
@@ -453,7 +455,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
     describe('Test special cases', () => {
         it('Should be MOLECULA_POOL.totalSupply > 0', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV2);
+            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV11);
 
             // deploy supply manager
             const SupplyManager = await ethers.getContractFactory('SupplyManager');
@@ -469,14 +471,14 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Check push invalid token', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployNitrogenV2WithStakedUSDe);
+            const { moleculaPool, poolOwner } = await loadFixture(deployNitrogenV11WithStakedUSDe);
 
             // It's not smart-contract
             await expect(moleculaPool.addToken(poolOwner)).to.be.rejectedWith('ENotContract');
         });
 
         it('Check duplicated pools', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV2);
+            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV11);
             const token = ethMainnetBetaConfig.USDT_ADDRESS;
             const token2 = ethMainnetBetaConfig.USDC_ADDRESS;
 
@@ -501,7 +503,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test remove tokens', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV2);
+            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV11);
             const token = ethMainnetBetaConfig.USDT_ADDRESS;
             const token2 = ethMainnetBetaConfig.USDC_ADDRESS;
             const token3 = ethMainnetBetaConfig.USDE_ADDRESS;
@@ -521,7 +523,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Check duplicated pools 4626', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV2);
+            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV11);
 
             const { susde, usde, usdeMinter } = await getEthena();
 
@@ -544,7 +546,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Check SupplyManager.apyFormatter', async () => {
-            const { moleculaPool, poolOwner, USDT } = await loadFixture(deployMoleculaPoolV2);
+            const { moleculaPool, poolOwner, USDT } = await loadFixture(deployMoleculaPoolV11);
             await moleculaPool.connect(poolOwner).addToken(USDT);
             await grantERC20(await moleculaPool.getAddress(), USDT, 100_000_000n);
 
@@ -578,7 +580,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 user1,
                 malicious,
                 randAccount,
-            } = await loadFixture(deployNitrogenV2WithStakedUSDe);
+            } = await loadFixture(deployNitrogenV11WithStakedUSDe);
 
             // deposit 123 stakedUSDe
             const susdeUserDeposit = 123n * 10n ** (await susde.decimals());
@@ -637,7 +639,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test white list', async () => {
-            const { moleculaPool, poolOwner, malicious } = await loadFixture(deployMoleculaPoolV2);
+            const { moleculaPool, poolOwner, malicious } = await loadFixture(deployMoleculaPoolV11);
 
             // Test deleteFromWhiteList
             expect(
@@ -683,7 +685,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
         it('Test execute', async () => {
             const { moleculaPool, randAccount, poolOwner, USDT } =
-                await loadFixture(deployNitrogenV2WithUSDT);
+                await loadFixture(deployNitrogenV11WithUSDT);
             const keeperSigner = await ethers.getImpersonatedSigner(
                 await moleculaPool.poolKeeper(),
             );
@@ -794,8 +796,8 @@ describe('Test Nitrogen solution v1.1', () => {
             const valueToRedeem = await moleculaPool.valueToRedeem();
             const totalSupply = await moleculaPool.totalSupply();
 
-            // Migrate from moleculaPool to moleculaPoolV2
-            const moleculaPoolV2 = await deployMoleculaPoolV11(
+            // Migrate from moleculaPool to moleculaPoolV11
+            const moleculaPoolV11 = await deployMoleculaPoolV11WithParams(
                 poolOwner,
                 await supplyManager.getAddress(),
             );
@@ -804,14 +806,14 @@ describe('Test Nitrogen solution v1.1', () => {
                 const token = await ethers.getContractAt('IERC20', t[0]);
                 await token
                     .connect(poolKeeperSigner)
-                    .approve(moleculaPoolV2.getAddress(), (1n << 256n) - 1n);
+                    .approve(moleculaPoolV11.getAddress(), (1n << 256n) - 1n);
             }
 
             for (const t of await moleculaPool.getPools4626()) {
                 const token = await ethers.getContractAt('IERC4626', t[0]);
                 await token
                     .connect(poolKeeperSigner)
-                    .approve(moleculaPoolV2.getAddress(), (1n << 256n) - 1n);
+                    .approve(moleculaPoolV11.getAddress(), (1n << 256n) - 1n);
             }
             await USDT.connect(poolKeeper).approve(await agent.getAddress(), valueToRedeem);
 
@@ -825,11 +827,11 @@ describe('Test Nitrogen solution v1.1', () => {
             // User get their tokens back
             expect(await USDT.balanceOf(user0)).to.be.greaterThan(0n);
 
-            await supplyManager.connect(poolOwner).setMoleculaPool(moleculaPoolV2.getAddress());
+            await supplyManager.connect(poolOwner).setMoleculaPool(moleculaPoolV11.getAddress());
 
-            expect((await moleculaPoolV2.poolMap(USDT)).valueToRedeem).to.be.equal(0n);
+            expect((await moleculaPoolV11.poolMap(USDT)).valueToRedeem).to.be.equal(0n);
 
-            expectEqual(await moleculaPoolV2.totalSupply(), totalSupply, 18n, 6n);
+            expectEqual(await moleculaPoolV11.totalSupply(), totalSupply, 18n, 6n);
 
             const agents = await supplyManager.getAgents();
 
@@ -840,7 +842,7 @@ describe('Test Nitrogen solution v1.1', () => {
                     await agentContract.getERC20Token(),
                 );
                 const allowance = await erc20Token.allowance(
-                    moleculaPoolV2.getAddress(),
+                    moleculaPoolV11.getAddress(),
                     agentAddr,
                 );
                 expect(allowance).to.be.equal((1n << 256n) - 1n);
@@ -913,8 +915,8 @@ describe('Test Nitrogen solution v1.1', () => {
             // Note: the first main check of the test!
             expect(await moleculaPool.valueToRedeem()).to.be.greaterThan(0n);
 
-            // Migrate from moleculaPool to moleculaPoolV2
-            const moleculaPoolV2 = await deployMoleculaPoolV11(
+            // Migrate from moleculaPool to moleculaPoolV11
+            const moleculaPoolV11 = await deployMoleculaPoolV11WithParams(
                 poolOwner,
                 await supplyManager.getAddress(),
             );
@@ -923,25 +925,25 @@ describe('Test Nitrogen solution v1.1', () => {
                 const token = await ethers.getContractAt('IERC20', t[0]);
                 await token
                     .connect(poolKeeperSigner)
-                    .approve(moleculaPoolV2.getAddress(), (1n << 256n) - 1n);
+                    .approve(moleculaPoolV11.getAddress(), (1n << 256n) - 1n);
             }
 
             for (const t of await moleculaPool.getPools4626()) {
                 const token = await ethers.getContractAt('IERC4626', t[0]);
                 await token
                     .connect(poolKeeperSigner)
-                    .approve(moleculaPoolV2.getAddress(), (1n << 256n) - 1n);
+                    .approve(moleculaPoolV11.getAddress(), (1n << 256n) - 1n);
             }
 
-            await supplyManager.connect(poolOwner).setMoleculaPool(moleculaPoolV2.getAddress());
+            await supplyManager.connect(poolOwner).setMoleculaPool(moleculaPoolV11.getAddress());
 
             // Note: the second main check of the test! `valueToRedeem` was not equal to zero, but now it is.
-            expect((await moleculaPoolV2.poolMap(USDT)).valueToRedeem).to.be.equal(0n);
+            expect((await moleculaPoolV11.poolMap(USDT)).valueToRedeem).to.be.equal(0n);
         });
 
         it('Test modifiers reverts MoleculaPoolTreasury', async () => {
             const { moleculaPool, randAccount, malicious, USDT } =
-                await loadFixture(deployNitrogenV2WithUSDT);
+                await loadFixture(deployNitrogenV11WithUSDT);
 
             await expect(
                 moleculaPool.connect(randAccount).addToken(randAccount),
@@ -999,7 +1001,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test MoleculaPoolTreasury constructor zero address in array', async () => {
-            const { poolOwner } = await loadFixture(deployNitrogenV2WithUSDT);
+            const { poolOwner } = await loadFixture(deployNitrogenV11WithUSDT);
 
             const MoleculaPool_revert = await ethers.getContractFactory('MoleculaPoolTreasury');
             await expect(
@@ -1167,7 +1169,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
         it('Test changeGuardian', async () => {
             const { moleculaPool, randAccount, poolOwner } =
-                await loadFixture(deployNitrogenV2WithUSDT);
+                await loadFixture(deployNitrogenV11WithUSDT);
             expect(await moleculaPool.guardian()).to.not.equal(randAccount);
             await expect(
                 moleculaPool.connect(randAccount).changeGuardian(randAccount),
@@ -1213,7 +1215,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
         it('Test pause agent accountant', async () => {
             const { moleculaPool, rebaseToken, agent, user0, USDT } =
-                await loadFixture(deployNitrogenV2WithUSDT);
+                await loadFixture(deployNitrogenV11WithUSDT);
             const depositValue = 100_000_000n;
 
             await grantERC20(user0, USDT, 2n * depositValue);
@@ -1272,7 +1274,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test changeGuardian for agent accountant', async () => {
-            const { agent, poolOwner, randAccount } = await loadFixture(deployNitrogenV2WithUSDT);
+            const { agent, poolOwner, randAccount } = await loadFixture(deployNitrogenV11WithUSDT);
             await expect(agent.connect(randAccount).changeGuardian(randAccount)).to.be.rejectedWith(
                 'OwnableUnauthorizedAccount',
             );
@@ -1280,7 +1282,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test pause agent accountant (conner cases)', async () => {
-            const { agent, randAccount } = await loadFixture(deployNitrogenV2WithUSDT);
+            const { agent, randAccount } = await loadFixture(deployNitrogenV11WithUSDT);
             await agent.pauseAll();
             await agent.pauseAll();
 
@@ -1368,6 +1370,525 @@ describe('Test Nitrogen solution v1.1', () => {
             // User get their tokens back
             expect(await USDT.balanceOf(user0)).to.be.greaterThan(0n);
             expect(await USDT.balanceOf(user0)).to.be.equal(redeemValue);
+        });
+    });
+
+    describe('Test Router', () => {
+        it('Should deposit and redeem via router', async () => {
+            const { router, routerAgent, USDC, user0, user1, user2, operator, rebaseToken } =
+                await loadFixture(deployNitrogenV11WithRouter);
+
+            const decimals: bigint = await USDC.decimals();
+            const depositValue = 100n * 10n ** decimals;
+
+            // Grand USD and approve tokens for routerAgent
+            await grantERC20(user0, USDC, 2n * depositValue);
+            await USDC.connect(user0).approve(routerAgent, 2n * depositValue);
+
+            // user0 sets operator and deposit tokens two times
+            await router.connect(user0).setOperator(operator, true);
+            await router.connect(operator).requestDeposit(depositValue, user1, user0, USDC);
+            await router.connect(user0).requestDeposit(depositValue, user1, user0, USDC);
+
+            const shares = 100n * 10n ** 18n;
+            expect(await rebaseToken.balanceOf(user1)).to.be.equal(2n * shares);
+
+            // user1 request redeem
+            expect(await USDC.balanceOf(user1)).to.be.equal(0);
+
+            await router.connect(user1).redeemImmediately(shares, user1, user1, USDC);
+            expect(await rebaseToken.balanceOf(user1)).to.be.equal(shares);
+            expect(await USDC.balanceOf(user1)).to.be.equal(depositValue);
+            expect(await USDC.balanceOf(user2)).to.be.equal(0);
+
+            // operator requests redeem in behalf of user1 and gives tokens to user2
+            await router.connect(user1).setOperator(operator, true);
+            await router.connect(operator).redeemImmediately(shares, user2, user1, USDC);
+            expect(await rebaseToken.balanceOf(user1)).to.be.equal(0);
+            expect(await USDC.balanceOf(user1)).to.be.equal(depositValue);
+            expect(await USDC.balanceOf(user2)).to.be.equal(depositValue);
+        });
+
+        it('Should deposit and redeem in one transaction via router', async () => {
+            const {
+                router,
+                routerAgent,
+                USDC,
+                user0,
+                rebaseToken,
+                supplyManager,
+                moleculaPool,
+                poolKeeper,
+                randAccount,
+                poolOwner,
+            } = await loadFixture(deployNitrogenV11WithRouter);
+
+            const decimals: bigint = await USDC.decimals();
+            const depositValue = 100n * 10n ** decimals;
+
+            // Grand USD and approve tokens for routerAgent
+            await grantERC20(user0, USDC, depositValue);
+            await USDC.connect(user0).approve(routerAgent, depositValue);
+
+            // user0 deposits tokens
+            await router.connect(user0).requestDeposit(depositValue, user0, user0, USDC);
+            const shares = 100n * 10n ** 18n;
+            expect(await rebaseToken.balanceOf(user0)).to.be.equal(shares);
+
+            // user0 request redeem
+            let tx = await router.connect(user0).redeemImmediately(shares / 2n, user0, user0, USDC);
+            await tx.wait();
+            let { operationId } = await findRequestRedeemEvent(tx);
+            await expect(tx)
+                .to.emit(supplyManager, 'Redeem')
+                .withArgs([operationId], [depositValue / 2n]);
+
+            // check balance
+            expect(await rebaseToken.balanceOf(user0)).to.be.equal(shares / 2n);
+            expect(await USDC.balanceOf(user0)).to.be.equal(depositValue / 2n);
+
+            // get rid of USDC from moleculaPool
+            await moleculaPool.connect(poolOwner).addInWhiteList(USDC.getAddress());
+            const encodedTransfer = USDC.interface.encodeFunctionData('transfer', [
+                randAccount.address,
+                await USDC.balanceOf(moleculaPool.getAddress()),
+            ]);
+            await moleculaPool.connect(poolKeeper).execute(USDC.getAddress(), encodedTransfer);
+
+            // user0 request redeem
+            tx = await router.connect(user0).requestRedeem(shares / 2n, user0, user0, USDC);
+            await tx.wait();
+            const eventData = await findRequestRedeemEvent(tx);
+            operationId = eventData.operationId;
+            expect(await rebaseToken.balanceOf(user0)).to.be.equal(0);
+            expect(await USDC.balanceOf(user0)).to.be.equal(depositValue / 2n);
+
+            // Return USDC tokens to moleculaPool
+            await USDC.connect(randAccount).transfer(
+                moleculaPool.getAddress(),
+                await USDC.balanceOf(randAccount),
+            );
+
+            // user0 redeems their tokens.
+            await moleculaPool.connect(user0).redeem([operationId]);
+            expect(await rebaseToken.balanceOf(user0)).to.be.equal(0);
+            expect(await USDC.balanceOf(user0)).to.be.equal(50_000_000);
+
+            // user0 confirms redeem.
+            await router.connect(user0).confirmRedeem(operationId);
+            expect(await USDC.balanceOf(user0)).to.be.equal(50_000_000 + 33_333_333);
+        });
+
+        it('Test min deposit value', async () => {
+            const { router, routerAgent, USDC, user0, rebaseToken } = await loadFixture(
+                deployNitrogenV11WithRouter,
+            );
+
+            const decimals: bigint = await USDC.decimals();
+            const depositValue = 5n * 10n ** (decimals - 1n);
+
+            // Grand USD and approve tokens for routerAgent
+            await grantERC20(user0, USDC, depositValue);
+            await USDC.connect(user0).approve(routerAgent, depositValue);
+
+            // Fail to deposit, set new min deposit value and deposit
+            await expect(
+                router.connect(user0).requestDeposit(depositValue, user0, user0, USDC),
+            ).to.be.rejectedWith('ETooLowDepositValue(');
+            await router.setMinDepositValue(USDC, depositValue);
+            await router.connect(user0).requestDeposit(depositValue, user0, user0, USDC);
+            expect(await rebaseToken.balanceOf(user0)).to.be.greaterThan(0n);
+
+            // Fail to set min deposit value (no such token)
+            await expect(router.setMinDepositValue(user0.address, depositValue)).to.be.rejectedWith(
+                'ENoAgent(',
+            );
+        });
+
+        it('Should pause/unpause', async () => {
+            const { router, routerAgent, USDC, user0, rebaseToken, poolOwner, guardian } =
+                await loadFixture(deployNitrogenV11WithRouter);
+
+            const decimals: bigint = await USDC.decimals();
+            const depositValue = 100n * 10n ** decimals;
+
+            // Grand USD and approve tokens for routerAgent
+            const depositQty = 4n;
+            await grantERC20(user0, USDC, depositQty * depositValue);
+            await USDC.connect(user0).approve(routerAgent, depositQty * depositValue);
+
+            // pause/unpause request deposit for token
+            await router.connect(guardian).pauseTokenRequestDeposit(USDC);
+            await expect(
+                router.connect(user0).requestDeposit(depositValue, user0, user0, USDC),
+            ).to.be.rejectedWith('ETokenRequestDepositPaused(');
+            await router.connect(poolOwner).unpauseTokenRequestDeposit(USDC);
+            await router.connect(user0).requestDeposit(depositValue, user0, user0, USDC);
+
+            // pause/unpause request deposit for all tokens
+            await router.connect(guardian).pauseRequestDeposit();
+            await router.connect(guardian).pauseRequestDeposit(); // Must be ok if call again
+            await expect(
+                router.connect(user0).requestDeposit(depositValue, user0, user0, USDC),
+            ).to.be.rejectedWith('ERequestDepositPaused(');
+            await router.connect(poolOwner).unpauseRequestDeposit();
+            await router.connect(poolOwner).unpauseRequestDeposit(); // Must be ok if call again
+            await router.connect(user0).requestDeposit(depositValue, user0, user0, USDC);
+
+            // pause/unpause request deposit and redeem for token
+            await router.connect(guardian).pauseToken(USDC);
+            await expect(
+                router.connect(user0).requestDeposit(depositValue, user0, user0, USDC),
+            ).to.be.rejectedWith('ETokenRequestDepositPaused(');
+            await router.connect(poolOwner).unpauseToken(USDC);
+            await router.connect(user0).requestDeposit(depositValue, user0, user0, USDC);
+
+            // pause/unpause request deposit and redeem for all token
+            await router.connect(guardian).pauseAll();
+            await expect(
+                router.connect(user0).requestDeposit(depositValue, user0, user0, USDC),
+            ).to.be.rejectedWith('ERequestDepositPaused(');
+            await router.connect(poolOwner).unpauseAll();
+            await router.connect(user0).requestDeposit(depositValue, user0, user0, USDC);
+
+            const shares = 100n * 10n ** 18n;
+
+            // pause/unpause request redeem for token
+            await router.connect(guardian).pauseTokenRequestRedeem(USDC);
+            await expect(
+                router.connect(user0).redeemImmediately(shares, user0, user0, USDC),
+            ).to.be.rejectedWith('ETokenRequestRedeemPaused(');
+            await router.connect(poolOwner).unpauseTokenRequestRedeem(USDC);
+            await router.connect(user0).redeemImmediately(shares, user0, user0, USDC);
+
+            // pause/unpause request redeem for all token
+            await router.connect(guardian).pauseRequestRedeem();
+            await router.connect(guardian).pauseRequestRedeem(); // Must be ok if call again
+            await expect(
+                router.connect(user0).redeemImmediately(shares, user0, user0, USDC),
+            ).to.be.rejectedWith('ERequestRedeemPaused(');
+            await router.connect(poolOwner).unpauseRequestRedeem();
+            await router.connect(poolOwner).unpauseRequestRedeem(); // Must be ok if call again
+            await router.connect(user0).redeemImmediately(shares, user0, user0, USDC);
+
+            // pause/unpause request deposit and redeem for token
+            await router.connect(guardian).pauseToken(USDC);
+            await expect(
+                router.connect(user0).redeemImmediately(shares, user0, user0, USDC),
+            ).to.be.rejectedWith('ETokenRequestRedeemPaused(');
+            await router.connect(poolOwner).unpauseToken(USDC);
+            await router.connect(user0).redeemImmediately(shares, user0, user0, USDC);
+
+            // pause/unpause request deposit and redeem for all token
+            await router.connect(guardian).pauseAll();
+            await expect(
+                router.connect(user0).redeemImmediately(shares, user0, user0, USDC),
+            ).to.be.rejectedWith('ERequestRedeemPaused(');
+            await router.connect(poolOwner).unpauseAll();
+            await router.connect(user0).redeemImmediately(shares, user0, user0, USDC);
+
+            // check user0's balances
+            expect(await rebaseToken.balanceOf(user0)).to.be.equal(0);
+            expect(await USDC.balanceOf(user0)).to.be.equal(depositQty * depositValue);
+        });
+
+        it('Should set parameters', async () => {
+            const { router, user0, user1, rebaseToken, poolOwner } = await loadFixture(
+                deployNitrogenV11WithRouter,
+            );
+
+            await router.callRebaseToken(
+                rebaseToken.interface.encodeFunctionData('setAccountant', [user0.address]),
+            );
+            expect(await rebaseToken.accountant()).to.be.equal(user0);
+
+            await router.callRebaseToken(
+                rebaseToken.interface.encodeFunctionData('setOracle', [user1.address]),
+            );
+            expect(await rebaseToken.oracle()).to.be.equal(user1);
+
+            await router.callRebaseToken(
+                rebaseToken.interface.encodeFunctionData('setMinDepositValue', [123]),
+            );
+            expect(await rebaseToken.minDepositValue()).to.be.equal(123);
+
+            await router.callRebaseToken(
+                rebaseToken.interface.encodeFunctionData('setMinRedeemValue', [1234]),
+            );
+            expect(await rebaseToken.minRedeemValue()).to.be.equal(1234);
+
+            await expect(
+                router
+                    .connect(poolOwner)
+                    .callRebaseToken(
+                        rebaseToken.interface.encodeFunctionData('transferOwnership', [
+                            user0.address,
+                        ]),
+                    ),
+            ).to.be.rejectedWith('EBadSelector()');
+
+            await router.changeGuardian(user0);
+            expect(await router.guardian()).to.be.equal(user0);
+        });
+
+        it('Should remove token', async () => {
+            const { router, USDC, user0 } = await loadFixture(deployNitrogenV11WithRouter);
+
+            // Remove token
+            await router.removeToken(USDC);
+            await expect(router.removeToken(USDC)).to.be.rejectedWith('EAlreadyRemoved(');
+            await expect(
+                router.connect(user0).requestDeposit(1, user0, user0, USDC),
+            ).to.be.rejectedWith('ENoAgent(');
+            await expect(
+                router.connect(user0).redeemImmediately(1, user0, user0, USDC),
+            ).to.be.rejectedWith('ENoAgent(');
+        });
+
+        it('Distribute yield via router routerAgent', async () => {
+            const { routerAgent, rebaseToken, USDC, user1, supplyManager, moleculaPool } =
+                await loadFixture(deployNitrogenV11WithRouter);
+
+            // generate income
+            const decimals: bigint = await USDC.decimals();
+            const income = 100500n * 10n ** decimals;
+            await grantERC20(await moleculaPool.getAddress(), USDC, income);
+
+            // distribute yield
+            const party = {
+                parties: [
+                    {
+                        party: user1,
+                        portion: 10n ** 18n,
+                    },
+                ],
+                agent: await routerAgent.getAddress(),
+                ethValue: 0n,
+            };
+            expect(await rebaseToken.balanceOf(user1)).to.equal(0);
+            await supplyManager.distributeYield([party], 5000);
+            expect(await rebaseToken.balanceOf(user1)).to.greaterThan(0);
+        });
+
+        it('White list for agents in the router', async () => {
+            const { router, randAccount, supplyManager, DAI } = await loadFixture(
+                deployNitrogenV11WithRouter,
+            );
+
+            // Create new dai routerAgent and add it in router
+            const Agent = await ethers.getContractFactory('RouterAgent');
+            const daiAgent = await Agent.connect(randAccount).deploy(
+                randAccount.address,
+                router.getAddress(),
+                supplyManager,
+            );
+            await daiAgent.connect(randAccount).setErc20Token(DAI);
+            await router.addAgent(daiAgent.getAddress(), false, false, 10n ** 6n, 10n ** 18n);
+
+            // Remove dia routerAgent
+            await router.removeToken(DAI);
+
+            // Remove code hash from white list
+            const codeHash = keccak256((await daiAgent.getDeployedCode())!);
+            await router.setAgentCodeHashInWhiteList(codeHash, false);
+            await expect(router.setAgentCodeHashInWhiteList(codeHash, false)).to.be.rejectedWith(
+                'EAlreadySetStatus()',
+            );
+
+            // Fail to add dai routerAgent
+            await expect(
+                router.addAgent(daiAgent.getAddress(), false, false, 10n ** 6n, 10n ** 18n),
+            ).to.be.rejectedWith('AgentCodeHashIsNotInWhiteList()');
+        });
+
+        it('Test router.{deposit,redeem} errors', async () => {
+            const { user0, user1, router, routerAgent, USDC } = await loadFixture(
+                deployNitrogenV11WithRouter,
+            );
+
+            await expect(router.redeem([], [])).to.be.rejectedWith('EEmptyArray(');
+            await expect(router.confirmRedeem(123)).to.be.rejectedWith('EBadOperationParameters(');
+
+            const decimals: bigint = await USDC.decimals();
+            const depositValue = 100n * 10n ** decimals;
+
+            // Grand USD and approve tokens for routerAgent
+            await grantERC20(user0, USDC, depositValue);
+            await USDC.connect(user0).approve(routerAgent, depositValue);
+
+            await expect(
+                router.connect(user1).requestDeposit(depositValue, user1, user0, USDC),
+            ).to.be.rejectedWith('EBadOwner(');
+            await router.connect(user0).requestDeposit(depositValue, user0, user0, USDC);
+
+            const shares = 100n * 10n ** 18n;
+
+            await expect(
+                router.connect(user1).requestRedeem(shares, user1, user0, USDC),
+            ).to.be.rejectedWith('EBadOwner(');
+            await expect(
+                router.connect(user0).requestRedeem(1, user0, user0, USDC),
+            ).to.be.rejectedWith('ETooLowRedeemValue(');
+
+            const tx = await router
+                .connect(user0)
+                .requestRedeem(ethers.MaxUint256, user0, user0, USDC);
+            const operationId0 = (await findRequestRedeemEvent(tx)).operationId;
+
+            await expect(router.redeem([operationId0], [1])).to.be.rejectedWith('EBadSender(');
+        });
+
+        it('Test router errors', async () => {
+            const { router, supplyManager, routerAgent, randAccount, USDC, DAI, rebaseToken } =
+                await loadFixture(deployNitrogenV11WithRouter);
+
+            // Create new dai routerAgent
+            const Agent = await ethers.getContractFactory('RouterAgent');
+            const daiAgent = await Agent.connect(randAccount).deploy(
+                randAccount.address,
+                router.getAddress(),
+                supplyManager,
+            );
+            // await daiAgent.connect(randAccount).setErc20Token(DAI);
+            await expect(
+                router
+                    .connect(randAccount)
+                    .addAgent(daiAgent.getAddress(), false, false, 10n ** 6n, 10n ** 18n),
+            ).to.be.rejectedWith('OwnableUnauthorizedAccount(');
+            await expect(
+                router.addAgent(daiAgent.getAddress(), false, false, 10n ** 6n, 10n ** 18n),
+            ).to.be.rejectedWith('EZeroAddress(');
+            await expect(
+                router.addAgent(routerAgent.getAddress(), false, false, 10n ** 6n, 10n ** 18n),
+            ).to.be.rejectedWith('EAlreadyHasToken(');
+
+            await expect(router.connect(randAccount).callRebaseToken('0x')).to.be.rejectedWith(
+                'OwnableUnauthorizedAccount(',
+            );
+
+            await expect(
+                router.connect(randAccount).setMinDepositValue(USDC, 0),
+            ).to.be.rejectedWith('OwnableUnauthorizedAccount(');
+            await expect(router.connect(randAccount).removeToken(USDC)).to.be.rejectedWith(
+                'OwnableUnauthorizedAccount(',
+            );
+
+            await expect(
+                router.callRebaseToken(
+                    rebaseToken.interface.encodeFunctionData('renounceOwnership'),
+                ),
+            ).to.be.rejectedWith('EBadSelector(');
+            await expect(
+                router.callRebaseToken(
+                    rebaseToken.interface.encodeFunctionData('mint', [ethers.ZeroAddress, 0]),
+                ),
+            ).to.be.rejectedWith('EBadSelector(');
+            await expect(
+                router.callRebaseToken(
+                    rebaseToken.interface.encodeFunctionData('burn', [ethers.ZeroAddress, 0]),
+                ),
+            ).to.be.rejectedWith('EBadSelector(');
+
+            await expect(router.connect(randAccount).changeGuardian(USDC)).to.be.rejectedWith(
+                'OwnableUnauthorizedAccount(',
+            );
+            await expect(router.changeGuardian(ethers.ZeroAddress)).to.be.rejectedWith(
+                'EZeroAddress(',
+            );
+
+            await expect(router.connect(randAccount).pauseRequestDeposit()).to.be.rejectedWith(
+                'EBadSender(',
+            );
+            await expect(router.connect(randAccount).unpauseRequestDeposit()).to.be.rejectedWith(
+                'OwnableUnauthorizedAccount(',
+            );
+
+            await expect(router.connect(randAccount).pauseRequestRedeem()).to.be.rejectedWith(
+                'EBadSender(',
+            );
+            await expect(router.connect(randAccount).unpauseRequestRedeem()).to.be.rejectedWith(
+                'OwnableUnauthorizedAccount(',
+            );
+
+            await expect(router.connect(randAccount).pauseAll()).to.be.rejectedWith('EBadSender(');
+            await expect(router.connect(randAccount).unpauseAll()).to.be.rejectedWith(
+                'OwnableUnauthorizedAccount(',
+            );
+
+            await expect(
+                router.connect(randAccount).pauseTokenRequestDeposit(USDC),
+            ).to.be.rejectedWith('EBadSender(');
+            await expect(
+                router.connect(randAccount).unpauseTokenRequestDeposit(USDC),
+            ).to.be.rejectedWith('OwnableUnauthorizedAccount(');
+
+            await expect(
+                router.connect(randAccount).pauseTokenRequestRedeem(USDC),
+            ).to.be.rejectedWith('EBadSender(');
+            await expect(
+                router.connect(randAccount).unpauseTokenRequestRedeem(USDC),
+            ).to.be.rejectedWith('OwnableUnauthorizedAccount(');
+
+            await expect(router.connect(randAccount).pauseToken(USDC)).to.be.rejectedWith(
+                'EBadSender(',
+            );
+            await expect(router.connect(randAccount).unpauseToken(USDC)).to.be.rejectedWith(
+                'OwnableUnauthorizedAccount(',
+            );
+
+            await expect(
+                router.connect(randAccount).setAgentCodeHashInWhiteList(ethers.ZeroHash, false),
+            ).to.be.rejectedWith('OwnableUnauthorizedAccount(');
+
+            await expect(router.pauseTokenRequestDeposit(DAI)).to.be.rejectedWith('ENoAgent(');
+            await expect(router.pauseTokenRequestRedeem(DAI)).to.be.rejectedWith('ENoAgent(');
+        });
+
+        it('Test routerAgent errors', async () => {
+            const { routerAgent, randAccount, USDC } = await loadFixture(
+                deployNitrogenV11WithRouter,
+            );
+
+            await expect(
+                routerAgent.connect(randAccount).setErc20Token(ethers.ZeroAddress),
+            ).to.be.rejectedWith('EZeroAddress()');
+            await expect(routerAgent.connect(randAccount).setErc20Token(USDC)).to.be.rejectedWith(
+                'OwnableUnauthorizedAccount(',
+            );
+            await expect(routerAgent.setErc20Token(USDC)).to.be.rejectedWith('EAlreadySetToken()');
+
+            await expect(
+                routerAgent.connect(randAccount).requestDeposit(0, ethers.ZeroAddress, 0),
+            ).to.be.rejectedWith('EBadSender(');
+            await expect(
+                routerAgent
+                    .connect(randAccount)
+                    .requestDeposit(0, ethers.ZeroAddress, 0, { value: 1n }),
+            ).to.be.rejectedWith('EMsgValueIsNotZero()');
+
+            await expect(routerAgent.connect(randAccount).requestRedeem(0, 0)).to.be.rejectedWith(
+                'EBadSender(',
+            );
+
+            await expect(
+                routerAgent
+                    .connect(randAccount)
+                    .redeem(ethers.ZeroAddress, [], [], 0, { value: 1n }),
+            ).to.be.rejectedWith('EMsgValueIsNotZero()');
+            await expect(
+                routerAgent.connect(randAccount).redeem(ethers.ZeroAddress, [], [], 0),
+            ).to.be.rejectedWith('EBadSender()');
+
+            await expect(
+                routerAgent.connect(randAccount).confirmRedeem(ethers.ZeroAddress, 0),
+            ).to.be.rejectedWith('EBadSender()');
+
+            await expect(
+                routerAgent.connect(randAccount).distribute([], [], { value: 1n }),
+            ).to.be.rejectedWith('EMsgValueIsNotZero()');
+            await expect(routerAgent.connect(randAccount).distribute([], [])).to.be.rejectedWith(
+                'EBadSender()',
+            );
         });
     });
 });

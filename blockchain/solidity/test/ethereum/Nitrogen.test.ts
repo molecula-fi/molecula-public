@@ -30,9 +30,9 @@ describe('Test Nitrogen solution', () => {
             expect(await supplyManager.owner()).to.equal(await poolOwner.getAddress());
             expect(await agent.owner()).to.equal(await poolOwner.getAddress());
             expect(await rebaseToken.owner()).to.equal(rebaseTokenOwner.address);
-            expect(await moleculaPool.totalSupply()).to.equal(100_000_000_000_000_000_000n);
-            expect(await supplyManager.totalSupply()).to.equal(100_000_000_000_000_000_000n);
-            expect(await supplyManager.getTotalPoolSupply()).to.equal(100_000_000_000_000_000_000n);
+            expect(await moleculaPool.totalSupply()).to.equal(100n * 10n ** 18n);
+            expect(await supplyManager.totalSupply()).to.equal(100n * 10n ** 18n);
+            expect(await supplyManager.getTotalPoolSupply()).to.equal(100n * 10n ** 18n);
         });
 
         it('Deposit and Income Flow', async () => {
@@ -143,9 +143,9 @@ describe('Test Nitrogen solution', () => {
             );
             expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY * 6n);
             expect(await moleculaPool.valueToRedeem()).to.equal(INITIAL_SUPPLY * 2n);
-            expect(await supplyManager.totalSupply()).to.equal(420_000_000_000_000_000_000n);
+            expect(await supplyManager.totalSupply()).to.equal(420n * 10n ** 18n);
             expect(await supplyManager.totalSharesSupply()).to.equal(
-                INITIAL_SUPPLY + secondShares + 60_000_000_000_000_000_000n,
+                INITIAL_SUPPLY + secondShares + 60n * 10n ** 18n,
             );
             expect(await supplyManager.totalSupply()).to.equal(
                 (await supplyManager.totalSharesSupply()) * 2n,
@@ -311,7 +311,7 @@ describe('Test Nitrogen solution', () => {
             const { supplyManager, agent, user1, rebaseToken, malicious, poolKeeper } =
                 await loadFixture(deployNitrogen);
 
-            const val = 100_000_000_000_000_000_000n;
+            const val = 100n * 10n ** 18n;
             expect(await supplyManager.totalSupply()).to.equal(val);
             expect(await supplyManager.totalSharesSupply()).to.equal(val);
             const DAI = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.DAI_ADDRESS);
@@ -331,7 +331,7 @@ describe('Test Nitrogen solution', () => {
                 parties: [
                     {
                         party: user1,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent,
@@ -573,7 +573,7 @@ describe('Test Nitrogen solution', () => {
                     await supplyManager.getAddress(),
                     'ETH TEST molecula',
                     'MTE',
-                    ethMainnetBetaConfig.DAI_TOKEN_DECIMALS,
+                    ethMainnetBetaConfig.MUSD_TOKEN_DECIMALS,
                     0,
                     1,
                 ),
@@ -586,7 +586,7 @@ describe('Test Nitrogen solution', () => {
                     await supplyManager.getAddress(),
                     'ETH TEST molecula',
                     'MTE',
-                    ethMainnetBetaConfig.DAI_TOKEN_DECIMALS,
+                    ethMainnetBetaConfig.MUSD_TOKEN_DECIMALS,
                     1,
                     0,
                 ),
@@ -679,7 +679,7 @@ describe('Test Nitrogen solution', () => {
                 parties: [
                     {
                         party: user1,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent,

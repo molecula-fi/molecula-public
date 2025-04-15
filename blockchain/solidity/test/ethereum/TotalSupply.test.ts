@@ -19,8 +19,8 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
             expect(await moleculaPool.owner()).to.equal(await poolOwner.getAddress());
             expect(await supplyManager.owner()).to.equal(await poolOwner.getAddress());
             expect(await agent.owner()).to.equal(await poolOwner.getAddress());
-            expect(await moleculaPool.totalSupply()).to.equal(100_000_000_000_000_000_000n);
-            expect(await supplyManager.totalSupply()).to.equal(100_000_000_000_000_000_000n);
+            expect(await moleculaPool.totalSupply()).to.equal(100n * 10n ** 18n);
+            expect(await supplyManager.totalSupply()).to.equal(100n * 10n ** 18n);
         });
         it('SupplyManager.totalSupply()', async () => {
             const { moleculaPool, supplyManager, rebaseToken, agent, user0, USDT } =
@@ -109,11 +109,11 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
                 parties: [
                     {
                         party: poolOwner,
-                        portion: 500_000_000_000_000_000n,
+                        portion: 500n * 10n ** 15n,
                     },
                     {
                         party: user1,
-                        portion: 500_000_000_000_000_000n,
+                        portion: 500n * 10n ** 15n,
                     },
                 ],
                 agent,
@@ -239,7 +239,7 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
                 parties: [
                     {
                         party: user0,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent: user0,
@@ -251,7 +251,7 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
                 parties: [
                     {
                         party: user0,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent,
@@ -262,7 +262,7 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
                 parties: [
                     {
                         party: user0,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent,
@@ -273,7 +273,7 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
                 parties: [
                     {
                         party: user0,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent: user1,

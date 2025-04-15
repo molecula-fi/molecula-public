@@ -10,7 +10,7 @@ import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 import { generateRandomWallet } from './Common';
 import { grantERC20 } from './grant';
 
-const INITIAL_SUPPLY = 100_000_000_000_000_000_000n;
+const INITIAL_SUPPLY = 100n * 10n ** 18n;
 
 export async function deployNitrogen() {
     // Contracts are deployed using the first signer/account by default
@@ -80,7 +80,7 @@ export async function deployNitrogen() {
 
     const rebaseTokenName = 'ETH TEST molecula';
     const rebaseTokenSymbol = 'MTE';
-    const rebaseTokenDecimals = ethMainnetBetaConfig.DAI_TOKEN_DECIMALS;
+    const rebaseTokenDecimals = ethMainnetBetaConfig.MUSD_TOKEN_DECIMALS;
     // deploy Rebase Token
     const RebaseToken = await ethers.getContractFactory('RebaseToken');
     const rebaseToken = await RebaseToken.connect(poolOwner).deploy(
@@ -92,7 +92,7 @@ export async function deployNitrogen() {
         rebaseTokenSymbol,
         rebaseTokenDecimals,
         10_000_000,
-        10_000_000_000_000_000_000n,
+        10n * 10n ** 18n,
     );
     expect(await rebaseToken.getAddress()).to.equal(rtFutureAddress);
     expect(await rebaseToken.name()).to.be.equal(rebaseTokenName);

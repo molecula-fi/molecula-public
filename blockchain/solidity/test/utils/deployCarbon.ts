@@ -8,7 +8,7 @@ import { tronMainnetBetaConfig } from '../../configs/tron/mainnetBetaTyped';
 import { generateRandomWallet } from './Common';
 import { grantERC20, grantETH } from './grant';
 
-export const INITIAL_SUPPLY = 100_000_000_000_000_000_000n;
+export const INITIAL_SUPPLY = 100n * 10n ** 18n;
 
 export async function deployCarbon() {
     // Contracts are deployed using the first signer/account by default

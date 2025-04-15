@@ -18,7 +18,7 @@ describe('Test SupplyManger yield', () => {
 
             // Create an array for users
             const users = [];
-            const portionPerUser = 2_000_000_000_000_000n; // Adjust portion as needed
+            const portionPerUser = 2n * 10n ** 15n; // Adjust portion as needed
 
             for (let i = 0; i < 500; i += 1) {
                 // console.log(i);
@@ -105,11 +105,11 @@ describe('Test SupplyManger yield', () => {
                 parties: [
                     {
                         party: user0,
-                        portion: 500_000_000_000_000_000n,
+                        portion: 500n * 10n ** 15n,
                     },
                     {
                         party: user1,
-                        portion: 500_000_000_000_000_000n,
+                        portion: 500n * 10n ** 15n,
                     },
                 ],
                 agent,
@@ -167,7 +167,7 @@ describe('Test SupplyManger yield', () => {
                 parties: [
                     {
                         party: caller,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent,

@@ -236,7 +236,7 @@ describe('Test Carbon', () => {
         it('Distribute yield', async () => {
             const { moleculaPool, supplyManager, agentLZ, user } = await loadFixture(deployCarbon);
 
-            const val = 100_000_000_000_000_000_000n;
+            const val = 100n * 10n ** 18n;
             expect(await supplyManager.totalSupply()).to.equal(val);
             expect(await supplyManager.totalSharesSupply()).to.equal(val);
             const DAI = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.DAI_ADDRESS);
@@ -255,7 +255,7 @@ describe('Test Carbon', () => {
                 parties: [
                     {
                         party: user!.address,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent: agentLZ,

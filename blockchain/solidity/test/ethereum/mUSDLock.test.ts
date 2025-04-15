@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { EventLog } from 'ethers';
 import { ethers } from 'hardhat';
 
-import type { MUSDLock, MockOracle, RebaseERC20 } from '../../typechain-types';
+import type { MUSDLock, Oracle, RebaseERC20 } from '../../typechain-types';
 
 describe('mUSDLock', () => {
     async function initContracts() {
@@ -12,7 +12,7 @@ describe('mUSDLock', () => {
         const user: HardhatEthersSigner = signers.at(0)!;
         const admin: HardhatEthersSigner = signers.at(1)!;
 
-        const oracle: MockOracle = await ethers.deployContract('MockOracle', [
+        const oracle: Oracle = await ethers.deployContract('Oracle', [
             100, // initialShares
             1000, // initialPool
             admin,
