@@ -51,6 +51,6 @@ export const tronMoleculaContractAddresses = {
             prod: MainProdContractsCarbon.tron.swftBridge as TronAddress,
             beta: MainBetaContractsCarbon.tron.swftBridge as TronAddress,
         },
-        [TronChainIDs.Shasta]: ContractsCarbon.tron.swftBridge as TronAddress,
+        [TronChainIDs.Shasta]: undefined,
     },
 } as const;

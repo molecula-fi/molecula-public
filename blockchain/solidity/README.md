@@ -18,7 +18,7 @@ yarn compile
 
 ### How to deploy contracts to ethereum (mainnet/sepolia) and tron (mainnet/shasta) networks.
 
-1.  Set `POOL_KEEPER`, `DEPLOYER_ADDRESS`, `OWNER` and `GUARDIAN_ADDRESS` in [eth sepolia config](./configs/ethereum/sepoliaTyped.ts),
+1.  Set `POOL_KEEPER`, `OWNER` and `GUARDIAN_ADDRESS` in [eth sepolia config](./configs/ethereum/sepoliaTyped.ts),
     [eth mainnet prod config](./configs/ethereum/mainnetProdTyped.ts) or
     [eth mainnet beta config](./configs/ethereum/mainnetBetaTyped.ts) configs.
 

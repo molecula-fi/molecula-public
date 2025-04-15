@@ -2,11 +2,11 @@ import type { AddressLike } from 'ethers';
 
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import type { EVMAddress, NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
-import { getConfig, increaseBalance, unitePool20And4626, getNonce } from '../../utils/deployUtils';
+import { getConfig, increaseBalance, getNonce } from '../../utils/deployUtils';
 
 async function deploymUSDe(
     hre: HardhatRuntimeEnvironment,
@@ -37,12 +37,12 @@ export async function deployCore(
     // Pool keeper is already deployed
     const poolKeeper = config.POOL_KEEPER;
 
-    // add mUSDe to pools20
-    const pools20 = config.POOLS20;
+    // add mUSDe to token array
+    const tokens = config.TOKENS;
     if (mUSDe !== '') {
-        pools20.push({ pool: mUSDe, n: 0 });
+        tokens.push({ token: mUSDe as EVMAddress, n: 0 });
     }
-    console.log('pools20:', pools20);
+    console.log('tokens:', tokens);
 
     // deploy moleculaPool
     const supplyManagerFutureAddress = hre.ethers.getCreateAddress({
@@ -55,7 +55,7 @@ export async function deployCore(
     }
     const moleculaPool = await MoleculaPoolFactory.deploy(
         account.address,
-        unitePool20And4626(pools20, config.POOLS4626),
+        tokens.map(x => x.token),
         poolKeeper,
         supplyManagerFutureAddress,
         config.WHITE_LIST,

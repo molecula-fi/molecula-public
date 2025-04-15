@@ -1,11 +1,10 @@
 import { Options } from '@layerzerolabs/lz-v2-utilities';
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
-import TronWeb from 'tronweb';
 
 import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
-import { getTronNetworkConfig, getConfig, getNonce } from '../../utils/deployUtils';
+import { getConfig, getNonce, getEthereumAddress } from '../../utils/deployUtils';
 
 export async function deployCarbon(
     hre: HardhatRuntimeEnvironment,
@@ -80,15 +79,7 @@ export async function setAccountant(
         accountantLZ: string;
     },
 ) {
-    const config = getTronNetworkConfig(environment);
-
-    // Create TronWeb instance
-    const tronWeb = new TronWeb({
-        fullHost: config.RPC_URL,
-    });
-    const accountantLzHexaDecimal = tronWeb.address
-        .toHex(contracts.accountantLZ)
-        .replace(/^(41)/, '0x') as string;
+    const accountantLzHexaDecimal = getEthereumAddress(environment, contracts.accountantLZ);
 
     const agentLZContract = await hre.ethers.getContractAt('AgentLZ', contracts.agentLZ);
 

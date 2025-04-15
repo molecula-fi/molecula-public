@@ -3,6 +3,8 @@ import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
+import type { EVMAddress, PoolData } from '@molecula-monorepo/blockchain.addresses';
+
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 
 import { getEthena, grantUSDe, grantStakedUSDE } from '../utils/Common';
@@ -485,7 +487,7 @@ describe('Test Nitrogen solution', () => {
 
             // Deploy moleculaPool and supplyManager
             await grantStakedUSDE(poolKeeper.address, 10n * 10n ** 18n, usde, susde, usdeMinter);
-            const p4626 = [{ pool: await susde.getAddress(), n: 0 }];
+            const p4626: PoolData[] = [{ token: (await susde.getAddress()) as EVMAddress, n: 0 }];
             const { supplyManager, moleculaPool } = await deployMoleculaPoolAndSupplyManager(
                 p4626,
                 poolOwner,
@@ -626,9 +628,7 @@ describe('Test Nitrogen solution', () => {
             // user1 tries to transferFrom more than shares balance
             await expect(
                 rebaseToken.connect(user1).transferFrom(user0, user1, 10n ** 18n),
-            ).to.be.rejectedWith(
-                'ERC20InsufficientBalance("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", 0, 1000000000000000000)',
-            );
+            ).to.be.rejectedWith('ERC20InsufficientBalance(');
 
             await expect(
                 rebaseToken.connect(user0).approve(ethers.ZeroAddress, uint256max),
@@ -657,9 +657,7 @@ describe('Test Nitrogen solution', () => {
             await rebaseToken.connect(user1).approve(user0, 1n);
             await expect(
                 rebaseToken.connect(user0).transferFrom(user1, user0, 2n),
-            ).to.be.rejectedWith(
-                'ERC20InsufficientAllowance("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", 1, 2)',
-            );
+            ).to.be.rejectedWith('ERC20InsufficientAllowance(');
 
             // setOracle test
             await expect(

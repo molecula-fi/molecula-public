@@ -1,9 +1,14 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import { type NetworkType, type ContractsNitrogen } from '@molecula-monorepo/blockchain.addresses';
+import {
+    type NetworkType,
+    type ContractsNitrogen,
+    type EVMAddress,
+    type PoolData,
+} from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
-import { getConfig, readFromFile, unitePool20And4626 } from '../../utils/deployUtils';
+import { getConfig, readFromFile } from '../../utils/deployUtils';
 
 export async function deployMoleculaPoolTreasury(
     hre: HardhatRuntimeEnvironment,
@@ -14,15 +19,15 @@ export async function deployMoleculaPoolTreasury(
         `${environment}/contracts_nitrogen.json`,
     );
 
-    const pools20 = [...config.POOLS20];
+    const tokens: PoolData[] = [...config.TOKENS];
     if (contractsNitrogen.eth.mUSDe !== '') {
-        pools20.push({ pool: contractsNitrogen.eth.mUSDe, n: 0 });
+        tokens.push({ token: contractsNitrogen.eth.mUSDe as EVMAddress, n: 0 });
     }
 
     const MoleculaPoolTreasury = await hre.ethers.getContractFactory('MoleculaPoolTreasury');
     const moleculaPoolTreasury = await MoleculaPoolTreasury.deploy(
         config.OWNER, // Note: owner is not deploy wallet
-        unitePool20And4626(pools20, config.POOLS4626),
+        tokens.map(x => x.token),
         config.POOL_KEEPER,
         contractsNitrogen.eth.supplyManager,
         config.WHITE_LIST,

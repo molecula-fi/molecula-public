@@ -3,6 +3,8 @@ import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signer
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
+import type { PoolData } from '@molecula-monorepo/blockchain.addresses';
+
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 
 import { generateRandomWallet } from './Common';
@@ -16,8 +18,8 @@ export async function deployNitrogen() {
     const poolKeeper = await generateRandomWallet();
     const poolOwner = signers.at(0)!;
     const rebaseTokenOwner = signers.at(1)!;
-    const user0 = signers.at(2)!;
-    const user1 = signers.at(3)!;
+    const user0 = await generateRandomWallet();
+    const user1 = await generateRandomWallet();
     const caller = signers.at(4)!;
     const malicious = signers.at(5)!;
     const controller = signers.at(6)!;
@@ -48,8 +50,8 @@ export async function deployNitrogen() {
     const moleculaPool = await MoleculaPool.connect(poolOwner).deploy(
         poolOwner.address,
         poolOwner.address,
-        ethMainnetBetaConfig.POOLS20,
-        ethMainnetBetaConfig.POOLS4626,
+        ethMainnetBetaConfig.TOKENS.map(x => ({ pool: x.token, n: x.n })),
+        [],
         poolKeeper,
         smFutureAddress,
     );
@@ -100,6 +102,8 @@ export async function deployNitrogen() {
     // set agent
     await supplyManager.setAgent(await agent.getAddress(), true);
 
+    const poolKeeperSigner = await ethers.getImpersonatedSigner(await poolKeeper.getAddress());
+
     return {
         moleculaPool,
         agent,
@@ -114,6 +118,7 @@ export async function deployNitrogen() {
         controller,
         USDT,
         poolKeeper,
+        poolKeeperSigner,
     };
 }
 
@@ -140,7 +145,7 @@ export async function deployMoleculaPool() {
 }
 
 export async function deployMoleculaPoolAndSupplyManager(
-    p4626: { pool: string; n: number }[],
+    p4626: PoolData[],
     poolOwner: HardhatEthersSigner,
     poolKeeper: HardhatEthersSigner,
 ) {
@@ -153,7 +158,7 @@ export async function deployMoleculaPoolAndSupplyManager(
         poolOwner.address,
         poolOwner.address,
         [],
-        p4626,
+        p4626.map(x => ({ pool: x.token, n: x.n })),
         poolKeeper.address,
         smFutureAddress,
     );

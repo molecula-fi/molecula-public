@@ -42,8 +42,8 @@ export async function deployCarbon() {
     const moleculaPool = await MoleculaPool.connect(owner!).deploy(
         owner!.address,
         owner!.address,
-        ethMainnetBetaConfig.POOLS20,
-        ethMainnetBetaConfig.POOLS4626,
+        ethMainnetBetaConfig.TOKENS.map(x => ({ pool: x.token, n: x.n })),
+        [],
         poolKeeper.address,
         smFutureAddress,
     );

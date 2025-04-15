@@ -1,7 +1,7 @@
 {
     "name": "@molecula-monorepo/common.utilities",
     "description": "Molecula-monorepo utilities",
-    "version": "0.14.0",
+    "version": "0.15.0",
     "private": true,
     "scripts": {
         "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version",

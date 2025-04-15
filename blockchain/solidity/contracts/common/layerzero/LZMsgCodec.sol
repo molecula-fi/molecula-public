@@ -50,7 +50,7 @@ library LZMsgCodec {
         bytes calldata message
     ) internal pure returns (uint256 value1, uint256 value2) {
         if (message.length != 64) revert EMalformedMasssage();
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             value1 := calldataload(add(message.offset, 0))
             value2 := calldataload(add(message.offset, 32))
@@ -123,7 +123,7 @@ library LZMsgCodec {
         returns (uint256 requestId, uint256 shares, uint256 totalValue, uint256 totalShares)
     {
         if (message.length != 128) revert EMalformedMasssage();
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             requestId := calldataload(add(message.offset, 0))
             shares := calldataload(add(message.offset, 32))
@@ -147,7 +147,7 @@ library LZMsgCodec {
 
         message = new bytes(1 + usersLen * 20 + usersLen * 32);
         message[0] = bytes1(DISTRIBUTE_YIELD);
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             let dataPtr := add(message, 32) // Pointer to the start of message data
             let offset := 1 // Skip the first byte (message type)
@@ -189,7 +189,7 @@ library LZMsgCodec {
         if (length % 52 != 0) revert EMalformedMasssage();
         users = new address[](length);
         shares = new uint256[](length);
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             let dataPtr := add(message, 32) // message already starts at users[0]
 
@@ -227,7 +227,7 @@ library LZMsgCodec {
     ) internal pure returns (bytes memory message) {
         address[] memory users = new address[](count);
         uint256[] memory shares = new uint256[](count);
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             let usersPtr := add(users, 32) // Pointer to the first element in users[]
             let sharesPtr := add(shares, 32) // Pointer to the first element in shares[]
@@ -288,7 +288,7 @@ library LZMsgCodec {
         uint256 numEntries = message.length / 64;
         requestIds = new uint256[](numEntries);
         values = new uint256[](numEntries);
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             let dataPtr := add(message, 32) // Start of the actual data
 
@@ -324,7 +324,7 @@ library LZMsgCodec {
     ) internal pure returns (bytes memory message) {
         uint256[] memory requestId = new uint256[](idsCount);
         uint256[] memory values = new uint256[](idsCount);
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             let requestIdPtr := add(requestId, 32) // Pointer to first element in requestId[]
             let valuesPtr := add(values, 32) // Pointer to first element in values[]
@@ -361,7 +361,7 @@ library LZMsgCodec {
 
         message = new bytes(1 + 32 + 32 + usersLen * 20 + usersLen * 32);
         message[0] = bytes1(DISTRIBUTE_YIELD_AND_UPDATE_ORACLE);
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             let offset := 1 // Skip message type byte
             let dataPtr := add(message, 32)
@@ -418,7 +418,7 @@ library LZMsgCodec {
 
         users = new address[](numUsers);
         shares = new uint256[](numUsers);
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             let dataPtr := add(message, 32)
             totalValue := mload(dataPtr)
@@ -457,7 +457,7 @@ library LZMsgCodec {
     ) internal pure returns (bytes memory message) {
         address[] memory users = new address[](count);
         uint256[] memory shares = new uint256[](count);
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             let usersPtr := add(users, 32) // Get pointer to first element in users[]
             let sharesPtr := add(shares, 32) // Get pointer to first element in shares[]

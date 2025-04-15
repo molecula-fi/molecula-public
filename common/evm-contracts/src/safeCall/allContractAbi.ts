@@ -13,9 +13,10 @@ import {
     MoleculaPoolTreasury__factory,
     MUSDE__factory,
     MUSDLock__factory,
-    Oracle__factory,
+    IOracle__factory,
     RebaseToken__factory,
     SupplyManager__factory,
+    UsdtOFT__factory,
 } from '@molecula-monorepo/solidity/typechain-types';
 
 import {
@@ -25,7 +26,6 @@ import {
     ERC4626__factory,
     SparkPool__factory,
     StakedUSDe__factory,
-    SwftSwap__factory,
     SavingsUSDS__factory,
     SFrxUSD__factory,
 } from '../../typechain';
@@ -44,18 +44,18 @@ const EvmAllContractsAbi: Record<ContractNameType, readonly JsonFragment[]> = {
     MoleculaPool: MoleculaPool__factory.abi,
     MoleculaPoolTreasury: MoleculaPoolTreasury__factory.abi,
     MUSDLock: MUSDLock__factory.abi,
-    Oracle: Oracle__factory.abi,
+    IOracle: IOracle__factory.abi,
     AccountantAgent: AccountantAgent__factory.abi,
     StakedUSDe: StakedUSDe__factory.abi,
     SavingsUSDS: SavingsUSDS__factory.abi,
     SFrxUSD: SFrxUSD__factory.abi,
-    SwftSwap: SwftSwap__factory.abi,
     AavePool: AavePool__factory.abi,
     SparkPool: SparkPool__factory.abi,
     EndpointLZ: ILayerZeroEndpointV2__factory.abi,
     SwapCurve: Curve__factory.abi,
     ICurveStableSwapFactoryNG: ICurveStableSwapFactoryNG__factory.abi,
     ICurveStableSwapNG: ICurveStableSwapFactoryNG__factory.abi,
+    UsdtOFT: UsdtOFT__factory.abi,
 } as const;
 
 export const allContractAbi: JsonFragment[][] = Object.values(

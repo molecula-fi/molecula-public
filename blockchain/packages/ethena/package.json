@@ -1,7 +1,7 @@
 {
     "name": "@molecula-monorepo/blockchain.ethena",
     "description": "A package responsible for compiling ethena contracts",
-    "version": "0.14.0",
+    "version": "0.15.0",
     "private": true,
     "license": "GPL-3.0-only",
     "main": "src/index.ts",
@@ -10,13 +10,14 @@
         "compile": "hardhat compile",
         "eslint:check": "eslint . --resolve-plugins-relative-to .",
         "eslint:fix": "eslint --fix . --resolve-plugins-relative-to .",
+        "ethena:deploy:devnet": "yarn compile && hardhat ethenaScope deployEthena --network sepolia --environment devnet",
+        "ethena:susde:mint:devnet": "yarn compile && hardhat ethenaScope mintsUSDe --network sepolia --environment devnet",
+        "ethena:usde:mint:devnet": "yarn compile && hardhat ethenaScope mintUSDe --network sepolia --environment devnet",
+        "fix:code": "yarn eslint:fix && yarn prettier:fix",
         "prettier:check": "prettier --check .",
         "prettier:fix": "prettier --write .",
-        "susde:deposit": "yarn --cwd ../../.. run compile:all && ts-node --files scripts/stakeUSDe.ts",
-        "susde:previewRedeem": "yarn --cwd ../../.. run compile:all && ts-node --files scripts/stakeUSDe-previewRedeem.ts",
         "test": "hardhat test",
-        "tsc": "tsc",
-        "usde:mint": "yarn --cwd ../../.. run compile:all && ts-node --files scripts/mintUSDe.ts"
+        "tsc": "tsc"
     },
     "dependencies": {
         "@molecula-monorepo/solidity": "*",

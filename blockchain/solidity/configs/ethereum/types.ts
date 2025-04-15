@@ -1,10 +1,7 @@
+import type { PoolData } from '@molecula-monorepo/blockchain.addresses';
 import type { EVMAddress } from '@molecula-monorepo/common.evm-utilities';
 
 export type EthereumNetworkConfig = {
-    JSON_RPC: string;
-    JSON_RPC_ID: number;
-    DEPLOYER_ADDRESS: EVMAddress;
-
     // LAYER ZERO
     LAYER_ZERO_ENDPOINT: EVMAddress;
     LAYER_ZERO_TRON_EID: number;
@@ -28,8 +25,7 @@ export type EthereumNetworkConfig = {
     INITIAL_USDT_SUPPLY: bigint;
     DAI_ADDRESS: EVMAddress;
 
-    POOLS20: { pool: string; n: number }[];
-    POOLS4626: { pool: string; n: number }[];
+    TOKENS: PoolData[];
     WHITE_LIST: string[];
 
     GUARDIAN_ADDRESS: EVMAddress;

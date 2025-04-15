@@ -5,6 +5,7 @@ import { readFile, writeFileSync, mkdirSync, existsSync } from 'fs';
 
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import * as path from 'path';
+import TronWeb from 'tronweb';
 
 import {
     NetworkType,
@@ -138,17 +139,6 @@ export function getTronNetworkConfig(network: NetworkType) {
     }
 }
 
-export function unitePool20And4626(
-    pool20: { pool: string; n: number }[],
-    pool4626: { pool: string; n: number }[],
-) {
-    const pool: string[] = [];
-    [...pool20, ...pool4626].forEach(p => {
-        pool.push(p.pool);
-    });
-    return pool;
-}
-
 export async function getConfig(hre: HardhatRuntimeEnvironment, network: NetworkType) {
     console.log('Network:', network);
 
@@ -156,12 +146,6 @@ export async function getConfig(hre: HardhatRuntimeEnvironment, network: Network
 
     const USDT = await hre.ethers.getContractAt('IERC20', config.USDT_ADDRESS);
     const account = (await hre.ethers.getSigners())[0]!;
-
-    if (account.address !== config.DEPLOYER_ADDRESS) {
-        console.log(
-            `Incorrect DEPLOYER_ADDRESS in network config, expected ${account.address} to equal ${config.DEPLOYER_ADDRESS}`,
-        );
-    }
 
     // print wallet balances
     console.log('Wallet address: ', account.address);
@@ -206,4 +190,15 @@ export async function increaseBalance(
 export async function getDeployerPrivateKey(hre: HardhatRuntimeEnvironment) {
     const accounts = hre.network.config.accounts as string[];
     return accounts[0] || '';
+}
+
+export function getEthereumAddress(environment: NetworkType, contract: string) {
+    const config = getTronNetworkConfig(environment);
+
+    // Create TronWeb instance
+    const tronWeb = new TronWeb({
+        fullHost: config.RPC_URL,
+    });
+
+    return tronWeb.address.toHex(contract).replace(/^(41)/, '0x') as string;
 }

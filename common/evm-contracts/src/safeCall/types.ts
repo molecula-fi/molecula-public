@@ -8,7 +8,7 @@ import type {
     MUSDLock,
     RebaseToken,
     SupplyManager,
-    Oracle,
+    IOracle,
     AccountantAgent,
     ILayerZeroEndpointV2,
     MUSDE,
@@ -18,13 +18,13 @@ import type {
     SavingsUSDS,
     SFrxUSD,
     AavePool,
-    SwftSwap,
     PostfixOverrides,
     IERC20Basic,
     ICurveStableSwapFactoryNG,
     ICurveStableSwapNG,
     IERC20Metadata,
     SparkPool,
+    UsdtOFT,
 } from '../types';
 
 type AnyFunction = () => void;
@@ -66,16 +66,16 @@ export type AllEvmContracts =
     | RebaseToken
     | MUSDLock
     | SupplyManager
-    | Oracle
+    | IOracle
     | StakedUSDe
     | SavingsUSDS
     | SFrxUSD
     | ILayerZeroEndpointV2
     | MUSDE
-    | SwftSwap
     | AavePool
     | SparkPool
     | ICurveStableSwapFactoryNG
-    | ICurveStableSwapNG;
+    | ICurveStableSwapNG
+    | UsdtOFT;
 
 export type ProviderOrRunner = Provider | ContractRunner;

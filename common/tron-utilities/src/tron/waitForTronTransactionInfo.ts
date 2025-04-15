@@ -5,6 +5,21 @@ import { Async, Log } from '@molecula-monorepo/common.utilities';
 
 const log = new Log('waitForTronTransaction');
 
+interface Options {
+    /**
+     * Use it to silent debug info.
+     *
+     * @defaultValue - false
+     */
+    silent?: boolean;
+    /**
+     * Whether to print energy info or not.
+     *
+     * @defaultValue - false
+     */
+    printEnergyInfo?: boolean;
+}
+
 /**
  * A utility to wait for the Tron transaction to succeed.
  * @param tronWeb - a TronWeb provider to interact with Tron.
@@ -15,8 +30,10 @@ const log = new Log('waitForTronTransaction');
 export async function waitForTronTransactionInfo(
     tronWeb: TronWeb,
     transactionId: string,
-    printEnergyInfo: boolean = false,
+    options: Options = {},
+    // printEnergyInfo: boolean = false,
 ): Promise<Transaction> {
+    const { silent = false, printEnergyInfo = false } = options;
     // Get the transaction info
     let info: Transaction | undefined;
     try {
@@ -30,7 +47,9 @@ export async function waitForTronTransactionInfo(
 
     // Check if it has the "receipt"
     if (info && 'receipt' in info) {
-        log.debug('The awaited transaction info:', info);
+        if (!silent) {
+            log.debug('The awaited transaction info:', info);
+        }
 
         // Check if the transaction has succeeded
         if (info.receipt.result !== 'SUCCESS') {
@@ -56,5 +75,5 @@ export async function waitForTronTransactionInfo(
     await Async.timeout(3000);
 
     // Call again recursively
-    return waitForTronTransactionInfo(tronWeb, transactionId, printEnergyInfo);
+    return waitForTronTransactionInfo(tronWeb, transactionId, options);
 }

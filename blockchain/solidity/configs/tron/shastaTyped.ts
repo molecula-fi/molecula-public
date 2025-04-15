@@ -14,7 +14,7 @@ export const shastaConfig: TronNetworkConfig = {
 
     // System contracts
     USDT_ADDRESS: 'TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs',
-    USDT_OFT: 'TQ98oncUwBiBa5FUQwcrtv6zNr2QTGGkx4',
+    USDT_OFT: 'TKSnyHmNMFhU2vWp2zBDZE48b1gd54GBcs',
 
     // Authorized wallets
     OWNER: 'TNSphg4KJNTvhNzZZsvAXDpUESC11HT4T3',

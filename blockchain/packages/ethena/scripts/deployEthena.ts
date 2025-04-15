@@ -1,12 +1,12 @@
 /* eslint-disable camelcase */
-import type { HDNodeWallet } from 'ethers';
+import type { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import { StakedUSDeV2__factory, USDe__factory } from '../typechain-types';
+export async function deployEthena(hre: HardhatRuntimeEnvironment, cooldownDuration: bigint) {
+    const account = (await hre.ethers.getSigners())[0]!;
 
-export async function deployEthena(account: HDNodeWallet, cooldownDuration: number) {
     // Deploy USDe
-    const usdeFactory = new USDe__factory();
-    const usde = await usdeFactory.connect(account).deploy(account.address);
+    const usdeFactory = await hre.ethers.getContractFactory('USDe');
+    const usde = await usdeFactory.deploy(account.address);
     await usde.waitForDeployment();
     console.log('USDe address: ', await usde.getAddress());
 
@@ -15,10 +15,12 @@ export async function deployEthena(account: HDNodeWallet, cooldownDuration: numb
     console.log('USDe minter: ', await usde.minter());
 
     // Deploy sUSDe
-    const stakedUSDeV2Factory = new StakedUSDeV2__factory();
-    const stakedUSDeV2 = await stakedUSDeV2Factory
-        .connect(account)
-        .deploy(await usde.getAddress(), account.address, account.address);
+    const stakedUSDeV2Factory = await hre.ethers.getContractFactory('StakedUSDeV2');
+    const stakedUSDeV2 = await stakedUSDeV2Factory.deploy(
+        await usde.getAddress(),
+        account.address,
+        account.address,
+    );
     await stakedUSDeV2.waitForDeployment();
     console.log('StakedUSDeV2 address: ', await stakedUSDeV2.getAddress());
 

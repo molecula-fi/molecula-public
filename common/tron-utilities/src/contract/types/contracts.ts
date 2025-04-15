@@ -3,6 +3,7 @@ import type { JsonFragment } from 'ethers';
 import type { TronWeb } from 'tronweb';
 
 import type { TRC20 } from '@molecula-monorepo/common.tron-contracts';
+import { type UsdtOFT } from '@molecula-monorepo/solidity/typechain-types';
 import type { ILayerZeroEndpointV2 } from '@molecula-monorepo/solidity/typechain-types/@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces';
 
 import type { MUSDLock } from '@molecula-monorepo/solidity/typechain-types/contracts/common/mUSDLock.sol';
@@ -18,7 +19,8 @@ export type AllTronContracts =
     | Oracle
     | AccountantLZ
     | TRC20
-    | ILayerZeroEndpointV2;
+    | ILayerZeroEndpointV2
+    | UsdtOFT;
 
 export type TronContractParams = {
     client: TronWeb;

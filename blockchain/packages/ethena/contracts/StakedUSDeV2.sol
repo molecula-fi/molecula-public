@@ -17,7 +17,10 @@ import "./USDeSilo.sol";
  * The algorithm seeks to balance the stability of the protocol by:
  * - Funding the protocol's insurance fund and DAO activities.
  * - Rewarding stakers with a portion of the protocol's yield.
- * @dev If the cooldown duration is set to zero, the StakedUSDeV2 behavior changes to follow ERC4626 standard and disables cooldownShares and cooldownAssets methods. If cooldown duration is greater than zero, the ERC4626 withdrawal and redeem functions are disabled, breaking the ERC4626 standard, and enabling the cooldownShares and the cooldownAssets functions.
+ * @dev If the cooldown duration is set to zero, the StakedUSDeV2 behavior changes to follow ERC4626
+ *      standard and disables cooldownShares and cooldownAssets methods. If cooldown duration is 
+ *      greater than zero, the ERC4626 withdrawal and redeem functions are disabled, breaking
+ *      the ERC4626 standard, and enabling the cooldownShares and the cooldownAssets functions.
  */
 contract StakedUSDeV2 is IStakedUSDeCooldown, StakedUSDe {
   using SafeERC20 for IERC20;

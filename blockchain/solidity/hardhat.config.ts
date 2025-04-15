@@ -6,9 +6,7 @@ import '@nomicfoundation/hardhat-toolbox';
 import '@nomicfoundation/hardhat-ethers';
 import 'hardhat-gas-reporter';
 
-// import tasks
 import './tasks';
-// TODO resolve artifacts problem with tron deploy scripts
 import { tronMainnetProdConfig } from './configs/tron/mainnetProdTyped';
 import { shastaConfig } from './configs/tron/shastaTyped';
 
@@ -32,7 +30,16 @@ const config: HardhatUserConfig = {
                 settings: {
                     optimizer: {
                         enabled: true,
-                        runs: 400,
+                        runs: 200,
+                    },
+                },
+            },
+            {
+                version: '0.8.22', // using in tron contracts
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
                     },
                 },
             },
@@ -46,6 +53,44 @@ const config: HardhatUserConfig = {
                 },
             },
         ],
+        overrides: {
+            'contracts/solutions/Carbon/tron/AccountantLZ.sol': {
+                version: '0.8.23',
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+            'contracts/solutions/Carbon/tron/TronOracle.sol': {
+                version: '0.8.23',
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+            'contracts/solutions/Carbon/tron/RebaseTokenTron.sol': {
+                version: '0.8.23',
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+            'contracts/common/UsdtOFT.sol': {
+                version: '0.8.22',
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+        },
     },
     networks: {
         hardhat: {

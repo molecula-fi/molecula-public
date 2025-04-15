@@ -6,7 +6,7 @@ import {
     MUSDE__factory,
     MoleculaPool__factory,
     MUSDLock__factory,
-    Oracle__factory,
+    IOracle__factory,
     AccountantAgent__factory,
     ILayerZeroEndpointV2__factory,
     IERC20Basic__factory,
@@ -14,6 +14,7 @@ import {
     MoleculaPoolTreasury__factory,
     ICurveStableSwapFactoryNG__factory,
     ICurveStableSwapNG__factory,
+    UsdtOFT__factory,
 } from '@molecula-monorepo/solidity/typechain-types';
 
 import {
@@ -24,7 +25,6 @@ import {
     StakedUSDe__factory,
     SavingsUSDS__factory,
     SFrxUSD__factory,
-    SwftSwap__factory,
     Curve__factory,
 } from '../typechain';
 
@@ -39,11 +39,10 @@ import type {
     ERC4626,
     MUSDE,
     MUSDLock,
-    Oracle,
+    IOracle,
     AccountantAgent,
     MoleculaPool,
     MoleculaPoolTreasury,
-    SwftSwap,
     StakedUSDe,
     SavingsUSDS,
     SFrxUSD,
@@ -56,6 +55,7 @@ import type {
     Curve,
     ICurveStableSwapFactoryNG,
     ICurveStableSwapNG,
+    UsdtOFT,
 } from './types';
 
 export const EvmContractSafeFactory = {
@@ -165,10 +165,10 @@ export const EvmContractSafeFactory = {
             rpcProvider,
         );
     },
-    Oracle: (address: string, rpcProvider: ProviderOrRunner) => {
-        return new EvmContractSafe<Oracle>(
+    IOracle: (address: string, rpcProvider: ProviderOrRunner) => {
+        return new EvmContractSafe<IOracle>(
             {
-                factory: Oracle__factory,
+                factory: IOracle__factory,
                 address,
             },
             rpcProvider,
@@ -205,15 +205,6 @@ export const EvmContractSafeFactory = {
         return new EvmContractSafe<SFrxUSD>(
             {
                 factory: SFrxUSD__factory,
-                address,
-            },
-            rpcProvider,
-        );
-    },
-    SwftSwap: (address: string, rpcProvider: ProviderOrRunner) => {
-        return new EvmContractSafe<SwftSwap>(
-            {
-                factory: SwftSwap__factory,
                 address,
             },
             rpcProvider,
@@ -269,6 +260,15 @@ export const EvmContractSafeFactory = {
         return new EvmContractSafe<ICurveStableSwapNG>(
             {
                 factory: ICurveStableSwapNG__factory,
+                address,
+            },
+            rpcProvider,
+        );
+    },
+    UsdtOFT: (address: string, rpcProvider: ProviderOrRunner) => {
+        return new EvmContractSafe<UsdtOFT>(
+            {
+                factory: UsdtOFT__factory,
                 address,
             },
             rpcProvider,

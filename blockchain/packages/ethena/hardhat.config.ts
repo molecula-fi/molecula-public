@@ -6,6 +6,8 @@ import '@nomicfoundation/hardhat-toolbox';
 import '@nomicfoundation/hardhat-ethers';
 import 'hardhat-gas-reporter';
 
+import './tasks';
+
 dotenv.config({ path: '.env.test' });
 
 const config: HardhatUserConfig = {
@@ -28,6 +30,16 @@ const config: HardhatUserConfig = {
             forking: {
                 url: process.env.JSON_RPC_URL as string,
                 blockNumber: 21772906,
+            },
+        },
+        sepolia: {
+            url: process.env.JSON_RPC_URL_SEPOLIA as string,
+            accounts: {
+                mnemonic: process.env.ETHEREUM_SEED_PHRASE as string,
+                path: "m/44'/60'/0'/0",
+                initialIndex: 0,
+                count: 20,
+                passphrase: '',
             },
         },
     },

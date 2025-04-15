@@ -10,7 +10,7 @@ import {
     CONFIRM_DEPOSIT_AND_UPDATE_ORACLE,
     DISTRIBUTE_YIELD,
     UPDATE_ORACLE,
-} from '../../scripts/utils/lzMsgTypes';
+} from '../../scripts/utils/lzShastaSetupUtils';
 
 import { deployCarbon, INITIAL_SUPPLY } from '../utils/deployCarbon';
 

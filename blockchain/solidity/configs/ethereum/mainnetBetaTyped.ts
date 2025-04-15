@@ -2,23 +2,13 @@ import {
     evmAuthorizedAddresses,
     EVMChainIDs,
     evmStaticTokenAddresses,
-    poolERC4626CurrenciesRetailMainnet,
-    staticPoolERC20CurrenciesRetailMainnet,
+    staticPoolCurrenciesRetailMainnet,
 } from '@molecula-monorepo/blockchain.addresses';
 
 import type { EthereumNetworkConfig } from './types';
 
 /** Ethereum Mainnet config for beta. */
 export const ethMainnetBetaConfig: EthereumNetworkConfig = {
-    /** JSON RPC provider. */
-    JSON_RPC: 'https://ethereum-rpc.publicnode.com',
-
-    /** Network Id. */
-    JSON_RPC_ID: 1,
-
-    /** Address of deployer account. */
-    DEPLOYER_ADDRESS: '0xf6Ea1B046522fe5a58124555b1Acbc77FabdD7E5',
-
     /** LayerZero Ethereum endpoint. */
     LAYER_ZERO_ENDPOINT: '0x1a44076050125825900e736c501f859c50fE728c',
 
@@ -65,11 +55,8 @@ export const ethMainnetBetaConfig: EthereumNetworkConfig = {
     /** Initial Supply Manager balance. */
     INITIAL_USDT_SUPPLY: 10_000_000n,
 
-    /** Pools ERC20 config for retail solutions. */
-    POOLS20: Object.values(staticPoolERC20CurrenciesRetailMainnet),
-
-    /** Pools ERC4626 config for retail solutions. */
-    POOLS4626: Object.values(poolERC4626CurrenciesRetailMainnet),
+    /** Pools Currencies config for retail solutions. */
+    TOKENS: Object.values(staticPoolCurrenciesRetailMainnet),
 
     /** Default whitelist of addresses callable by MoleculaPoolFactory contract. */
     WHITE_LIST: [

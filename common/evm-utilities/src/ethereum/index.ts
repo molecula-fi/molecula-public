@@ -11,6 +11,7 @@ export * from './signWithWallet';
 export * from './decodeParams';
 export * from './ethereumSubscriber';
 export * from './normalizeAddress';
+export * from './areEvmAddressesEqual';
 
 // Export types
 export * from './types';

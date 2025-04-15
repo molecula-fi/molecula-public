@@ -12,13 +12,14 @@ export type {
     MoleculaPool,
     MoleculaPoolTreasury,
     MUSDLock,
-    Oracle,
+    IOracle,
     AccountantAgent,
     ILayerZeroEndpointV2,
     IERC20Basic,
     IERC20Metadata,
     ICurveStableSwapFactoryNG,
     ICurveStableSwapNG,
+    UsdtOFT,
 } from '@molecula-monorepo/solidity/typechain-types';
 
 const contractsNames = [
@@ -33,18 +34,18 @@ const contractsNames = [
     'MoleculaPool',
     'MoleculaPoolTreasury',
     'MUSDLock',
-    'Oracle',
+    'IOracle',
     'AccountantAgent',
     'StakedUSDe',
     'SavingsUSDS',
     'SFrxUSD',
-    'SwftSwap',
     'AavePool',
     'SparkPool',
     'EndpointLZ',
     'SwapCurve',
     'ICurveStableSwapFactoryNG',
     'ICurveStableSwapNG',
+    'UsdtOFT',
 ] as const;
 
 export type ContractNameType = (typeof contractsNames)[number];

@@ -3,7 +3,7 @@
 pragma solidity ^0.8.23;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
+import {OptionsBuilder} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
 
 uint16 constant BASE = 0x100;
 uint16 constant UNIT = 0x200;

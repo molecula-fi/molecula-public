@@ -16,7 +16,7 @@ import "./interfaces/IStakedUSDe.sol";
  * - Stake USDe tokens. 
  * - Earn a portion of:
  *   - The protocol LST.
- *   - The perpetual yield allocated to stakers by the Ethena DAO governance voted yield distribution algorithm.  
+ *   - The perpetual yield allocated to stakers by the Ethena DAO governance voted yield distribution algorithm.
  * The algorithm seeks to balance the stability of the protocol by:
  *  - Funding its insurance fund and DAO activities.
  *  - Rewarding stakers with a portion of the protocol's yield.
@@ -31,19 +31,23 @@ contract StakedUSDe is SingleAdminAccessControl, ReentrancyGuard, ERC20Permit, E
   bytes32 private constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
   /// @notice Role which prevents an address to stake.
   bytes32 private constant SOFT_RESTRICTED_STAKER_ROLE = keccak256("SOFT_RESTRICTED_STAKER_ROLE");
-  /// @notice Role which prevents an address to transfer, stake, or unstake. The owner of the contract can redirect the address staking balance if its is in the full restricting mode.
+  /// @notice Role which prevents an address to transfer, stake, or unstake. The contract owner can 
+  // redirect the address staking balance if it is in the full restricting mode.
   bytes32 private constant FULL_RESTRICTED_STAKER_ROLE = keccak256("FULL_RESTRICTED_STAKER_ROLE");
-  /// @notice Vesting period of `lastDistributionAmount`, over which it increasingly becomes available to stakers.
+  /// @notice Vesting period of `lastDistributionAmount`, 
+  /// over which it increasingly becomes available to stakers.
   uint256 private constant VESTING_PERIOD = 8 hours;
   /// @notice Minimum non-zero shares amount to prevent the donation attack.
   uint256 private constant MIN_SHARES = 1 ether;
 
   /* ------------- STATE VARIABLES ------------- */
 
-  /// @notice Amount of the last asset distribution from the controller contract into this contract and any unvested remainder at that time.
+  /// @notice Amount of the last asset distribution from the controller 
+  /// contract into this contract and any unvested remainder at that time.
   uint256 public vestingAmount;
 
-  /// @notice Timestamp of the last asset distribution from the controller contract into this contract.
+  /// @notice Timestamp of the last asset distribution from 
+  /// the controller contract into this contract.
   uint256 public lastDistributionTimestamp;
 
   /* ------------- MODIFIERS ------------- */

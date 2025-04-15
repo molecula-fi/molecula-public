@@ -2,23 +2,13 @@ import {
     EVMChainIDs,
     evmAuthorizedAddresses,
     evmStaticTokenAddresses,
-    poolERC4626CurrenciesRetailTestnet,
-    staticPoolERC20CurrenciesRetailTestnet,
+    staticPoolCurrenciesRetailTestnet,
 } from '@molecula-monorepo/blockchain.addresses';
 
 import type { EthereumNetworkConfig } from './types';
 
 /** Sepolia config. */
 export const sepoliaConfig: EthereumNetworkConfig = {
-    /** JSON RPC provider. */
-    JSON_RPC: 'https://sepolia.infura.io/v3/cfb5ebe1abe04a4394021b44d5417473',
-    // 'https://ethereum-sepolia-rpc.publicnode.com',
-    /** Network Id. */
-    JSON_RPC_ID: 11155111,
-
-    /** Address of deployer account. */
-    DEPLOYER_ADDRESS: '0x99EC47D28FB39d1888b025Cf4B33765043c41353',
-
     /** layerzero sepolia endpoint. */
     LAYER_ZERO_ENDPOINT: '0x6EDCE65403992e310A62460808c4b910D972f10f',
 
@@ -64,11 +54,8 @@ export const sepoliaConfig: EthereumNetworkConfig = {
     /** Initial Supply Manager balance. */
     INITIAL_USDT_SUPPLY: 100_000_000n,
 
-    /** Pools ERC20 config for retail testnet solutions. */
-    POOLS20: Object.values(staticPoolERC20CurrenciesRetailTestnet),
-
-    /** Pools ERC4626 config for retail testnet solutions. */
-    POOLS4626: Object.values(poolERC4626CurrenciesRetailTestnet),
+    /** Pools Currencies config for retail testnet solutions. */
+    TOKENS: Object.values(staticPoolCurrenciesRetailTestnet),
 
     /** White list of address callable by MoleculaPoolFactory contract. */
     WHITE_LIST: [],

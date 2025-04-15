@@ -1,10 +1,9 @@
 /* eslint-disable camelcase */
+import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
-
-import { unitePool20And4626 } from '../../scripts/utils/deployUtils';
 
 import { generateRandomWallet } from './Common';
 import { findRequestRedeemEvent } from './event';
@@ -42,7 +41,7 @@ export async function deployNitrogenV2Common(token: string) {
     const MoleculaPool = await ethers.getContractFactory('MoleculaPoolTreasury');
     const moleculaPool = await MoleculaPool.connect(poolOwner).deploy(
         poolOwner.address,
-        unitePool20And4626(ethMainnetBetaConfig.POOLS20, ethMainnetBetaConfig.POOLS4626),
+        ethMainnetBetaConfig.TOKENS.map(x => x.token),
         poolKeeper,
         supplyManagerFutureAddress,
         [],
@@ -133,6 +132,25 @@ export function deployNitrogenV2WithUSDT() {
 
 export function deployNitrogenV2WithStakedUSDe() {
     return deployNitrogenV2Common(ethMainnetBetaConfig.SUSDE_ADDRESS);
+}
+
+export async function deployMoleculaPoolV11(
+    poolOwner: HardhatEthersSigner,
+    supplyManagerAddress: string,
+) {
+    const signers = await ethers.getSigners();
+    const newPoolKeeper = signers.at(10)!;
+    const guardian = signers.at(11)!;
+    const MoleculaPoolTreasury = await ethers.getContractFactory('MoleculaPoolTreasury');
+    const moleculaPoolV2 = await MoleculaPoolTreasury.connect(poolOwner).deploy(
+        poolOwner.address,
+        [],
+        newPoolKeeper.address,
+        supplyManagerAddress,
+        [],
+        guardian,
+    );
+    return moleculaPoolV2;
 }
 
 export async function deployMoleculaPoolV2() {

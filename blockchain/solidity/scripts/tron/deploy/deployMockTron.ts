@@ -20,7 +20,7 @@ export async function deployMockUSDT(
 
     const transaction = (await tronWeb.transactionBuilder.createSmartContract(
         {
-            feeLimit: 1000000000, // The maximum TRX burns for resource consumption（1TRX = 1,000,000SUN
+            feeLimit: 1000000000, // The maximum TRX burns for resource consumption（1TRX = 1,000,000 sun
             // @ts-ignore (probably wrong type annotation)
             abi: artifact.abi,
             bytecode: artifact.bytecode,
@@ -51,7 +51,7 @@ export async function deployUsdtOFT(
 
     const transaction = (await tronWeb.transactionBuilder.createSmartContract(
         {
-            feeLimit: 1000000000, // The maximum TRX burns for resource consumption（1TRX = 1,000,000SUN
+            feeLimit: 3000000000, // The maximum TRX burns for resource consumption（3TRX = 3,000,000 sun
             // @ts-ignore (probably wrong type annotation)
             abi: artifact.abi,
             bytecode: artifact.bytecode,

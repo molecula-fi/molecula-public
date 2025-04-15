@@ -1,7 +1,7 @@
 {
     "name": "@molecula-monorepo/common.evm-utilities",
     "description": "Molecula-monorepo blockchain utilities",
-    "version": "0.14.0",
+    "version": "0.15.0",
     "private": true,
     "scripts": {
         "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version",

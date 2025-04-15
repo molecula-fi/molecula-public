@@ -12,7 +12,7 @@ import {OApp, Origin, MessagingFee} from "@layerzerolabs/lz-evm-oapp-v2/contract
 import {OptionsLZ} from "../../../common/layerzero/OptionsLZ.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../../../common/UsdtOFT.sol";
+import {UsdtOFT, SendParam, MessagingFee} from "../../../common/UsdtOFT.sol";
 import {ZeroValueChecker} from "../../../common/ZeroValueChecker.sol";
 
 /// @title AgentLZ - Agent contract for LayerZero cross-chain communication.
@@ -42,9 +42,9 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
 
     /**
      * @dev Enum representing the status of a deposit.
-     * @param None No deposit recorded
-     * @param ReadyToConfirm Deposit recorded, awaiting confirmation
-     * @param Executed Deposit executed
+     * @param None No deposit recorded.
+     * @param ReadyToConfirm Deposit recorded, awaiting confirmation.
+     * @param Executed Deposit executed.
      */
     enum DepositStatus {
         None,
@@ -74,12 +74,6 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
 
     /// @dev Error: Caller is not the authorized Supply Manager.
     error ENotMySupplyManager();
-
-    /// @dev Error: Insufficient USDT balance in contract.
-    error EInsufficientBalance();
-
-    /// @dev Error: Insufficient fees provided to cover transaction.
-    error EInsufficientFees();
 
     /// @notice Event emitted when a redeem operation is executed.
     event Redeem();
@@ -119,8 +113,10 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
     }
 
     /**
-     * @dev Called when the data is received from the protocol. It overrides the equivalent function in the parent contract.
-     * Protocol messages are defined as packets, comprised of the following parameters. Call on depositing.
+     * @dev Called when the data is received from the protocol.
+     * It overrides the equivalent function in the parent contract.
+     * Protocol messages are defined as packets, comprised of the following parameters.
+     * Call on depositing.
      * @param _origin Struct containing information about where the packet came from.
      * @param _guid Global unique identifier for tracking the packet.
      * @param payload Encoded message.
@@ -193,6 +189,16 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
     }
 
     /**
+     * @dev Overrides the gas needed to pay for the full omnichain transaction.
+     * @param _nativeFee The native fee in ETH.
+     * @return nativeFee The amount of native currency paid.
+     */
+    function _payNative(uint256 _nativeFee) internal virtual override returns (uint256 nativeFee) {
+        if (msg.value < _nativeFee) revert NotEnoughNative(msg.value);
+        return _nativeFee;
+    }
+
+    /**
      * @dev Sets the `updateOracleData` status.
      * @param isSend `updateOracleData` status.
      */
@@ -208,13 +214,15 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         address accontantAddress
     ) external onlyOwner checkNotZero(accontantAddress) {
         accountant = accontantAddress;
+        bytes32 account = bytes32(uint256(uint160(accontantAddress)));
+        _setPeer(DST_EID, account);
     }
 
     /**
      * @notice Sends a message from the source to the destination chain.
-     * @dev This function confirms a deposit operation by executing the deposit on the Supply Manager,
-     *      encoding the confirmation message, and sending it via LayerZero. If the user overpays,
-     *      excess gas is refunded using inline assembly.
+     * @dev This function confirms a deposit by executing the deposit on the Supply Manager,
+     *      encoding the confirmation message, and sending it via LayerZero.
+     *      If the user overpays, the excess gas is refunded using inline assembly.
      * @param requestId The unique identifier of the deposit request.
      */
     function confirmDeposit(uint256 requestId) external payable nonReentrant {
@@ -226,27 +234,22 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         // Retrieve the deposit amount from the mapping.
         uint256 value = deposits[requestId].value;
 
-        // Ensure the contract has sufficient USDT balance to complete the deposit.
-        if (USDT.balanceOf(address(this)) < value) {
-            revert EInsufficientBalance();
-        }
-
         // Approve the deposit amount to be transferred to the Molecula Pool via the Supply Manager.
         USDT.forceApprove(ISupplyManager(SUPPLY_MANAGER).getMoleculaPool(), value);
 
         // Execute the deposit on the Supply Manager and receive the corresponding number of shares.
         uint256 shares = ISupplyManager(SUPPLY_MANAGER).deposit(address(USDT), requestId, value);
 
-        // Declare LayerZero options and payload variables.
+        // Declare the LayerZero options and payload variables.
         bytes memory lzOptions;
         bytes memory payload;
 
-        // Check whether oracle data needs to be updated along with the deposit confirmation.
+        // Check whether the oracle data needs to be updated along with the deposit confirmation.
         if (updateOracleData) {
             // Retrieve the total value and total shares from the Oracle.
             (uint256 totalValue, uint256 totalShares) = IOracle(SUPPLY_MANAGER).getTotalSupply();
 
-            // Encode the deposit confirmation message along with updated oracle data.
+            // Encode the deposit confirmation message along with the updated oracle data.
             payload = LZMsgCodec.lzEncodeConfirmDepositMessageAndUpdateOracle(
                 requestId,
                 shares,
@@ -257,10 +260,10 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
             // Retrieve LayerZero options specific to this message type.
             lzOptions = getLzOptions(LZMsgCodec.CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 0);
         } else {
-            // Encode the deposit confirmation message without updating oracle data.
+            // Encode the deposit confirmation message without updating the oracle data.
             payload = LZMsgCodec.lzEncodeConfirmDepositMessage(requestId, shares);
 
-            // Retrieve LayerZero options specific to this message type.
+            // Retrieve the LayerZero options specific to this message type.
             lzOptions = getLzOptions(LZMsgCodec.CONFIRM_DEPOSIT, 0);
         }
 
@@ -270,29 +273,25 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         // Extract the native fee from the sendFee struct for use in assembly.
         uint256 nativeFee = sendFee.nativeFee;
 
-        // Ensure the sender has provided enough native gas to cover the messaging fee.
-        if (msg.value < nativeFee) {
-            revert EInsufficientFees();
-        }
-
         // Send the LayerZero message, providing the necessary gas fee.
         _lzSend(
-            DST_EID,
-            payload,
-            lzOptions,
-            sendFee,
-            payable(msg.sender) // Refund any unspent gas back to the sender.
+            DST_EID, // Destination LayerZero Endpoint ID: TRON network.
+            payload, // Encoded payload containing updated oracle data.
+            lzOptions, // LayerZero options for processing the message.
+            sendFee, // The required fee in the native gas and ZRO token, if applicable.
+            payable(msg.sender) // Refund any unused gas to the original transaction sender.
         );
 
         // Refund any excess gas back to the caller using inline assembly.
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let refundAmount := sub(callvalue(), nativeFee) // Calculate excess gas.
+            // Calculate any excess gas.
+            let refundAmount := sub(callvalue(), nativeFee)
             if gt(refundAmount, 0) {
-                // Proceed only if there's an excess.
-                let success := call(gas(), caller(), refundAmount, 0, 0, 0, 0) // Transfer refund to the caller.
+                // If there is an excess gas, transfer the refund to the caller.
+                let success := call(gas(), caller(), refundAmount, 0, 0, 0, 0)
                 if iszero(success) {
-                    // If transfer fails, revert.
+                    // If the transfer fails, revert.
                     revert(0, 0)
                 }
             }
@@ -321,16 +320,24 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         // Approve the total USDT amount for spending by the UsdtOFT contract.
         USDT.forceApprove(address(USDT_OFT), totalValue);
 
-        // Prepare structured parameters for the cross-chain USDT transfer using the UsdtOFT contract.
+        // Deduct the commission from each value.
+        uint256 length = values.length;
+        for (uint256 i = 0; i < length; ++i) {
+            values[i] =
+                (values[i] * (USDT_OFT.BPS_DENOMINATOR() - USDT_OFT.feeBps())) /
+                USDT_OFT.BPS_DENOMINATOR();
+        }
+
+        // Prepare structured parameters for the cross-chain USDT transfer via the UsdtOFT contract.
         SendParam memory sendParam = SendParam({
-            dstEid: DST_EID, // Destination LayerZero Endpoint ID (Tron in this case)
-            to: bytes32(uint256(uint160(accountant))), // Recipient on the destination chain (converted to bytes32)
-            amountLD: totalValue, // Total USDT amount being sent
+            dstEid: DST_EID, // Destination LayerZero Endpoint ID. TRON in this caseю
+            to: bytes32(uint256(uint160(accountant))), // Recipient on the destination chain. Value converted to bytes32.
+            amountLD: totalValue, // Total USDT amount being sent.
             minAmountLD: (totalValue -
-                ((totalValue * USDT_OFT.feeBps()) / USDT_OFT.BPS_DENOMINATOR())), // Minimum acceptable amount after fees
-            extraOptions: "", // No extra options provided
-            composeMsg: "", // No additional message composition needed
-            oftCmd: "" // No special OFT command required
+                ((totalValue * USDT_OFT.feeBps()) / USDT_OFT.BPS_DENOMINATOR())), // Minimum acceptable amount after fees.
+            extraOptions: "", // No extra options provided.
+            composeMsg: "", // No additional message composition needed.
+            oftCmd: "" // No special OFT command required.
         });
 
         // Quote the fee required for sending USDT across chains using UsdtOFT.
@@ -346,36 +353,32 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         // Quote the fee required for the LayerZero message transmission.
         MessagingFee memory sendFee = _quote(DST_EID, payload, lzOptions, false);
 
-        // Calculate the total required fee (sum of USDT-OFT transfer fee and LayerZero message fee).
+        // Calculate the total required fee: sum of USDT-OFT transfer fee and LayerZero message fee.
         uint256 totalRequiredFee = usdtFee.nativeFee + sendFee.nativeFee;
 
-        // Ensure that the sender has provided enough ETH to cover all fees.
-        if (msg.value < totalRequiredFee) {
-            revert EInsufficientFees();
-        }
-
         // Execute the USDT transfer across chains using UsdtOFT.
-        // slither-disable-next-line unused-return
-        USDT_OFT.send{value: usdtFee.nativeFee}(sendParam, usdtFee, msg.sender);
+        // slither-disable-next-line unused-return, solhint-disable-next-line check-send-result, avoid-tx-origin
+        USDT_OFT.send{value: usdtFee.nativeFee}(sendParam, usdtFee, tx.origin);
 
         // Use LayerZero to send the confirmation payload to the destination chain.
         _lzSend(
-            DST_EID, // Destination LayerZero Endpoint ID
-            payload, // Encoded LayerZero payload containing redemption details
-            lzOptions, // LayerZero options for processing the message
-            sendFee, // The required fee in native gas and ZRO token (if applicable)
-            payable(tx.origin) // Refund any unused gas to the original transaction sender
+            DST_EID, // Destination LayerZero Endpoint ID.
+            payload, // Encoded LayerZero payload containing redemption details.
+            lzOptions, // LayerZero options for processing the message.
+            sendFee, // The required fee in native gas and ZRO token, if applicable.
+            // solhint-disable-next-line avoid-tx-origin
+            payable(tx.origin) // Refund any unused gas to the original transaction sender.
         );
 
-        // Refund any excess ETH sent by the caller back to tx.origin using assembly.
-        // slither-disable-next-line assembly
+        // Refund any excess ETH sent by the caller back to `tx.origin`, using assembly.
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let refundAmount := sub(callvalue(), totalRequiredFee) // Calculate the excess ETH amount
+            let refundAmount := sub(callvalue(), totalRequiredFee) // Calculate the excess ETH amount.
             if gt(refundAmount, 0) {
-                // If there is any excess amount
-                let success := call(gas(), origin(), refundAmount, 0, 0, 0, 0) // Attempt to refund to tx.origin
+                // If there is any excess amount, attempt to refund to `tx.origin`.
+                let success := call(gas(), origin(), refundAmount, 0, 0, 0, 0)
                 if iszero(success) {
-                    // If the refund fails, revert the transaction
+                    // If the refund fails, revert the transaction.
                     revert(0, 0)
                 }
             }
@@ -394,7 +397,7 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         bytes memory lzOptions;
         bytes memory payload;
 
-        // Check whether oracle data needs to be updated along with yield distribution.
+        // Check whether the oracle data needs to be updated along with yield distribution.
         if (updateOracleData) {
             // Retrieve LayerZero options for updating oracle data.
             lzOptions = getLzOptions(LZMsgCodec.DISTRIBUTE_YIELD_AND_UPDATE_ORACLE, users.length);
@@ -411,10 +414,10 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
                 totalShares
             );
         } else {
-            // Retrieve LayerZero options without updating oracle data.
+            // Retrieve the LayerZero options without updating the oracle data.
             lzOptions = getLzOptions(LZMsgCodec.DISTRIBUTE_YIELD, users.length);
 
-            // Encode the yield distribution message without oracle updates.
+            // Encode the yield distribution message without the oracle updates.
             payload = LZMsgCodec.lzEncodeDistributeYieldMessage(users, shares);
         }
 
@@ -424,29 +427,25 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         // Extract the native fee from the sendFee struct for use in assembly.
         uint256 nativeFee = sendFee.nativeFee;
 
-        // Ensure that the sender has provided enough native gas to cover the messaging fee.
-        if (msg.value < nativeFee) {
-            revert EInsufficientFees();
-        }
-
         // Use LayerZero to send the yield distribution message to the destination chain.
         _lzSend(
-            DST_EID, // Destination LayerZero Endpoint ID
-            payload, // Encoded LayerZero payload containing yield distribution details
-            lzOptions, // LayerZero options for processing the message
-            sendFee, // The required fee in native gas and ZRO token (if applicable)
-            payable(tx.origin) // Refund any unused gas to the original transaction sender
+            DST_EID, // Destination LayerZero Endpoint ID.
+            payload, // Encoded LayerZero payload containing yield distribution details.
+            lzOptions, // LayerZero options for processing the message.
+            sendFee, // The required fee in native gas and ZRO token, if applicable.
+            // solhint-disable-next-line avoid-tx-origin
+            payable(tx.origin) // Refund any unused gas to the original transaction sender.
         );
 
         // Refund any excess ETH sent by the caller back to tx.origin using inline assembly.
-        // slither-disable-next-line assembly
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let refundAmount := sub(callvalue(), nativeFee) // Calculate the excess ETH amount
+            let refundAmount := sub(callvalue(), nativeFee) // Calculate the excess ETH amount.
             if gt(refundAmount, 0) {
-                // If there is any excess amount
-                let success := call(gas(), origin(), refundAmount, 0, 0, 0, 0) // Attempt to refund to tx.origin
+                // If there is any excess amount, attempt to refund to `tx.origin`.
+                let success := call(gas(), origin(), refundAmount, 0, 0, 0, 0)
                 if iszero(success) {
-                    // If the refund fails, revert the transaction
+                    // If the refund fails, revert the transaction.
                     revert(0, 0)
                 }
             }
@@ -457,15 +456,15 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
     }
 
     /**
-     * @notice Updates the Oracle on the TRON network by retrieving the latest total value and shares,
+     * @notice Updates the Oracle on TRON by retrieving the latest total value and shares,
      *         encoding them into a LayerZero message, and sending it to the destination chain.
-     * @dev Ensures the sender has provided enough gas for LayerZero messaging and refunds any excess.
+     * @dev Ensures the sender has provided enough gas for LayerZero messaging, refunding an excess.
      */
     function updateOracle() external payable nonReentrant {
         // Retrieve the latest total value and total shares from the Supply Manager's Oracle.
         (uint256 totalValue, uint256 totalShares) = IOracle(SUPPLY_MANAGER).getTotalSupply();
 
-        // Retrieve LayerZero options specific to the updateOracle message.
+        // Retrieve LayerZero options specific to the `updateOracle`` message.
         bytes memory lzOptions = getLzOptions(LZMsgCodec.UPDATE_ORACLE, 0);
 
         // Encode the total value and total shares into the LayerZero payload.
@@ -474,32 +473,27 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         // Quote the LayerZero messaging fee required for sending the payload.
         MessagingFee memory sendFee = _quote(DST_EID, payload, lzOptions, false);
 
-        // Extract the native fee from the sendFee struct for use in assembly.
+        // Extract the native fee from the `sendFee` struct for use in assembly.
         uint256 nativeFee = sendFee.nativeFee;
-
-        // Ensure the sender has provided enough ETH to cover the LayerZero messaging fee.
-        if (msg.value < nativeFee) {
-            revert EInsufficientFees();
-        }
 
         // Use LayerZero to send the Oracle update message to the destination chain.
         _lzSend(
-            DST_EID, // Destination LayerZero Endpoint ID (Tron network)
-            payload, // Encoded payload containing updated oracle data
-            lzOptions, // LayerZero options for processing the message
-            sendFee, // The required fee in native gas and ZRO token (if applicable)
-            payable(msg.sender) // Refund any unused gas to the original transaction sender
+            DST_EID, // Destination LayerZero Endpoint ID: TRON network.
+            payload, // Encoded payload containing updated oracle data.
+            lzOptions, // LayerZero options for processing the message.
+            sendFee, // The required fee in native gas and ZRO token, if applicable.
+            payable(msg.sender) // Refund any unused gas to the original transaction sender.
         );
 
-        // Refund any excess ETH sent by the caller back to msg.sender using inline assembly.
-        // slither-disable-next-line assembly
+        // Refund any excess ETH sent by the caller back to `msg.sender`, using inline assembly.
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let refundAmount := sub(callvalue(), nativeFee) // Calculate excess ETH amount
+            let refundAmount := sub(callvalue(), nativeFee) // Calculate the excess ETH amount.
             if gt(refundAmount, 0) {
-                // If there is any excess amount
-                let success := call(gas(), caller(), refundAmount, 0, 0, 0, 0) // Attempt to refund
+                // If there is any excess amount, attempt to refund to the caller.
+                let success := call(gas(), caller(), refundAmount, 0, 0, 0, 0)
                 if iszero(success) {
-                    // If refund fails, revert transaction
+                    // If the refund fails, revert the transaction.
                     revert(0, 0)
                 }
             }
@@ -518,7 +512,7 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
      * @param msgType The message type being quoted (e.g., REQUEST_DEPOSIT, CONFIRM_REDEEM).
      * @param arrLen The length of the array for certain message types (e.g., CONFIRM_REDEEM, DISTRIBUTE_YIELD).
      * @return nativeFee The estimated gas fee required in the native blockchain token (e.g., ETH).
-     * @return lzTokenFee The estimated gas fee in the LayerZero ZRO token (if applicable).
+     * @return lzTokenFee The estimated gas fee in the LayerZero ZRO token, if applicable.
      * @return lzOptions The LayerZero options that would be used in the actual transaction.
      */
     function quote(
@@ -528,72 +522,71 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         // slither-disable-next-line uninitialized-local
         bytes memory payload;
 
-        // Check the message type and determine the appropriate payload and LayerZero options
+        // Check the message type and determine the appropriate payload and LayerZero options.
         if (
             msgType == LZMsgCodec.CONFIRM_DEPOSIT ||
             msgType == LZMsgCodec.CONFIRM_DEPOSIT_AND_UPDATE_ORACLE
         ) {
             if (updateOracleData) {
-                // If updating oracle data, include total supply details
+                // If updating the oracle data, include total supply details.
                 payload = LZMsgCodec.lzEncodeConfirmDepositMessageAndUpdateOracle(1, 2, 3, 4);
                 lzOptions = getLzOptions(LZMsgCodec.CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 0);
             } else {
-                // Standard deposit confirmation message
+                // Standard deposit confirmation message.
                 payload = LZMsgCodec.lzEncodeConfirmDepositMessage(2, 2);
                 lzOptions = getLzOptions(LZMsgCodec.CONFIRM_DEPOSIT, 0);
             }
         } else if (msgType == LZMsgCodec.CONFIRM_REDEEM) {
-            // Confirm redeem request for multiple deposit IDs
+            // Confirm redeem request for multiple deposit IDs.
             payload = LZMsgCodec.lzDefaultConfirmRedeemMessage(arrLen);
             lzOptions = getLzOptions(LZMsgCodec.CONFIRM_REDEEM, arrLen);
+            // Create a mock SendParam struct for fee estimation with minimal values.
+            SendParam memory sendParam = SendParam({
+                dstEid: DST_EID, // Destination LayerZero Endpoint ID. E.g., Ethereum.
+                to: bytes32(uint256(uint160(accountant))), // Mock recipient address on the destination chain.
+                amountLD: 1e6, // 1 USDT for estimation.
+                minAmountLD: 1, // Minimum acceptable amount. Value mocked.
+                extraOptions: "", // No additional options provided.
+                composeMsg: "", // No additional message composition.
+                oftCmd: "" // No special OFT command used.
+            });
+
+            // Estimate the gas fee required for the cross-chain USDT transfer via UsdtOFT.
+            MessagingFee memory usdtFee = USDT_OFT.quoteSend(sendParam, false);
+
+            // Add the USDT_OFT fees to total estimated fees.
+            nativeFee += usdtFee.nativeFee;
+            lzTokenFee += usdtFee.lzTokenFee;
         } else if (
             msgType == LZMsgCodec.DISTRIBUTE_YIELD ||
             msgType == LZMsgCodec.DISTRIBUTE_YIELD_AND_UPDATE_ORACLE
         ) {
             if (updateOracleData) {
-                // Include updated oracle data in the yield distribution message
+                // Include the updated oracle data in the yield distribution message.
                 payload = LZMsgCodec.lzDefaultDistributeYieldMessageAndUpdateOracle(arrLen);
                 lzOptions = getLzOptions(LZMsgCodec.DISTRIBUTE_YIELD_AND_UPDATE_ORACLE, arrLen);
             } else {
-                // Standard yield distribution message
+                // Standard yield distribution message.
                 payload = LZMsgCodec.lzDefaultDistributeYieldMessage(arrLen);
                 lzOptions = getLzOptions(LZMsgCodec.DISTRIBUTE_YIELD, arrLen);
             }
         } else if (msgType == LZMsgCodec.UPDATE_ORACLE) {
-            // Oracle update request
+            // Oracle update request.
             payload = LZMsgCodec.lzEncodeUpdateOracle(1, 2);
             lzOptions = getLzOptions(LZMsgCodec.UPDATE_ORACLE, 0);
         } else if (msgType == LZMsgCodec.REQUEST_DEPOSIT) {
-            // Estimate fees for a deposit request, which includes both LayerZero and USDT_OFT fees
+            // Estimate fees for a deposit request, which includes both LayerZero and USDT_OFT fees.
             lzOptions = getLzOptions(LZMsgCodec.REQUEST_DEPOSIT, 0);
             payload = LZMsgCodec.lzEncodeRequestDepositMessage(1, 1);
-
-            // Create a mock SendParam struct for fee estimation with minimal values
-            SendParam memory sendParam = SendParam({
-                dstEid: DST_EID, // Destination LayerZero Endpoint ID (e.g., Ethereum)
-                to: bytes32(uint256(uint160(accountant))), // Mock recipient address on the destination chain
-                amountLD: 1e6, // 1 USDT for estimation
-                minAmountLD: 1, // Minimum acceptable amount (mocked)
-                extraOptions: "", // No additional options provided
-                composeMsg: "", // No additional message composition
-                oftCmd: "" // No special OFT command used
-            });
-
-            // Estimate the gas fee required for the cross-chain USDT transfer via UsdtOFT
-            MessagingFee memory usdtFee = USDT_OFT.quoteSend(sendParam, false);
-
-            // Add USDT_OFT fees to total estimated fees
-            nativeFee += usdtFee.nativeFee;
-            lzTokenFee += usdtFee.lzTokenFee;
         } else {
-            // If an unknown message type is provided, revert the transaction
+            // If an unknown message type is provided, revert the transaction.
             revert LZMsgCodec.ELzUnknownMessage();
         }
 
-        // Estimate the LayerZero messaging fee based on the payload
+        // Estimate the LayerZero messaging fee based on the payload.
         MessagingFee memory fee = _quote(DST_EID, payload, lzOptions, false);
 
-        // Sum LayerZero fees and USDT_OFT fees (if applicable)
+        // Sum the LayerZero and USDT_OFT fees, if applicable.
         nativeFee += fee.nativeFee;
         lzTokenFee += fee.lzTokenFee;
 

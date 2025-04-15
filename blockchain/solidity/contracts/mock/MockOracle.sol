@@ -3,14 +3,15 @@
 pragma solidity ^0.8.23;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
 // solhint-disable-next-line no-unused-import
-import {ISetterOracle, IOracle} from "./interfaces/ISetterOracle.sol";
+import {ISetterOracle, IOracle} from "../common/interfaces/ISetterOracle.sol";
 
 /**
- * @title Oracle
+ * @title MockOracle
  * @dev Contract for managing shares and pool information, implementing the ISetterOracle interface.
  */
-contract Oracle is Ownable, ISetterOracle {
+contract MockOracle is Ownable, ISetterOracle {
     /// @dev Total pool value tracked by the Oracle.
     uint256 private _pool = 0;
 

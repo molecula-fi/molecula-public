@@ -1,3 +1,4 @@
+/*  eslint-disable max-lines */
 import BigNumber from 'bignumber.js';
 
 import { AbiCoder, type JsonFragment } from 'ethers';
@@ -264,7 +265,7 @@ export class TronContractSafe<Contract extends AllTronContracts> {
                 throw new Error('apiUrl is not set');
             }
 
-            const { fromAddress } = txData;
+            const { fromAddress, callValue } = txData;
 
             const methodName = method.toString();
 
@@ -280,6 +281,7 @@ export class TronContractSafe<Contract extends AllTronContracts> {
                 function_selector: functionSelector,
                 parameter,
                 visible: true,
+                call_value: callValue ? +callValue : undefined,
             });
 
             const energyPrices = await this.getEnergyPricesRequest();
@@ -413,6 +415,7 @@ export class TronContractSafe<Contract extends AllTronContracts> {
         function_selector: string;
         parameter: string;
         visible: boolean;
+        call_value?: number | undefined;
     }) => {
         const options = {
             method: 'POST',

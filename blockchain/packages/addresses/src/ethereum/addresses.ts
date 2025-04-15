@@ -3,6 +3,7 @@ import {
     ContractsNitrogen,
     MainBetaContractsCarbon,
     MainBetaContractsNitrogen,
+    DevnetContractsEthena,
 } from '../../deploy';
 
 import { MainProdContractsCarbon, MainProdContractsNitrogen } from '../../deploy/mainnet/prod';
@@ -33,11 +34,11 @@ export const evmStaticTokenAddresses = {
     },
     USDe: {
         [EVMChainIDs.Mainnet]: '0x4c9edd5852cd905f086c759e8383e09bff1e68b3',
-        [EVMChainIDs.Sepolia]: '0x3882Ef2d84B0aA75b1565Bb99A8fb90e52612b92',
+        [EVMChainIDs.Sepolia]: DevnetContractsEthena.USDe as EVMAddress,
     },
     sUSDe: {
         [EVMChainIDs.Mainnet]: '0x9d39a5de30e57443bff2a8307a4256c8797a3497',
-        [EVMChainIDs.Sepolia]: '0x572d3e6b50BB4B2CB4061db7aa233Ae50d9ab258',
+        [EVMChainIDs.Sepolia]: DevnetContractsEthena.sUSDe as EVMAddress,
     },
     aEthUSDT: {
         [EVMChainIDs.Mainnet]: '0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a',
@@ -57,6 +58,10 @@ export const evmStaticTokenAddresses = {
     },
     FRAX: {
         [EVMChainIDs.Mainnet]: '0x853d955acef822db058eb8505911ed77f175b99e',
+        [EVMChainIDs.Sepolia]: undefined,
+    },
+    frxUSD: {
+        [EVMChainIDs.Mainnet]: '0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29',
         [EVMChainIDs.Sepolia]: undefined,
     },
     sFrxUSD: {
@@ -159,6 +164,6 @@ export const evmMoleculaContractAddresses = {
     },
     SwftBridge: {
         [EVMChainIDs.Mainnet]: undefined,
-        [EVMChainIDs.Sepolia]: ContractsCarbon.eth.swftBridge as EVMAddress,
+        [EVMChainIDs.Sepolia]: undefined,
     },
 } as const;

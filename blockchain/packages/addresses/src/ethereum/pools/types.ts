@@ -2,12 +2,13 @@ import type { EVMAddress } from '../types';
 
 export type PoolData = {
     /**
-     * Pool Currency address.
+     * Token address.
      */
-    pool: EVMAddress;
+    token: EVMAddress;
 
     /**
-     * Decimal normalization (to 18).
+     * Decimal normalization to rebaseToken.decimals(),
+     * e.g. `rebaseToken.decimals() - token.decimals() === 18 - token.decimals()`.
      */
     n: number;
 };
