@@ -1,11 +1,7 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import { NetworkType } from '@molecula-monorepo/blockchain.addresses';
-import type {
-    ContractsCarbon,
-    MainBetaContractsCarbon,
-    MainProdContractsCarbon,
-} from '@molecula-monorepo/blockchain.addresses/deploy';
+import type { ContractsCarbon } from '@molecula-monorepo/blockchain.addresses/deploy';
 
 import { readFromFile, getNetworkConfig } from '../utils/deployUtils';
 
@@ -16,10 +12,7 @@ export async function runVerify(hre: HardhatRuntimeEnvironment) {
         hre.network.name === 'sepolia' ? NetworkType.devnet : NetworkType['mainnet/beta'];
     const config = getNetworkConfig(networkType);
 
-    const contractsConfig:
-        | typeof ContractsCarbon
-        | typeof MainBetaContractsCarbon
-        | typeof MainProdContractsCarbon = await readFromFile(
+    const contractsConfig: ContractsCarbon = await readFromFile(
         `${networkType}/contracts_carbon.json`,
     );
 

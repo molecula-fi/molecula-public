@@ -2,27 +2,27 @@
 
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
-
-import { getNetworkConfig } from '../utils/deployUtils';
-
-export async function setOwnerFromConfig(
+export async function setOwner(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
     contracts: { addr: string; name: string }[],
+    newOwner: string,
 ) {
-    const config = getNetworkConfig(environment);
     const account = (await hre.ethers.getSigners())[0]!;
-    console.log(`Setting owner ${config.OWNER} for the contracts:`);
+    console.log(`Setting owner ${newOwner} for the contracts:`);
     for (const contract of contracts) {
-        const ownableContract = await hre.ethers.getContractAt('Ownable', contract.addr);
+        const ownableContract = await hre.ethers.getContractAt(
+            '@openzeppelin/contracts/access/Ownable.sol:Ownable',
+            contract.addr,
+        );
+        // @ts-ignore
         const currentOwner = await ownableContract.owner();
-        if (currentOwner === config.OWNER) {
+        if (currentOwner === newOwner) {
             console.log(
                 `\tContract ${contract.name} ${contract.addr} has already the owner. Skipped.`,
             );
         } else if (currentOwner === account.address) {
-            const response = await ownableContract.transferOwnership(config.OWNER);
+            // @ts-ignore
+            const response = await ownableContract.transferOwnership(newOwner);
             await response.wait();
             console.log(`\tSet owner for contract ${contract.name} ${contract.addr}.`);
         } else {

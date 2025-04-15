@@ -15,7 +15,7 @@ export async function deployMoleculaPoolTreasury(
     environment: NetworkType,
 ) {
     const { config } = await getConfig(hre, environment);
-    const contractsNitrogen: typeof ContractsNitrogen = await readFromFile(
+    const contractsNitrogen: ContractsNitrogen = await readFromFile(
         `${environment}/contracts_nitrogen.json`,
     );
 

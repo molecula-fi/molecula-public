@@ -112,6 +112,8 @@ export async function deployNitrogen(
         poolKeeper,
         mUSDLock: await musdLock.getAddress(),
         mUSDe,
+        router: '',
+        routerAgents: {},
         ethena: {
             USDe: config.USDE_ADDRESS,
             sUSDe: config.SUSDE_ADDRESS,

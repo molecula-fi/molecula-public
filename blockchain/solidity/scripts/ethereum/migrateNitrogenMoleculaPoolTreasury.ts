@@ -19,7 +19,7 @@ export async function migrateNitrogenMoleculaPoolTreasury(
         throw new Error('Firstly deploy MoleculaPoolTreasury');
     }
 
-    const contractsNitrogen: typeof ContractsNitrogen = await readFromFile(
+    const contractsNitrogen: ContractsNitrogen = await readFromFile(
         `${environment}/contracts_nitrogen.json`,
     );
     const supplyManager = await hre.ethers.getContractAt(

@@ -1,27 +1,29 @@
+/* eslint-disable no-restricted-syntax */
+
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type {
-    ContractsNitrogen,
-    MainBetaContractsNitrogen,
-    MainProdContractsNitrogen,
-    NetworkType,
-} from '@molecula-monorepo/blockchain.addresses';
+import type { ContractsNitrogen, NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
-import { setOwnerFromConfig } from '../helpers';
-import { readFromFile } from '../utils/deployUtils';
+import { getNetworkConfig, readFromFile } from '../utils/deployUtils';
+import { setOwner } from '../utils/setOwner';
 
 export async function setNitrogenOwner(hre: HardhatRuntimeEnvironment, environment: NetworkType) {
-    const config:
-        | typeof ContractsNitrogen
-        | typeof MainBetaContractsNitrogen
-        | typeof MainProdContractsNitrogen = await readFromFile(
+    const contractsNitrogen: ContractsNitrogen = await readFromFile(
         `${environment}/contracts_nitrogen.json`,
     );
     const contracts = [
-        { name: 'SupplyManager', addr: config.eth.supplyManager },
-        { name: 'MoleculaPool', addr: config.eth.moleculaPool },
-        { name: 'RebaseToken', addr: config.eth.rebaseToken },
-        { name: 'AccountantAgent', addr: config.eth.accountantAgent },
+        { name: 'SupplyManager', addr: contractsNitrogen.eth.supplyManager },
+        { name: 'MoleculaPool', addr: contractsNitrogen.eth.moleculaPool },
+        { name: 'AccountantAgent', addr: contractsNitrogen.eth.accountantAgent },
+        { name: 'RebaseToken', addr: contractsNitrogen.eth.rebaseToken },
     ];
-    await setOwnerFromConfig(hre, environment, contracts);
+    if (contractsNitrogen.eth.router !== '') {
+        contracts.push({ name: 'Router', addr: contractsNitrogen.eth.router });
+    }
+    for (const [tokenName, agentAddress] of Object.entries(contractsNitrogen.eth.routerAgents)) {
+        contracts.push({ name: `RouterAgent#${tokenName}`, addr: agentAddress as string });
+    }
+
+    const config = getNetworkConfig(environment);
+    await setOwner(hre, contracts, config.OWNER);
 }

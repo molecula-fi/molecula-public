@@ -11,7 +11,7 @@ export async function deployAccountantAgent(
     environment: NetworkType,
 ) {
     const { config } = await getConfig(hre, environment);
-    const contractsNitrogen: typeof ContractsNitrogen = await readFromFile(
+    const contractsNitrogen: ContractsNitrogen = await readFromFile(
         `${environment}/contracts_nitrogen.json`,
     );
     const Agent = await hre.ethers.getContractFactory('AccountantAgent');

@@ -2,7 +2,7 @@
 // "setup:dvn:test": "                                 hardhat run scripts/ethereum/setupSepoliaOAppDVN.ts --network sepolia",
 import { ethers } from 'hardhat';
 
-import { ContractsCarbon } from '@molecula-monorepo/blockchain.addresses/deploy/devnet';
+import { DevnetContractsCarbon } from '@molecula-monorepo/blockchain.addresses/deploy/devnet';
 
 import { sepoliaConfig } from '../../configs/ethereum/sepoliaTyped';
 import { setReceiveConfig, setSendConfig } from '../utils/lzSepoliaSetupUtils';
@@ -23,7 +23,7 @@ export async function setupSepoliaOAppDVN() {
         sepoliaConfig.LAYER_ZERO_ENDPOINT,
     );
     // Define the addresses and parameters
-    const oappAddress = ContractsCarbon.eth.agentLZ; // AgentLZ
+    const oappAddress = DevnetContractsCarbon.eth.agentLZ; // AgentLZ
     const remoteEid = sepoliaConfig.LAYER_ZERO_TRON_EID; // Example target endpoint ID, Binance Smart Chain
     // Get OApp Config
     const { sendLibAddress, receiveLibAddress } = await getOAppConfig(
