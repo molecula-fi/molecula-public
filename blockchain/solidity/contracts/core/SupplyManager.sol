@@ -260,7 +260,7 @@ contract SupplyManager is Ownable, ISupplyManager, IOracle, ZeroValueChecker {
         // Increase the total shares' supply amount with the operation yield shares.
         totalSharesSupply += operationYieldShares;
 
-        /// Make a redeem operation request into the Pool and get a converted value with the right decimal amount.
+        // Make a redeem operation request into the Pool and get a converted value with the right decimal amount.
         value = moleculaPool.requestRedeem(token, value);
 
         // Save the redeem operation information.
