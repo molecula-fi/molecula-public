@@ -6,23 +6,7 @@
         },
         {
             "name": "💰 Contracts",
-            "path": "contracts",
-        },
-        {
-            "name": "⚙️ Backend",
-            "path": "backend",
-        },
-        {
-            "name": "✨ molecula.io",
-            "path": "frontend/website",
-        },
-        {
-            "name": "🚀 Retail App (beta.molecula.io)",
-            "path": "frontend/retail",
-        },
-        {
-            "name": "🖥️ Frontend",
-            "path": "frontend",
+            "path": "blockchain",
         },
     ],
     "extensions": {
