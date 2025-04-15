@@ -49,9 +49,6 @@ export const ethMainnetBetaConfig: EthereumNetworkConfig = {
     /** @deprecated Dai initial supply. */
     INITIAL_DAI_SUPPLY: 5_000_000_000_000_000_000n,
 
-    /** @deprecated decimals for DAI solution. */
-    DAI_TOKEN_DECIMALS: 18,
-
     /** Initial Supply Manager balance. */
     INITIAL_USDT_SUPPLY: 10_000_000n,
 

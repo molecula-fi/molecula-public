@@ -1,10 +1,4 @@
-# @molecula-monorepo/solidity
-
-## Get coverage table
-
-Use `yarn coverage` to create folder coverage
-
-In terminal you can see the table and you can run local host for ./coverage/index.html
+# Solidity contracts
 
 ## Contracts compilation
 
@@ -13,6 +7,12 @@ To compile contracts run:
 ```
 yarn compile
 ```
+
+## Get coverage table
+
+Use `yarn coverage` to create folder coverage
+
+In terminal you can see the table and you can run local host for ./coverage/index.html
 
 ## Contracts deployment
 
@@ -67,9 +67,11 @@ yarn compile
 ### How to migrate from `MoleculaPool` to `MoleculaPoolTreasury` contract.
 
 1. Deploy `MoleculaPoolTreasury` contract
+
     ```
     yarn deploy:pool:[test|beta|production]
     ```
+
 2. `PoolKeeper` should set infinite allowance for `MoleculaPoolTreasury` contract for all tokens from old `MoleculaPool`
    contract.
 
@@ -77,6 +79,36 @@ yarn compile
     ```
     yarn migrate:nitrogen:pool:[test|beta]
     ```
+
+### How to deploy and setup Router and RouterAgent
+
+1. Deploy Router:
+
+    ```
+    yarn deploy:router:test
+    ```
+
+2. Deploy RouterAgent and set ERC20 token address :
+
+    ```
+    yarn deploy:routerAgent:test --token-name <TOKEN_NAME> --token <TOKEN_ADDRESS>
+    ```
+
+3. Set correct owner in RouterAgent and Router
+
+    ```
+    yarn set:nitrogen:owner:[test|beta|production]
+    ```
+
+4. Add RouterAgent in Router and SupplyManager and set Router as owner in RebaseToken
+
+    ```
+    yarn set:nitrogen:setupRouter:test --min-deposit-value <minDepositValue> --min-redeem-shares <minRedeemShares> --token-name <TokenName>
+    ```
+
+    `--min-deposit-value` - Minimal deposit value set in Router for the token that RouterAgent work with.
+    `--min-redeem-shares` - Minimal redeem shares (in mUSD).
+    `--token-name` - Token name that RouterAgent work with.
 
 ### How to migrate from `AgentAccountant` to `AccountantAgent` contract.
 

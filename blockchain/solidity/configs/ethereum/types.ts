@@ -21,7 +21,6 @@ export type EthereumNetworkConfig = {
 
     // Deploy params
     INITIAL_DAI_SUPPLY: bigint;
-    DAI_TOKEN_DECIMALS: number;
     INITIAL_USDT_SUPPLY: bigint;
     DAI_ADDRESS: EVMAddress;
 
