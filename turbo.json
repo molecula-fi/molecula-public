@@ -26,17 +26,7 @@
             "dependsOn": ["transitNode"]
         },
         "unitTests": {},
-        "hardhatUnitTests": {},
-
-        "back:build": {
-            "dependsOn": ["^back:build"],
-            "outputs": ["dist/**"]
-        },
-        "back:dev": {
-            "dependsOn": ["^back:build"],
-            "cache": false,
-            "persistent": true
-        }
+        "hardhatUnitTests": {}
     },
     "globalEnv": [
         "NODE_ENV",

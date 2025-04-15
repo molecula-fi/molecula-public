@@ -13,11 +13,6 @@ for arg in "$@"; do
 	fi
 done
 
-# [Re-]generate all required types in parallel first.
-# npx concurrently "yarn compile:all" "yarn gql:generate"
-# yarn turbo run compile gql:generate
-yarn turbo run compile gql:generate --cache=local:rw --output-logs=new-only
-
 # Run slither first and do it separately because slither cleans compiled artifacts
 if slither --version "$1"; then
   yarn turbo run slither || { echo "slither failed"; exit 1; }
@@ -29,10 +24,8 @@ if [ "$FULL_CHECK" == true ]; then
     tsc\
     eslint:check\
     prettier:check\
-    cycles:check\
     solhint:check\
-    hardhatUnitTests\
-    unitTests --output-logs=new-only || { echo "pre-commit --full failed"; exit 1; }
+    hardhatUnitTests || { echo "pre-commit --full failed"; exit 1; }
 
   # Run natspec check without turbo since it's present only in a root package
   yarn natspec:check || { echo "natspec check failed"; exit 1; }

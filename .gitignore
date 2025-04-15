@@ -25,15 +25,6 @@ configs/frontend-environments/website/.env.production
 configs/frontend-environments/prelaunch/.env.production
 configs/frontend-environments/retail/.env.production
 
-# Ui tests repo
-ui-tests/extensions/
-ui-tests/.husky/
-test-results/
-ui-tests/integration-tests/tests-results/
-ui-tests/integration-tests/playwright-report/
-ui-tests/api-tests/tests-results/
-ui-tests/api-tests/playwright-report/
-
 # Turborepo logs, outputs, and other functionality.
 .turbo
 
@@ -42,7 +33,3 @@ ui-tests/api-tests/playwright-report/
 
 # Terraform
 tfState.json
-
-# Tests
-ui-tests/transactionHash.json
-tests-results/allure-results/
