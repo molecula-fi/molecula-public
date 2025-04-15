@@ -1,17 +1,20 @@
 import { scope } from 'hardhat/config';
 
+import type { ContractsCore, ContractsNitrogen } from '@molecula-monorepo/blockchain.addresses';
+
 import {
-    deployNitrogen,
     deployAccountantAgent,
     deployCarbon,
     deployCore,
     deployMoleculaPoolTreasury,
+    deployNitrogen,
 } from '../scripts/ethereum';
+import { deployRouter, deployRouterAgent } from '../scripts/ethereum/deploy/deployRouter';
 import {
-    handleError,
-    writeToFile,
-    readFromFile,
     getEnvironment,
+    handleError,
+    readFromFile,
+    writeToFile,
 } from '../scripts/utils/deployUtils';
 
 const ethereumMajorScope = scope('ethereumScope', 'Scope for major ethereum deployment flow');
@@ -23,7 +26,9 @@ ethereumMajorScope
         const environment = getEnvironment(hre, taskArgs.environment);
 
         try {
-            const contractsCore = await readFromFile(`${environment}/contracts_core.json`);
+            const contractsCore: ContractsCore = await readFromFile(
+                `${environment}/contracts_core.json`,
+            );
             const eth = await deployNitrogen(hre, environment, {
                 mUSDe: contractsCore.eth.mUSDe,
                 moleculaPool: contractsCore.eth.moleculaPool,
@@ -87,7 +92,7 @@ ethereumMajorScope
     .addParam('environment', 'Deployment environment')
     .setAction(async (taskArgs, hre) => {
         console.log('\n Ethereum Deployment');
-        console.log('Environment:', taskArgs.environment); // Now using environment variable
+        console.log('Environment:', taskArgs.environment);
         console.log('Network:', hre.network.name);
 
         const environment = getEnvironment(hre, taskArgs.environment);
@@ -114,4 +119,48 @@ ethereumMajorScope
         } catch (error) {
             handleError(error);
         }
+    });
+
+ethereumMajorScope
+    .task('deployRouter', 'Deploys Router')
+    .addParam('environment', 'Deployment environment')
+    .setAction(async (taskArgs, hre) => {
+        console.log('Environment:', taskArgs.environment);
+        console.log('Network:', hre.network.name);
+
+        const environment = getEnvironment(hre, taskArgs.environment);
+        const contractsNitrogen: ContractsNitrogen = await readFromFile(
+            `${environment}/contracts_nitrogen.json`,
+        );
+
+        contractsNitrogen.eth.router = await deployRouter(hre, environment, contractsNitrogen);
+
+        writeToFile(`${environment}/contracts_nitrogen.json`, contractsNitrogen);
+        console.log('Deployment and file write completed successfully.');
+    });
+
+ethereumMajorScope
+    .task('deployRouterAgent', 'Deploys RouterAgent')
+    .addParam('environment', 'Deployment environment')
+    .addParam('token', 'ERC20 token address')
+    .addParam('tokenName', 'Token name')
+    .setAction(async (taskArgs, hre) => {
+        console.log('Environment:', taskArgs.environment);
+        console.log('Network:', hre.network.name);
+
+        const environment = getEnvironment(hre, taskArgs.environment);
+        const contractsNitrogen: ContractsNitrogen = await readFromFile(
+            `${environment}/contracts_nitrogen.json`,
+        );
+
+        // @ts-ignore
+        contractsNitrogen.eth.routerAgents[taskArgs.tokenName] = await deployRouterAgent(
+            hre,
+            environment,
+            contractsNitrogen,
+            taskArgs.token,
+        );
+
+        writeToFile(`${environment}/contracts_nitrogen.json`, contractsNitrogen);
+        console.log('Deployment and file write completed successfully.');
     });
