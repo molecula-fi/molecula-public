@@ -1,11 +1,8 @@
-/**
- * Link to original contract https://etherscan.io/address/0x811ed79dB9D34E83BDB73DF6c3e07961Cfb0D5c0#code
- */
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
+/* solhint-disable */
 pragma solidity ^0.8.22;
 
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IMessagingChannel} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/IMessagingChannel.sol";
@@ -15,9 +12,9 @@ import {OAppOptionsType3} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/lib
 
 import {OFTLimit, OFTReceipt, OFTFeeDetail} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
-import {IUsdtOFT, IOFT, SendParam, MessagingReceipt, MessagingFee} from "./interfaces/IUsdtOFT.sol";
+import {IUsdtOFT, IOFT, SendParam, MessagingReceipt, MessagingFee} from "../common/interfaces/IUsdtOFT.sol";
 
-contract UsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
+contract MockUsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
     using SafeERC20 for IERC20;
 
     // MsgTypes
@@ -26,17 +23,17 @@ contract UsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
     uint16 public constant SEND_CREDITS = 3;
 
     // Endpoint IDs
-    uint32 public immutable ARBITRUM_EID; // 30110
-    uint32 public immutable CELO_EID; // 30125
-    uint32 public immutable ETH_EID; // 30101
-    uint32 public immutable TON_EID; // 30152
-    uint32 public immutable TRON_EID; // 30420
-    uint32 public immutable LOCAL_EID;
+    uint32 public constant ARBITRUM_EID = 30110; // 30110
+    uint32 public constant CELO_EID = 30125; // 30125
+    uint32 public constant ETH_EID = 30101; // 30101
+    uint32 public constant TON_EID = 30152; // 30152
+    uint32 public constant TRON_EID = 30420; // 30420
+    uint32 public eid;
 
     // Credit balances
     mapping(uint32 eid => uint256 credits) public credits;
 
-    IERC20 internal immutable innerToken;
+    IERC20 public innerToken;
 
     // Management addresses
     address public lpAdmin;
@@ -44,40 +41,15 @@ contract UsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
 
     // Fees
     uint256 public feeBalance = 0;
-    uint16 public feeBps = 0;
+    uint16 public feeBps = 10;
     uint16 public constant BPS_DENOMINATOR = 10000;
 
     constructor(
-        uint32 _arbitrumEid,
-        uint32 _celoEid,
-        uint32 _ethEid,
-        uint32 _tonEid,
-        uint32 _tronEid,
-        address _token,
         address _lzEndpoint,
         address _delegate
     ) OApp(_lzEndpoint, _delegate) Ownable(_delegate) {
         // @dev Endpoint details
-        ARBITRUM_EID = _arbitrumEid;
-        CELO_EID = _celoEid;
-        ETH_EID = _ethEid;
-        TON_EID = _tonEid;
-        TRON_EID = _tronEid;
-        LOCAL_EID = IMessagingChannel(_lzEndpoint).eid();
-
-        // @dev Only allow the contract to be deployed with the correct endpoint IDs
-        if (
-            LOCAL_EID != ARBITRUM_EID &&
-            LOCAL_EID != CELO_EID &&
-            LOCAL_EID != ETH_EID &&
-            LOCAL_EID != TRON_EID
-        ) {
-            revert InvalidEid();
-        }
-
-        // @dev Token details
-        if (IERC20Metadata(_token).decimals() != sharedDecimals()) revert InvalidLocalDecimals();
-        innerToken = IERC20(_token);
+        eid = IMessagingChannel(_lzEndpoint).eid();
 
         // @dev Defaults to the lpAdmin AND planner being the delegate
         lpAdmin = _delegate;
@@ -118,6 +90,14 @@ contract UsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
     }
 
     /// ========================== OWNER FUNCTIONS =====================================
+    function setInnerToken(address _innerToken) external onlyOwner {
+        innerToken = IERC20(_innerToken);
+    }
+
+    function increaseCredits(uint32 _eid, uint256 _credits) external onlyOwner {
+        _increaseCredits(_eid, _credits);
+    }
+
     function setLpAdmin(address _lpAdmin) external onlyOwner {
         lpAdmin = _lpAdmin;
         emit LpAdminSet(_lpAdmin);
@@ -139,7 +119,7 @@ contract UsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
         if (_amount > feeBalance) revert InsufficientFeeBalance();
         feeBalance -= _amount;
 
-        if (LOCAL_EID == TRON_EID) {
+        if (eid == TRON_EID) {
             // tron USDT does not support safeTransfer
             innerToken.transfer(_to, _amount);
         } else {
@@ -190,14 +170,14 @@ contract UsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
     /// ========================== LIQUIDITY FUNCTIONS =====================================
     function depositLocal(uint256 _amount) external {
         innerToken.safeTransferFrom(msg.sender, address(this), _amount);
-        _increaseCredits(LOCAL_EID, _amount);
+        _increaseCredits(eid, _amount);
         emit LocalDeposit(_amount);
     }
 
     function withdrawLocal(address _to, uint256 _amount) external onlyLpAdminOrOwner {
-        _decreaseCredits(LOCAL_EID, _amount);
+        _decreaseCredits(eid, _amount);
 
-        if (LOCAL_EID == TRON_EID) {
+        if (eid == TRON_EID) {
             // tron USDT does not support safeTransfer
             innerToken.transfer(_to, _amount);
         } else {
@@ -415,7 +395,7 @@ contract UsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
 
         // @dev Handle the credits
         _decreaseCredits(_sendParam.dstEid, amountReceived);
-        _increaseCredits(LOCAL_EID, amountReceived);
+        _increaseCredits(eid, amountReceived);
 
         // @dev Increment the fee balance so we can account for fee withdrawals
         feeBalance += amountSent - amountReceived;
@@ -444,7 +424,7 @@ contract UsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
         amountReceived = uint64(bytes8(_message[34:42]));
 
         // @dev Unlock the tokens and transfer to the recipient.
-        if (LOCAL_EID == TRON_EID) {
+        if (eid == TRON_EID) {
             // tron USDT does not support safeTransfer
             innerToken.transfer(to, amountReceived);
         } else {

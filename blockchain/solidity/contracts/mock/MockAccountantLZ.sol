@@ -1,22 +1,22 @@
 // SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.23;
+pragma solidity ^0.8.23;
 
-import {IAccountant} from "../../../common/interfaces/IAccountant.sol";
+import {IAccountant} from "../common/interfaces/IAccountant.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IRebaseToken} from "../../../common/interfaces/IRebaseToken.sol";
-import {ISetterOracle} from "../../../common/interfaces/ISetterOracle.sol";
+import {IRebaseToken} from "../common/interfaces/IRebaseToken.sol";
+import {ISetterOracle} from "../common/interfaces/ISetterOracle.sol";
 
-import {LZMsgCodec} from "../../../common/layerzero/LZMsgCodec.sol";
+import {LZMsgCodec} from "../common/layerzero/LZMsgCodec.sol";
 import {OApp, Origin} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
-import {OptionsLZ} from "../../../common/layerzero/OptionsLZ.sol";
+import {OptionsLZ} from "../common/layerzero/OptionsLZ.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../../../common/UsdtOFT.sol";
-import {ZeroValueChecker} from "../../../common/ZeroValueChecker.sol";
+import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../common/UsdtOFT.sol";
+import {ZeroValueChecker} from "../common/ZeroValueChecker.sol";
 
 /// @title AccountantLZ - Accountant contract for handling LayerZero-based cross-chain transactions.
 /// @notice This contract facilitates cross-chain USDT transactions using LayerZero and UsdtOFT.
-contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
+contract MockAccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
     using SafeERC20 for IERC20;
 
     /// @dev LayerZero destination chain ID for cross-chain communication.

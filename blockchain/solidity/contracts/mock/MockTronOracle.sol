@@ -1,22 +1,22 @@
 // SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.23;
+pragma solidity ^0.8.23;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 // solhint-disable-next-line no-unused-import
-import {ISetterOracle, IOracle} from "../../../common/interfaces/ISetterOracle.sol";
+import {ISetterOracle, IOracle} from "../common/interfaces/ISetterOracle.sol";
 
 /**
  * @title TronOracle
  * @dev Contract for managing shares and pool information, implementing the IOracle interface.
  */
-contract TronOracle is Ownable, ISetterOracle {
+contract MockTronOracle is Ownable, ISetterOracle {
     /// @dev Total pool value tracked by the Oracle.
-    uint256 private _pool = 0;
+    uint256 private _pool = 10 * 10 ** 18;
 
     /// @dev Total shares value tracked by the Oracle.
-    uint256 private _shares = 0;
+    uint256 private _shares = 10 * 10 ** 18;
 
     /// @dev Accountant address.
     address public accountant;
@@ -52,21 +52,15 @@ contract TronOracle is Ownable, ISetterOracle {
 
     /**
      * @dev Constructor that initializes the smart contract by setting the initial shares, pool value, and its owner.
-     * @param initialShares Shares number to set for the Oracle specified during contract creation.
-     * @param initialPool Pool value to set for the Oracle specified during contract creation.
      * @param initialOwner Smart contract owner address.
      * @param accountantAddress Accountant address.
      * @param authorizedUpdaterAddress Value setter address.
      */
     constructor(
-        uint256 initialShares,
-        uint256 initialPool,
         address initialOwner,
         address accountantAddress,
         address authorizedUpdaterAddress
     ) Ownable(initialOwner) {
-        _pool = initialPool;
-        _shares = initialShares;
         accountant = accountantAddress;
         authorizedUpdater = authorizedUpdaterAddress;
     }

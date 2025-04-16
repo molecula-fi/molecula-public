@@ -6,7 +6,7 @@
  */
 
 // solhint-disable-next-line compiler-version
-pragma solidity ^0.4.18;
+pragma solidity 0.4.20;
 
 /**
  * @title SafeMath
@@ -418,7 +418,7 @@ contract UpgradedStandardToken is StandardToken {
     ) public returns (bool);
 }
 
-contract MockUsdtTron is Pausable, StandardTokenWithFees, BlackList {
+contract UsdtTron is Pausable, StandardTokenWithFees, BlackList {
     address public upgradedAddress;
     bool public deprecated;
 
@@ -430,7 +430,7 @@ contract MockUsdtTron is Pausable, StandardTokenWithFees, BlackList {
     // @param _symbol Token symbol
     // @param _decimals Token decimals
     // solhint-disable-next-line func-name-mixedcase
-    function TetherToken(
+    function UsdtTron(
         uint256 _initialSupply,
         string _name,
         string _symbol,
