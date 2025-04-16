@@ -5,7 +5,7 @@ import { ethers } from 'hardhat';
 import { DevnetContractsCarbon } from '@molecula-monorepo/blockchain.addresses/deploy/devnet';
 
 import { sepoliaConfig } from '../../configs/ethereum/sepoliaTyped';
-import { setReceiveConfig, setSendConfig } from '../utils/lzSepoliaSetupUtils';
+import { setReceiveConfig, setSendConfig, setPeer } from '../utils/lzSepoliaSetupUtils';
 import { getOAppConfig } from '../utils/lzSetupUtils';
 
 export async function setupSepoliaOAppDVN() {
@@ -34,6 +34,8 @@ export async function setupSepoliaOAppDVN() {
     console.log('AgentLZ sendLibAddress:', sendLibAddress);
     console.log('AgentLZ receiveLibAddress:', receiveLibAddress);
 
+    // Set peer
+    await setPeer(oappAddress, remoteEid, DevnetContractsCarbon.tron.accountantLZ);
     // Set send config
     await setSendConfig(lzEndpoint, remoteEid, oappAddress, sendLibAddress);
     // Set receive config

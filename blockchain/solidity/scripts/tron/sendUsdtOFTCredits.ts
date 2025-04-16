@@ -1,7 +1,7 @@
 import TronWeb from 'tronweb';
 
 import { abi as usdtOFT } from '../../artifacts/contracts/common/UsdtOFT.sol/UsdtOFT.json';
-import { abi as usdtContract } from '../../artifacts/contracts/test/MockUsdtTron.sol/MockUsdtTron.json';
+import { abi as usdtContract } from '../../artifacts/contracts/test/UsdtTron.sol/UsdtTron.json';
 import { sepoliaConfig } from '../../configs/ethereum/sepoliaTyped';
 import { shastaConfig } from '../../configs/tron/shastaTyped';
 

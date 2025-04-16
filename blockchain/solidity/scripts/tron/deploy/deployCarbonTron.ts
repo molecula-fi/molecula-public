@@ -38,7 +38,6 @@ export async function deployCarbon(
     mnemonic: string,
     path: string,
     network: NetworkType,
-    agentLZ: string,
 ) {
     const { config, tronWeb, privateKey } = await getTronWeb(mnemonic, path, network);
 
@@ -67,7 +66,6 @@ export async function deployCarbon(
         lzDstEid: config.LAYER_ZERO_ETHEREUM_EID,
         usdtAddress: config.USDT_ADDRESS,
         usdtOFTAddress: config.USDT_OFT,
-        agentAddress: agentLZ,
         oracleAddress: oracle,
     });
     console.log('Swap Accountant LZ deployed:', accountantLZ);
@@ -77,11 +75,13 @@ export async function deployCarbon(
     console.log('Oracle accountant set:', accountantLZ);
 
     // deploy RebaseToken
-    const rebaseToken = await deployRebaseToken(network, hre, tronWeb, privateKey, {
+    const rebaseToken = await deployRebaseToken(hre, tronWeb, privateKey, {
         initialOwner,
         accountantAddress: accountantLZ,
         initialShares: 0n, // set to zero, the initial shares are present only in Nitrogen
         oracleAddress: oracle,
+        tokenName: config.MUSD_TOKEN_NAME,
+        tokenSymbol: config.MUSD_TOKEN_SYMBOL,
         tokenDecimals: config.MUSD_TOKEN_DECIMALS,
         minDeposit: config.MUSD_TOKEN_MIN_DEPOSIT,
         minRedeem: config.MUSD_TOKEN_MIN_REDEEM,

@@ -16,7 +16,7 @@ export async function deployMockUSDT(
     // Find an account address corresponding to the given PRIVATE_KEY
     const issuerAddress = tronWeb.address.fromPrivateKey(privateKey);
 
-    const artifact = await hre.artifacts.readArtifact('MockUsdtTron');
+    const artifact = await hre.artifacts.readArtifact('UsdtTron');
 
     const transaction = (await tronWeb.transactionBuilder.createSmartContract(
         {
@@ -25,7 +25,7 @@ export async function deployMockUSDT(
             abi: artifact.abi,
             bytecode: artifact.bytecode,
             // @ts-ignore (probably wrong type annotation)
-            parameters: [],
+            parameters: [hre.ethers.formatUnits(1000000, 6), 'Tether token', 'USDT', 6],
         },
         issuerAddress,
     )) as Transaction;

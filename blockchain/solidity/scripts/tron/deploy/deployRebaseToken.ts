@@ -2,25 +2,9 @@ import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import type TronWeb from 'tronweb';
 import type { Transaction } from 'tronweb/interfaces';
 
-import { NetworkType } from '@molecula-monorepo/blockchain.addresses';
-
 import { waitForDeployment } from './waitForDeployment';
 
-export function getRebaseTokenVersion(network: NetworkType) {
-    switch (network) {
-        case NetworkType['mainnet/beta']:
-            return 'RebaseTokenBeta';
-        case NetworkType['mainnet/prod']:
-            return 'RebaseTokenTron';
-        case NetworkType.devnet:
-            return 'RebaseTokenTest';
-        default:
-            throw new Error('Unsupported network type!');
-    }
-}
-
 export async function deployRebaseToken(
-    network: NetworkType,
     hre: HardhatRuntimeEnvironment,
     tronWeb: TronWeb,
     privateKey: string,
@@ -29,6 +13,8 @@ export async function deployRebaseToken(
         accountantAddress: string;
         initialShares: bigint;
         oracleAddress: string;
+        tokenName: string;
+        tokenSymbol: string;
         tokenDecimals: number;
         minDeposit: bigint;
         minRedeem: bigint;
@@ -37,11 +23,7 @@ export async function deployRebaseToken(
     // Find an account address corresponding to the given PRIVATE_KEY
     const issuerAddress = tronWeb.address.fromPrivateKey(privateKey);
 
-    const contractVersion = getRebaseTokenVersion(network);
-
-    console.log(`For ${network} selected ${contractVersion} contract version`);
-
-    const artifact = await hre.artifacts.readArtifact(contractVersion);
+    const artifact = await hre.artifacts.readArtifact('RebaseTokenTron');
 
     const transaction = (await tronWeb.transactionBuilder.createSmartContract(
         {
@@ -55,6 +37,8 @@ export async function deployRebaseToken(
                 params.accountantAddress,
                 params.initialShares,
                 params.oracleAddress,
+                params.tokenName,
+                params.tokenSymbol,
                 params.tokenDecimals,
                 params.minDeposit,
                 params.minRedeem,

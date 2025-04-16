@@ -6,7 +6,7 @@ import { DevnetContractsCarbon } from '@molecula-monorepo/blockchain.addresses/d
 import { abi as lzEndpointABI } from '../../artifacts/@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol/ILayerZeroEndpointV2.json';
 import { shastaConfig } from '../../configs/tron/shastaTyped';
 import { getTronOAppConfig } from '../utils/lzSetupUtils';
-import { setReceiveConfig, setSendConfig } from '../utils/lzShastaSetupUtils';
+import { setReceiveConfig, setSendConfig, setPeer } from '../utils/lzShastaSetupUtils';
 
 export async function setupShastaOAppDVN() {
     // Create TronWeb instance
@@ -45,6 +45,8 @@ export async function setupShastaOAppDVN() {
     console.log('sendLibAddress:', sendLibAddress);
     console.log('receiveLibAddress:', receiveLibAddress);
 
+    // Set Peer
+    await setPeer(tronWeb, oappAddress, remoteEid, DevnetContractsCarbon.eth.agentLZ);
     // Set Receive Config
     await setReceiveConfig(tronWeb, lzEndpoint, remoteEid, oappAddress, receiveLibAddress);
     // Set Send Config

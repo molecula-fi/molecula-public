@@ -9,16 +9,16 @@ const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 export async function setPeer(
     sourceOAppAddress: AddressLike,
     remoteEid: number,
-    oappAddress: AddressLike,
+    peerOAppAddress: AddressLike,
 ) {
     const sourceContract = await ethers.getContractAt('IOAppCore', sourceOAppAddress as string);
     const addressInBytes32 = ethers.zeroPadValue(
-        TronWeb.address.toHex(oappAddress as string).replace(/^(41)/, '0x') as string,
+        TronWeb.address.toHex(peerOAppAddress as string).replace(/^(41)/, '0x') as string,
         32,
     );
     const response = await sourceContract.setPeer(remoteEid, addressInBytes32);
     await response.wait();
-    console.log(`\tSet peer for the contract ${oappAddress}.`);
+    console.log(`\tSet peer for the contract ${peerOAppAddress}.`);
 }
 
 export async function setUsdtOftFee(usdtOftAddress: AddressLike) {

@@ -8,8 +8,10 @@ import { verifyContract } from '../../verification/verificationUtils';
 
 async function deployUSDT(hre: HardhatRuntimeEnvironment) {
     // deploy USDT
-    const USDT = await hre.ethers.getContractFactory('MockUsdtEthereum');
-    const usdt = await USDT.deploy({ gasLimit: DEPLOY_GAS_LIMIT });
+    const USDT = await hre.ethers.getContractFactory('UsdtEthereum');
+    const usdt = await USDT.deploy(hre.ethers.formatUnits(1000000, 6), 'Tether token', 'USDT', 6, {
+        gasLimit: DEPLOY_GAS_LIMIT,
+    });
     await usdt.waitForDeployment();
     const usdtAddress = await usdt.getAddress();
     console.log('usdt deployed: ', usdtAddress);

@@ -15,7 +15,6 @@ export async function deployAccountantLZ(
         lzDstEid: number;
         usdtAddress: string;
         usdtOFTAddress: string;
-        agentAddress: string;
         oracleAddress: string;
     },
 ): Promise<string> {
@@ -37,7 +36,6 @@ export async function deployAccountantLZ(
                 params.lzDstEid,
                 params.usdtAddress,
                 params.usdtOFTAddress,
-                params.agentAddress,
                 params.oracleAddress,
             ],
         },
