@@ -10,7 +10,7 @@ import { grantERC20, grantETH } from '../utils/grant';
 
 describe('Test SupplyManger yield', () => {
     describe('Test SupplyManager pool yield lock and out of gas distribution', () => {
-        it.skip('SupplyManager.distributeYield() out of gas for', async () => {
+        it('SupplyManager.distributeYield() out of gas for', async () => {
             const { moleculaPool, supplyManager, agent, USDT } = await loadFixture(deployNitrogen);
 
             const income = 250_000_000n;
@@ -21,10 +21,9 @@ describe('Test SupplyManger yield', () => {
             const portionPerUser = 2n * 10n ** 15n; // Adjust portion as needed
 
             for (let i = 0; i < 500; i += 1) {
-                // console.log(i);
-                const user = ethers.Wallet.createRandom(); // Generate a new user account
+                const user = ethers.getAddress(`0x${i.toString(16).padStart(40, '0')}`); // Generate a new user account
                 users.push({
-                    party: user.address, // Use user address
+                    party: user, // Use user address
                     portion: portionPerUser,
                 });
             }
