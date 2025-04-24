@@ -1,0 +1,4 @@
+@openzeppelin/=node_modules/@openzeppelin/
+@layerzerolabs/=node_modules/@layerzerolabs/
+solidity-bytes-utils/=node_modules/solidity-bytes-utils/
+forge-std/=lib/forge-std/src/

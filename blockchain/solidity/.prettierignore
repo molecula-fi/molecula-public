@@ -2,6 +2,11 @@
 /artifacts
 /cache
 
+# Forge files
+/lib
+/build
+/cache_forge
+
 # TypeChain files
 /typechain
 /typechain-types

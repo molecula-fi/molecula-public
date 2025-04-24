@@ -1,6 +1,5 @@
 /* eslint-disable no-restricted-syntax, @typescript-eslint/no-explicit-any */
 
-import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import { readFile, writeFileSync, mkdirSync, existsSync } from 'fs';
 
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -159,11 +158,6 @@ export async function getConfig(hre: HardhatRuntimeEnvironment, network: Network
         account,
         USDT,
     };
-}
-
-export async function getNonce(account: HardhatEthersSigner) {
-    const nonce = await account.getNonce();
-    return nonce;
 }
 
 // If `target` does not have enough erc20Token tokens, then transfer them

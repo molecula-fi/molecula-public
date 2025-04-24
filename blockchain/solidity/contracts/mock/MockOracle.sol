@@ -13,10 +13,10 @@ import {ISetterOracle, IOracle} from "../common/interfaces/ISetterOracle.sol";
  */
 contract MockOracle is Ownable, ISetterOracle {
     /// @dev Total pool value tracked by the Oracle.
-    uint256 private _pool = 0;
+    uint256 private _pool;
 
     /// @dev Total shares value tracked by the Oracle.
-    uint256 private _shares = 0;
+    uint256 private _shares;
 
     /**
      * @dev Constructor that initializes the smart contract by setting the initial shares, pool value, and its owner.

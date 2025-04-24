@@ -3,8 +3,8 @@ import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import {
     MoleculaPoolVersion,
     type NetworkType,
-    type AccountantAgentContract,
     type ContractsNitrogen,
+    type ContractAccountantAgent,
 } from '@molecula-monorepo/blockchain.addresses';
 
 import { getConfig, readFromFile, writeToFile } from '../utils/deployUtils';
@@ -42,16 +42,14 @@ export async function migrateNitrogenAgent(
     version: MoleculaPoolVersion,
 ) {
     const accountantAgentAddress = (
-        (await readFromFile(
-            `${environment}/accountant_agent.json`,
-        )) as typeof AccountantAgentContract
+        (await readFromFile(`${environment}/accountant_agent.json`)) as ContractAccountantAgent
     ).accountantAgent;
 
     if (accountantAgentAddress.length === 0) {
         throw new Error('Firstly deploy accountantAgentAddress');
     }
 
-    const contractsNitrogen: typeof ContractsNitrogen = await readFromFile(
+    const contractsNitrogen: ContractsNitrogen = await readFromFile(
         `${environment}/contracts_nitrogen.json`,
     );
 

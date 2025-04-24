@@ -1,13 +1,13 @@
-import AccountantAgentContract from './accountant_agent.json';
-import ContractsCarbon from './contracts_carbon.json';
-import ContractsCore from './contracts_core.json';
+import DevnetContractAccountantAgent from './accountant_agent.json';
+import DevnetContractsCarbon from './contracts_carbon.json';
+import DevnetContractsCore from './contracts_core.json';
 import DevnetContractsEthena from './contracts_ethena.json';
-import ContractsNitrogen from './contracts_nitrogen.json';
+import DevnetContractsNitrogen from './contracts_nitrogen.json';
 
 export {
-    ContractsCarbon,
-    ContractsNitrogen,
-    ContractsCore,
-    AccountantAgentContract,
+    DevnetContractsCarbon,
+    DevnetContractsNitrogen,
+    DevnetContractsCore,
+    DevnetContractAccountantAgent,
     DevnetContractsEthena,
 };

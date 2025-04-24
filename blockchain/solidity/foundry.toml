@@ -1,0 +1,30 @@
+[profile.default]
+src = 'contracts'
+out = 'build'
+libs = ['lib', 'node_modules']
+test = 'test'
+cache_path  = 'cache_forge'
+build_info = true
+build_info_path = 'build/build-info'
+auto_detect_remappings = false
+auto_detect_solc = true
+optimizer = true
+optimizer_runs = 400
+
+fs_permissions = [
+  { access = "read-write", path = ".forge-snapshots/" },
+  { access = "read", path = "build/" }
+]
+
+remappings = [
+    "@openzeppelin/=node_modules/@openzeppelin/", 
+    "@layerzerolabs/=node_modules/@layerzerolabs/",
+    "solidity-bytes-utils/=node_modules/solidity-bytes-utils/"
+]
+
+[doc]
+ignore = ["contracts/test/**/*.sol", "contracts/mock/**/*.sol", "contracts/core/MoleculaPool.sol"]
+
+[profile.default.fuzz]
+runs = 1024
+show_metrics = true

@@ -30,6 +30,8 @@ export const tronMainnetProdConfig: TronNetworkConfig = {
         tronAuthorizedAddresses.TREASURY_AUTHORIZED_LZ_CONFIGURATOR[TronChainIDs.Mainnet].prod,
 
     // Token info
+    MUSD_TOKEN_NAME: 'Molecula USD',
+    MUSD_TOKEN_SYMBOL: 'mUSD',
     MUSD_TOKEN_DECIMALS: 18,
     MUSD_TOKEN_MIN_DEPOSIT: 1_000_000n,
     MUSD_TOKEN_MIN_REDEEM: 500_000_000_000_000_000n,

@@ -6,7 +6,7 @@
  */
 
 // solhint-disable-next-line compiler-version
-pragma solidity ^0.4.18;
+pragma solidity 0.4.20;
 
 /**
  * @title SafeMath
@@ -316,8 +316,8 @@ contract StandardToken is ERC20, BasicToken {
 
 contract StandardTokenWithFees is StandardToken, Ownable {
     // Additional variables for use if transaction fees ever became necessary
-    uint256 public basisPointsRate = 0;
-    uint256 public maximumFee = 0;
+    uint256 public basisPointsRate;
+    uint256 public maximumFee;
     // solhint-disable-next-line private-vars-leading-underscore, state-visibility
     uint256 constant MAX_SETTABLE_BASIS_POINTS = 20;
     // solhint-disable-next-line private-vars-leading-underscore, state-visibility
@@ -418,7 +418,7 @@ contract UpgradedStandardToken is StandardToken {
     ) public returns (bool);
 }
 
-contract MockUsdtTron is Pausable, StandardTokenWithFees, BlackList {
+contract UsdtTron is Pausable, StandardTokenWithFees, BlackList {
     address public upgradedAddress;
     bool public deprecated;
 
@@ -430,7 +430,7 @@ contract MockUsdtTron is Pausable, StandardTokenWithFees, BlackList {
     // @param _symbol Token symbol
     // @param _decimals Token decimals
     // solhint-disable-next-line func-name-mixedcase
-    function TetherToken(
+    function UsdtTron(
         uint256 _initialSupply,
         string _name,
         string _symbol,

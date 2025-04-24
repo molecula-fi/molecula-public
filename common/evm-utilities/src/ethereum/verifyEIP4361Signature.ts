@@ -26,6 +26,10 @@ export interface BuildOptions {
      * Client protocol, ie https
      */
     protocol: string;
+    /**
+     * Statement message for auth
+     */
+    statement: string;
 }
 
 /**
@@ -33,13 +37,13 @@ export interface BuildOptions {
  * @param options - Build options
  */
 export function buildEIP4361SignMessage(options: BuildOptions): string {
-    const { address, nonce, host, protocol } = options;
+    const { address, nonce, host, protocol, statement } = options;
 
     const siweMessage = new SiweMessage({
         scheme: protocol,
         domain: host,
         uri: `${protocol}://${host}`,
-        statement: 'Authorization in Atoms service',
+        statement,
         version: '1',
         chainId: 1,
         address,
@@ -47,6 +51,14 @@ export function buildEIP4361SignMessage(options: BuildOptions): string {
     });
 
     return siweMessage.prepareMessage();
+}
+
+/**
+ * Validate EIP4361 sign message
+ */
+export function validEIP4361SignMessage(message: string): boolean {
+    const siweMessage = new SiweMessage(message);
+    return !!siweMessage;
 }
 
 /**

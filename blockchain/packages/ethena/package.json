@@ -1,7 +1,7 @@
 {
     "name": "@molecula-monorepo/blockchain.ethena",
     "description": "A package responsible for compiling ethena contracts",
-    "version": "0.15.0",
+    "version": "0.16.0",
     "private": true,
     "license": "GPL-3.0-only",
     "main": "src/index.ts",
@@ -23,7 +23,7 @@
         "@molecula-monorepo/solidity": "*",
         "@openzeppelin/contracts": "^4.9.5",
         "dotenv": "^16.4.7",
-        "hardhat": "^2.22.19",
+        "hardhat": "^2.23.0",
         "hardhat-gas-reporter": "^2.2.2",
         "node-fetch": "^2.6.7"
     },

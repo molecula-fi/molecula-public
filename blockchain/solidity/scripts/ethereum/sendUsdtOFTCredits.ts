@@ -6,7 +6,7 @@ async function sendUSDTCreditsCrossChain() {
     const amountToSend = ethers.parseUnits('1000', 6); // 1000 USDT (6 decimals)
 
     // Contract instances
-    const usdtToken = await ethers.getContractAt('MockUsdtEthereum', sepoliaConfig.USDT_ADDRESS);
+    const usdtToken = await ethers.getContractAt('UsdtEthereum', sepoliaConfig.USDT_ADDRESS);
     const usdtOFT = await ethers.getContractAt('UsdtOFT', sepoliaConfig.USDT_OFT);
 
     // Step 1: Approve USDT tokens

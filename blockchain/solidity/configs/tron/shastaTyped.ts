@@ -30,6 +30,8 @@ export const shastaConfig: TronNetworkConfig = {
         tronAuthorizedAddresses.TREASURY_AUTHORIZED_LZ_CONFIGURATOR[TronChainIDs.Shasta],
 
     // Token info
+    MUSD_TOKEN_NAME: 'mUSD retail test v0.14',
+    MUSD_TOKEN_SYMBOL: 'mUSDretS',
     MUSD_TOKEN_DECIMALS: 18,
     MUSD_TOKEN_MIN_DEPOSIT: 1000000n,
     MUSD_TOKEN_MIN_REDEEM: 1_000_000_000_000_000_000n,

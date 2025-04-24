@@ -1,22 +1,18 @@
 // SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 import {RebaseTokenCommon} from "../../../common/rebase/RebaseTokenCommon.sol";
 
 contract RebaseTokenTron is RebaseTokenCommon {
-    /// @dev Rebase token contract's tokenName.
-    string public constant TOKEN_NAME = "Molecula USD";
-
-    /// @dev Rebase token contract's tokenSymbol.
-    string public constant TOKEN_SYMBOL = "mUSD";
-
     /**
      * @dev Constructor for initializing the contract.
      * @param initialOwner Smart contract owner address.
      * @param accountantAddress Accountant address.
      * @param initialShares Shares' amount to mint.
      * @param oracleAddress Oracle contract address.
+     * @param tokenName Token name.
+     * @param tokenSymbol Token symbol.
      * @param tokenDecimals Token decimals.
      * @param minDeposit Minimum deposit value.
      * @param minRedeem Minimum redeem operation value.
@@ -26,6 +22,8 @@ contract RebaseTokenTron is RebaseTokenCommon {
         address accountantAddress,
         uint256 initialShares,
         address oracleAddress,
+        string memory tokenName,
+        string memory tokenSymbol,
         uint8 tokenDecimals,
         uint256 minDeposit,
         uint256 minRedeem
@@ -35,8 +33,8 @@ contract RebaseTokenTron is RebaseTokenCommon {
             accountantAddress,
             initialShares,
             oracleAddress,
-            TOKEN_NAME,
-            TOKEN_SYMBOL,
+            tokenName,
+            tokenSymbol,
             tokenDecimals,
             minDeposit,
             minRedeem

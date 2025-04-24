@@ -1,6 +1,8 @@
-/* eslint-disable camelcase */
+/* eslint-disable camelcase, max-lines */
 import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+import { days } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time/duration';
 import { expect } from 'chai';
+import { keccak256 } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
@@ -8,8 +10,6 @@ import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 import { generateRandomWallet } from './Common';
 import { findRequestRedeemEvent } from './event';
 import { grantERC20 } from './grant';
-
-const INITIAL_SUPPLY = 100n * 10n ** 18n;
 
 export async function deployNitrogenV2Common(token: string) {
     // Contracts are deployed using the first signer/account by default
@@ -24,6 +24,9 @@ export async function deployNitrogenV2Common(token: string) {
     const controller = signers.at(6)!;
     const randAccount = signers.at(7)!;
     const guardian = signers.at(8)!;
+    const authorizedYieldDistributor = signers.at(9)!;
+    const lmUSDHolder = signers.at(10)!;
+    const user2 = signers.at(11)!;
 
     // calc future addresses
     const transactionCount = await poolOwner.getNonce();
@@ -53,6 +56,7 @@ export async function deployNitrogenV2Common(token: string) {
     const initBalance = await DAI.balanceOf(moleculaPool.getAddress());
     expect(initBalance).to.be.equal(0n);
     // grant DAI for initial supply
+    const INITIAL_SUPPLY = 100n * 10n ** 18n;
     await grantERC20(moleculaPool.getAddress(), DAI, INITIAL_SUPPLY);
     expect(await DAI.balanceOf(moleculaPool.getAddress())).to.equal(INITIAL_SUPPLY);
 
@@ -86,9 +90,9 @@ export async function deployNitrogenV2Common(token: string) {
         await supplyManager.getAddress(),
         'ETH TEST molecula',
         'MTE',
-        ethMainnetBetaConfig.DAI_TOKEN_DECIMALS,
+        ethMainnetBetaConfig.MUSD_TOKEN_DECIMALS,
         10_000_000,
-        10_000_000_000_000_000_000n,
+        10n * 10n ** 18n,
     );
     expect(await rebaseToken.getAddress()).to.equal(rebaseTokenFutureAddress);
 
@@ -108,11 +112,39 @@ export async function deployNitrogenV2Common(token: string) {
 
     const USDT = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.USDT_ADDRESS);
 
+    // Deploy wmUSD
+    const lmusdFutureAddress = ethers.getCreateAddress({
+        from: poolOwner.address,
+        nonce: (await poolOwner.getNonce()) + 1,
+    });
+    const WMUSD = await ethers.getContractFactory('WMUSD');
+    const wmusd = await WMUSD.deploy(
+        ethMainnetBetaConfig.WMUSD_TOKEN_NAME,
+        ethMainnetBetaConfig.WMUSD_TOKEN_SYMBOL,
+        poolOwner,
+        rebaseToken,
+        lmusdFutureAddress,
+    );
+
+    // Deploy lmUSD
+    const LMUSD = await ethers.getContractFactory('LMUSD');
+    const lmusd = await LMUSD.deploy(
+        ethMainnetBetaConfig.WMUSD_TOKEN_NAME,
+        ethMainnetBetaConfig.WMUSD_TOKEN_SYMBOL,
+        poolOwner,
+        rebaseToken,
+        wmusd,
+        [days(7)],
+        [1],
+    );
+    expect(await lmusd.getAddress()).to.be.equal(lmusdFutureAddress);
+
     return {
         moleculaPool,
         agent,
         supplyManager,
         rebaseToken,
+        wmusd,
         poolOwner,
         rebaseTokenOwner,
         user0,
@@ -122,19 +154,24 @@ export async function deployNitrogenV2Common(token: string) {
         controller,
         randAccount,
         guardian,
+        authorizedYieldDistributor,
         USDT,
+        lmUSDHolder,
+        user2,
+        poolKeeper,
+        lmusd,
     };
 }
 
-export function deployNitrogenV2WithUSDT() {
+export function deployNitrogenV11WithUSDT() {
     return deployNitrogenV2Common(ethMainnetBetaConfig.USDT_ADDRESS);
 }
 
-export function deployNitrogenV2WithStakedUSDe() {
+export function deployNitrogenV11WithStakedUSDe() {
     return deployNitrogenV2Common(ethMainnetBetaConfig.SUSDE_ADDRESS);
 }
 
-export async function deployMoleculaPoolV11(
+export async function deployMoleculaPoolV11WithParams(
     poolOwner: HardhatEthersSigner,
     supplyManagerAddress: string,
 ) {
@@ -153,7 +190,7 @@ export async function deployMoleculaPoolV11(
     return moleculaPoolV2;
 }
 
-export async function deployMoleculaPoolV2() {
+export async function deployMoleculaPoolV11() {
     const signers = await ethers.getSigners();
     const poolOwner = signers.at(0)!;
     const poolKeeper = signers.at(1)!;
@@ -176,7 +213,7 @@ export async function deployMoleculaPoolV2() {
 }
 
 export async function initNitrogenForPause() {
-    const { moleculaPool, randAccount, guardian, poolOwner } = await deployNitrogenV2WithUSDT();
+    const { moleculaPool, randAccount, guardian, poolOwner } = await deployNitrogenV11WithUSDT();
     const USDT = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.USDT_ADDRESS);
     const keeperSigner = await ethers.getImpersonatedSigner(await moleculaPool.poolKeeper());
     await moleculaPool.addInWhiteList(USDT);
@@ -214,7 +251,7 @@ export async function initNitrogenForPause() {
 
 export async function initNitrogenAndRequestDeposit() {
     const { moleculaPool, rebaseToken, guardian, poolOwner, agent, user0, malicious, randAccount } =
-        await deployNitrogenV2WithUSDT();
+        await deployNitrogenV11WithUSDT();
     const USDT = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.USDT_ADDRESS);
     const depositValue = 100_000_000n;
     await grantERC20(user0, USDT, depositValue);
@@ -238,5 +275,55 @@ export async function initNitrogenAndRequestDeposit() {
         randAccount,
         operationId,
         redeemValue,
+    };
+}
+
+export async function deployNitrogenV11WithRouter() {
+    const nitrogen = await deployNitrogenV2Common(ethMainnetBetaConfig.USDT_ADDRESS);
+    const signers = await ethers.getSigners();
+    const user2 = signers.at(10)!;
+    const operator = signers.at(11)!;
+
+    const USDC = await ethers.getContractAt('IERC20Metadata', ethMainnetBetaConfig.USDC_ADDRESS);
+    const DAI = await ethers.getContractAt('IERC20Metadata', ethMainnetBetaConfig.DAI_ADDRESS);
+
+    // deploy router
+    const Router = await ethers.getContractFactory('Router');
+    const router = await Router.connect(nitrogen.poolOwner).deploy(
+        nitrogen.poolOwner,
+        nitrogen.rebaseToken,
+        nitrogen.guardian,
+    );
+
+    // deploy router agent
+    const Agent = await ethers.getContractFactory('RouterAgent');
+    const routerAgent = await Agent.connect(nitrogen.poolOwner).deploy(
+        nitrogen.poolOwner,
+        router,
+        nitrogen.supplyManager,
+    );
+
+    // set USDC in agent
+    await routerAgent.setErc20Token(USDC);
+
+    // Add routerAgent to supplyManager
+    await nitrogen.supplyManager.connect(nitrogen.poolOwner).setAgent(routerAgent, true);
+
+    // Add routerAgent to router
+    const codeHash = keccak256((await routerAgent.getDeployedCode())!);
+    await router.setAgentCodeHashInWhiteList(codeHash, true);
+    await router.addAgent(routerAgent.getAddress(), false, false, 10n ** 6n, 10n ** 18n);
+
+    // Set router as owner of rebaseToken
+    await nitrogen.rebaseToken.connect(nitrogen.rebaseTokenOwner).transferOwnership(router);
+
+    return {
+        ...nitrogen,
+        routerAgent,
+        router,
+        USDC,
+        DAI,
+        user2,
+        operator,
     };
 }

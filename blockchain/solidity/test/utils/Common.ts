@@ -2,7 +2,7 @@
 import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import { time } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { expect } from 'chai';
-import type { AddressLike } from 'ethers';
+import { type AddressLike } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
@@ -80,6 +80,7 @@ export async function grantUSDe(
 // Check that numbers are equal to`precision` fractional digits.
 // `abs(b - a) / 10**decimals < 1 / 10**precision`
 export function expectEqual(a: bigint, b: bigint, decimals: bigint, precision: bigint) {
+    expect(decimals).to.be.greaterThanOrEqual(precision);
     if (a > b) {
         expectEqual(b, a, decimals, precision);
         return;
@@ -89,8 +90,11 @@ export function expectEqual(a: bigint, b: bigint, decimals: bigint, precision: b
     // (b - a) / 10**decimals < 1 / 10**precision
     // (b - a) < 10**decimals / 10**precision
     // (b - a) < 10**(decimals - precision)
-    expect(b - a).to.be.lessThan(10n ** (decimals - precision));
-    expect(decimals).to.be.greaterThan(precision);
+    if (b - a >= 10n ** (decimals - precision)) {
+        throw new Error(
+            `a: ${ethers.formatUnits(a, decimals)}, b: ${ethers.formatUnits(b, decimals)}, |b-a|: ${ethers.formatUnits(b - a, decimals)}  decimal: ${decimals}, precision: ${precision}`,
+        );
+    }
 }
 
 export async function mintmUSDe(

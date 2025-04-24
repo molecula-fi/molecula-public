@@ -23,7 +23,7 @@ contract AccountantAgent is Ownable, IAccountant, IAgent, ZeroValueChecker {
     /// @dev SupplyManager interface.
     ISupplyManager public immutable SUPPLY_MANAGER;
 
-    /// @dev USDT token's address.
+    /// @dev erc20 token's address.
     IERC20 public immutable ERC20_TOKEN;
 
     /// @dev Account address that can pause the `requestDeposit` and `requestRedeem` functions.
@@ -72,7 +72,7 @@ contract AccountantAgent is Ownable, IAccountant, IAgent, ZeroValueChecker {
     /**
      * @dev Initializes the contract setting the initializer address.
      * @param initialOwner Owner address.
-     * @param rebaseTokenAddress Swap initializer contract's address.
+     * @param rebaseTokenAddress Rebase token address.
      * @param supplyManagerAddress Supply Manager's contract address.
      * @param usdtAddress USDT token's address.
      * @param guardianAddress Guardian address that can pause the contract.
@@ -98,7 +98,7 @@ contract AccountantAgent is Ownable, IAccountant, IAgent, ZeroValueChecker {
     }
 
     /**
-     * @dev Emitted when processing deposits.
+     * @dev Creates a new deposit request.
      * @param requestId Redemption operation unique identifier.
      * @param user User address.
      * @param value Deposited value.

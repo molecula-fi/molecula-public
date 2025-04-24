@@ -16,7 +16,9 @@ yarn-error.log
 # Hardhat files
 /cache
 /cache-tron
+/cache_forge
 /artifacts
+/build
 
 # TypeChain files
 /typechain

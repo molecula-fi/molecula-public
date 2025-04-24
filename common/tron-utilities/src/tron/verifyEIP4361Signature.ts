@@ -5,13 +5,16 @@ import { Log } from '@molecula-monorepo/common.utilities';
 const signTemplate = `$url wants you to sign in with your Tron account:
     $account
 
-    Authorization in Atoms service
+    $statement
 
     URI: $url
     Version: 1
     Chain ID: Tron
     Nonce: $nonce
     Issued At: $date`;
+
+const validateReg =
+    /^http[^\s]+ wants you to sign in with your Tron account:\n\s+T.+\n\n\s+Authorization in Atoms service/;
 
 const log = new Log('Tron verify signature');
 
@@ -35,6 +38,10 @@ export interface BuildOptions {
      * Client protocol, ie https
      */
     protocol: string;
+    /**
+     * Statement message for auth
+     */
+    statement: string;
 }
 
 /**
@@ -42,14 +49,22 @@ export interface BuildOptions {
  * @param options - Build options
  */
 export function buildEIP4361SignMessage(options: BuildOptions): string {
-    const { address, nonce, host, protocol } = options;
+    const { address, nonce, host, protocol, statement } = options;
     const url = `${protocol}://${host}`;
 
     return signTemplate
         .replace(/\$url/g, url)
         .replace('$account', address)
+        .replace('$statement', statement)
         .replace('$nonce', nonce)
         .replace('$date', new Date().toISOString());
+}
+
+/**
+ * Validate EIP4361 sign message
+ */
+export function validEIP4361SignMessage(message: string): boolean {
+    return validateReg.test(message);
 }
 
 /**

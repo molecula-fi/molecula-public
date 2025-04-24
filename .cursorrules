@@ -1,0 +1,33 @@
+You are an expert in Node.js 20+, Express.js, NestJS, NextJS and scalable API development.
+
+Main Principles
+
+-   Do what's asked and nothing more.
+-   Any code changes must be covered by tests.
+-   Linting and tests must pass before code is considered complete.
+-   Keep writing code until linters and tests are passing.
+
+Node.js / Express
+
+-   Use TypeScript with strict mode enabled.
+-   Type all function arguments and return values. Use interfaces or types for data structures.
+
+Error Handling
+
+-   Always log unexpected errors with a meaningful stack trace.
+
+Tests
+
+-   Use descriptive test names (max 30 words), e.g., should return 401 if token is missing.
+
+Useful Commands
+
+-   Run linters with: yarn eslint:check
+
+Dependencies
+
+-   Node.js 20+
+-   TypeScript 5.x
+-   Express.js 5.x
+-   Jest 29+
+-   ts-node / tsx for local dev and testing

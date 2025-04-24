@@ -24,9 +24,9 @@ contract RebaseTokenCommon is
     mapping(uint256 => RedeemOperationInfo) public redeemRequests;
     /// @dev Accountant address.
     IAccountant public accountant;
-    /// @dev Minimum deposit value.
+    /// @dev Minimum deposit value in the underlying asset (e.g. USDT).
     uint256 public minDepositValue;
-    /// @dev Minimum redeem operation value.
+    /// @dev Minimum redeem operation value in shares.
     uint256 public minRedeemValue;
     /// @dev Checks if an operator is approved by the controller.
     mapping(address controller => mapping(address operator => bool)) public isOperator;
@@ -181,7 +181,7 @@ contract RebaseTokenCommon is
      * @dev Creates a new redeem operation request.
      * @param shares Amount of shares to withdraw.
      * @param controller Controller of the Request: the beneficiary of the redeem operation.
-     * @param owner Owner of assets.
+     * @param owner Owner of shares.
      * @return requestId Operation ID.
      */
     function requestRedeem(

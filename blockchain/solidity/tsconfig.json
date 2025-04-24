@@ -1,5 +1,6 @@
 {
     "extends": "@molecula-monorepo/tsconfig-shared",
     "include": ["**/*.ts", "**/*.tsx"],
+    "exclude": ["lib"],
     "files": ["./hardhat.config.ts"]
 }

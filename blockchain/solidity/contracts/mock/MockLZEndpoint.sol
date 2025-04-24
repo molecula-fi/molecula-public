@@ -58,7 +58,7 @@ interface ILZApp {
 /// @notice MockLayerZeroEndpoint contract.
 contract MockLZEndpoint {
     /// @dev Nonce counter of the operations.
-    uint64 public nonce = 0;
+    uint64 public nonce;
 
     /// @dev The last message received.
     bytes public lastMessage;
@@ -120,6 +120,141 @@ contract MockLZEndpoint {
     }
 
     /**
+     * @dev Called when the data is received from the protocol and we need to update oracle data. It overrides the equivalent function in the parent contract.
+     * Protocol messages are defined as packets, comprised of the following parameters.
+     * @param oApp The address of the OApp.
+     * @param srcEid The source chain ID.
+     * @param sender The sender address.
+     * @param msgType The message type.
+     * @param requestId The request ID.
+     * @param shares The data shares.
+     * @param totalValue The data totalValue.
+     * @param totalShares The data totalShares.
+     */
+    function lzReceiveAndUpdateOracle(
+        address oApp,
+        uint32 srcEid,
+        bytes32 sender,
+        bytes1 msgType,
+        uint256 requestId,
+        uint256 shares,
+        uint256 totalValue,
+        uint256 totalShares
+    ) external payable {
+        nonce += 1;
+        bytes memory options;
+        bytes memory message = abi.encodePacked(
+            msgType,
+            requestId,
+            shares,
+            totalValue,
+            totalShares
+        );
+
+        ILZApp(oApp).lzReceive(
+            Origin(srcEid, sender, nonce),
+            bytes32(0),
+            message,
+            address(0),
+            options
+        );
+    }
+
+    /**
+     * @dev Called when the data is received from the protocol and we need to update oracle data. It overrides the equivalent function in the parent contract.
+     * Protocol messages are defined as packets, comprised of the following parameters.
+     * @param oApp The address of the OApp.
+     * @param srcEid The source chain ID.
+     * @param sender The sender address.
+     * @param msgType The message type.
+     * @param users Users.
+     * @param shares Shares.
+     * @param totalValue The data totalValue.
+     * @param totalShares The data totalShares.
+     */
+    function lzReceiveDistributeYieldAndUpdateOracle(
+        address oApp,
+        uint32 srcEid,
+        bytes32 sender,
+        bytes1 msgType,
+        address[] memory users,
+        uint256[] memory shares,
+        uint256 totalValue,
+        uint256 totalShares
+    ) external payable {
+        nonce += 1;
+        bytes memory options;
+        bytes memory message = _lzEncodeDistributeYieldMessageAndUpdateOracle(
+            msgType,
+            users,
+            shares,
+            totalValue,
+            totalShares
+        );
+
+        ILZApp(oApp).lzReceive(
+            Origin(srcEid, sender, nonce),
+            bytes32(0),
+            message,
+            address(0),
+            options
+        );
+    }
+
+    /**
+     * @dev Encodes a distribute yield message and update the oracle.
+     * @param msgType The message type.
+     * @param users The addresses of the users.
+     * @param shares Number of shares.
+     * @param totalValue Total value.
+     * @param totalShares Total shares.
+     * @return message Encoded message.
+     */
+    function _lzEncodeDistributeYieldMessageAndUpdateOracle(
+        bytes1 msgType,
+        address[] memory users,
+        uint256[] memory shares,
+        uint256 totalValue,
+        uint256 totalShares
+    ) internal pure returns (bytes memory message) {
+        uint256 usersLen = users.length;
+
+        message = new bytes(1 + 32 + 32 + usersLen * 20 + usersLen * 32);
+        message[0] = bytes1(msgType);
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
+        assembly {
+            let offset := 1 // Skip message type byte
+            let dataPtr := add(message, 32)
+
+            // Store totalValue and totalShares
+            mstore(add(dataPtr, offset), totalValue)
+            offset := add(offset, 32)
+            mstore(add(dataPtr, offset), totalShares)
+            offset := add(offset, 32)
+
+            for {
+                let i := 0
+            } lt(i, usersLen) {
+                i := add(i, 1)
+            } {
+                let user := mload(add(users, add(32, mul(i, 32))))
+                mstore(add(dataPtr, offset), shl(96, user))
+                offset := add(offset, 20)
+            }
+
+            for {
+                let i := 0
+            } lt(i, usersLen) {
+                i := add(i, 1)
+            } {
+                let share := mload(add(shares, add(32, mul(i, 32))))
+                mstore(add(dataPtr, offset), share)
+                offset := add(offset, 32)
+            }
+        }
+    }
+
+    /**
      * @dev Call the redeem operation on an OApp.
      * @param oApp The address of the OApp.
      * @param srcEid The source chain ID.
@@ -168,13 +303,9 @@ contract MockLZEndpoint {
         nonce += 1;
         bytes memory options;
         // Encode the message.
-        bytes memory message = abi.encodePacked(msgType);
-        for (uint256 i = 0; i < users.length; i++) {
-            message = abi.encodePacked(message, bytes20(users[i]));
-        }
-        for (uint256 i = 0; i < shares.length; i++) {
-            message = abi.encodePacked(message, shares[i]);
-        }
+
+        bytes memory message = _lzEncodeDistributeYieldMessage(msgType, users, shares);
+
         // Send the data to the app.
         ILZApp(oApp).lzReceive(
             Origin(srcEid, sender, nonce),
@@ -183,6 +314,51 @@ contract MockLZEndpoint {
             address(0),
             options
         );
+    }
+
+    /**
+     * @dev Encodes a distribute yield message.
+     * @param msgType The message type.
+     * @param users The addresses of the users.
+     * @param shares Number of shares.
+     * @return message Encoded message.
+     */
+    function _lzEncodeDistributeYieldMessage(
+        bytes1 msgType,
+        address[] memory users,
+        uint256[] memory shares
+    ) internal pure returns (bytes memory message) {
+        uint256 usersLen = users.length;
+
+        message = new bytes(1 + usersLen * 20 + usersLen * 32);
+        message[0] = msgType;
+        // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
+        assembly {
+            let dataPtr := add(message, 32) // Pointer to the start of message data
+            let offset := 1 // Skip the first byte (message type)
+
+            // Store users addresses (each 20 bytes)
+            for {
+                let i := 0
+            } lt(i, usersLen) {
+                i := add(i, 1)
+            } {
+                let user := mload(add(users, add(32, mul(i, 32)))) // Load user address
+                mstore(add(dataPtr, offset), shl(96, user)) // Store as bytes20 (shifted left 96 bits)
+                offset := add(offset, 20) // Move forward by 20 bytes
+            }
+
+            // Store shares (each 32 bytes)
+            for {
+                let i := 0
+            } lt(i, usersLen) {
+                i := add(i, 1)
+            } {
+                let share := mload(add(shares, add(32, mul(i, 32)))) // Load share value
+                mstore(add(dataPtr, offset), share) // Store as uint256
+                offset := add(offset, 32) // Move forward by 32 bytes
+            }
+        }
     }
 
     /**

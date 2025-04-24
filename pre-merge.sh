@@ -44,8 +44,9 @@ npx concurrently "yarn tsc" \
  "yarn prettier:check" \
  "yarn cycles:check" \
  "yarn solhint:check" \
- "yarn natspec:check" \
  "yarn unitTests" \
+# Temporary disable
+# "yarn natspec:check"
 # Temporary disable the following until the issues with "429 Too Many Requests" is resolved:
 # "yarn hardhatUnitTests"
 

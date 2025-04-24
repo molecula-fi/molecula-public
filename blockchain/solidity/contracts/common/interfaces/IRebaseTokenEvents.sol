@@ -5,7 +5,6 @@ pragma solidity ^0.8.23; // Make files compatible between the solutions.
 interface IRebaseTokenEvents {
     /**
      * @dev Emitted when a deposit gets confirmed.
-     *
      * @param requestId Operation ID.
      * @param user User's address that deposits.
      * @param assets Deposit amount.
@@ -15,7 +14,6 @@ interface IRebaseTokenEvents {
 
     /**
      * @dev Emitted when a withdrawal gets confirmed.
-     *
      * @param requestId Operation ID.
      * @param user User's address that withdraws.
      * @param assets Withdrawal amount.

@@ -48,9 +48,6 @@ export const sepoliaConfig: EthereumNetworkConfig = {
     /** @deprecated Dai initial supply. */
     INITIAL_DAI_SUPPLY: 100_000_000_000_000_000_000n,
 
-    /** @deprecated decimals for DAI solution. */
-    DAI_TOKEN_DECIMALS: 18,
-
     /** Initial Supply Manager balance. */
     INITIAL_USDT_SUPPLY: 100_000_000n,
 
@@ -99,4 +96,12 @@ export const sepoliaConfig: EthereumNetworkConfig = {
     /** Agent Authorized lz configurator address. */
     AGENT_AUTHORIZED_LZ_CONFIGURATOR:
         evmAuthorizedAddresses.AGENT_AUTHORIZED_LZ_CONFIGURATOR[EVMChainIDs.Sepolia],
+
+    WMUSD_TOKEN_NAME: 'Wrapped mUSD test',
+    WMUSD_TOKEN_SYMBOL: 'wmUSDt',
+
+    LMUSD_TOKEN_NAME: 'Locked mUSD test',
+    LMUSD_TOKEN_SYMBOL: 'lmUSDt',
+    LMUSD_PERIODS: [],
+    LMUSD_MULTIPLIERS: [],
 };

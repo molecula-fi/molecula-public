@@ -5,6 +5,7 @@ import { migrateNitrogenAgent, migrateNitrogenMoleculaPoolTreasury } from '../sc
 import { setAccountant } from '../scripts/ethereum/deploy/deployCarbon';
 import { setCoreOwner } from '../scripts/ethereum/setCoreOwner';
 import { setNitrogenOwner } from '../scripts/ethereum/setNitrogenOwner';
+import { setupRouter } from '../scripts/ethereum/setRouter';
 import { setCarbonOwner } from '../scripts/tron/setCarbonOwner';
 
 import { getEnvironment, getVersion, readFromFile } from '../scripts/utils/deployUtils';
@@ -44,6 +45,27 @@ ethereumSetupScope
         const environment = getEnvironment(hre, taskArgs.environment);
         await migrateNitrogenMoleculaPoolTreasury(hre, environment);
         console.log('Migration Nitrogen MoleculaPoolTreasury completed successfully.');
+    });
+
+ethereumSetupScope
+    .task('setupRouter', 'Add AgentRouter in Router')
+    .addParam('environment')
+    .addParam('minDepositValue')
+    .addParam('minRedeemShares')
+    .addParam('tokenName')
+    .setAction(async (taskArgs, hre) => {
+        console.log('Environment:', taskArgs.environment);
+        console.log('Network:', hre.network.name);
+
+        const environment = getEnvironment(hre, taskArgs.environment);
+        await setupRouter(
+            hre,
+            environment,
+            taskArgs.minDepositValue,
+            taskArgs.minRedeemShares,
+            taskArgs.tokenName,
+        );
+        console.log('Adding RouterAgent completed successfully.');
     });
 
 ethereumSetupScope

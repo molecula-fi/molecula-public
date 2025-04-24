@@ -4,7 +4,7 @@ import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
-import { getConfig, getNonce, getEthereumAddress } from '../../utils/deployUtils';
+import { getConfig, getEthereumAddress } from '../../utils/deployUtils';
 
 export async function deployCarbon(
     hre: HardhatRuntimeEnvironment,
@@ -17,7 +17,7 @@ export async function deployCarbon(
     const { config, account } = await getConfig(hre, environment);
 
     // calc agent LZ future address
-    const trxCount = await getNonce(account);
+    const trxCount = await account.getNonce();
     const agentLZFutureAddress = hre.ethers.getCreateAddress({
         from: account.address,
         nonce: trxCount,
@@ -79,11 +79,15 @@ export async function setAccountant(
         accountantLZ: string;
     },
 ) {
+    const { config } = await getConfig(hre, environment);
+
     const accountantLzHexaDecimal = getEthereumAddress(environment, contracts.accountantLZ);
 
     const agentLZContract = await hre.ethers.getContractAt('AgentLZ', contracts.agentLZ);
 
-    const response = await agentLZContract.setAccountant(accountantLzHexaDecimal);
+    const addressInBytes32 = hre.ethers.zeroPadValue(accountantLzHexaDecimal, 32);
+
+    const response = await agentLZContract.setPeer(config.LAYER_ZERO_TRON_EID, addressInBytes32);
 
     await response.wait();
 

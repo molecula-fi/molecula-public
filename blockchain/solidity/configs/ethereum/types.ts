@@ -21,7 +21,6 @@ export type EthereumNetworkConfig = {
 
     // Deploy params
     INITIAL_DAI_SUPPLY: bigint;
-    DAI_TOKEN_DECIMALS: number;
     INITIAL_USDT_SUPPLY: bigint;
     DAI_ADDRESS: EVMAddress;
 
@@ -45,4 +44,12 @@ export type EthereumNetworkConfig = {
     AUTHORIZED_AGENT_SERVER: EVMAddress;
     AUTHORIZED_WMUSDT_SERVER: EVMAddress;
     AGENT_AUTHORIZED_LZ_CONFIGURATOR: EVMAddress;
+
+    WMUSD_TOKEN_NAME: string;
+    WMUSD_TOKEN_SYMBOL: string;
+
+    LMUSD_TOKEN_NAME: string;
+    LMUSD_TOKEN_SYMBOL: string;
+    LMUSD_PERIODS: [];
+    LMUSD_MULTIPLIERS: [];
 };

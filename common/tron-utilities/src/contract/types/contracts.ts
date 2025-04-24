@@ -2,7 +2,7 @@ import type { JsonFragment } from 'ethers';
 
 import type { TronWeb } from 'tronweb';
 
-import type { TRC20 } from '@molecula-monorepo/common.tron-contracts';
+import type { SunCurve, TRC20 } from '@molecula-monorepo/common.tron-contracts';
 import { type UsdtOFT } from '@molecula-monorepo/solidity/typechain-types';
 import type { ILayerZeroEndpointV2 } from '@molecula-monorepo/solidity/typechain-types/@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces';
 
@@ -20,6 +20,7 @@ export type AllTronContracts =
     | AccountantLZ
     | TRC20
     | ILayerZeroEndpointV2
+    | SunCurve
     | UsdtOFT;
 
 export type TronContractParams = {

@@ -30,6 +30,8 @@ export const tronMainnetBetaConfig: TronNetworkConfig = {
         tronAuthorizedAddresses.TREASURY_AUTHORIZED_LZ_CONFIGURATOR[TronChainIDs.Mainnet].beta,
 
     // Token info
+    MUSD_TOKEN_NAME: 'mUSD release candidate',
+    MUSD_TOKEN_SYMBOL: 'mUSDrec',
     MUSD_TOKEN_DECIMALS: 18,
     MUSD_TOKEN_MIN_DEPOSIT: 1_000_000n,
     MUSD_TOKEN_MIN_REDEEM: 500_000_000_000_000_000n,

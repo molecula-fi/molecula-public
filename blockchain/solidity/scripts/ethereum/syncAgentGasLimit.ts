@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop, no-restricted-syntax */
 import { ethers } from 'hardhat';
 
-import { ContractsCarbon } from '@molecula-monorepo/blockchain.addresses/deploy/devnet';
+import { DevnetContractsCarbon } from '@molecula-monorepo/blockchain.addresses/deploy/devnet';
 
 // Constants
 const BASE = 0x100;
@@ -27,7 +27,7 @@ async function syncAgentGasLimit() {
 
     const agentNew = await ethers.getContractAt(
         'AgentLZ',
-        ContractsCarbon.eth.agentLZ, // ← replace with actual address
+        DevnetContractsCarbon.eth.agentLZ, // ← replace with actual address
     );
 
     const results = [];

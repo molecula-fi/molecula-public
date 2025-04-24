@@ -1,2 +1,5 @@
 blockchain/solidity/contracts/common/UsdtOFT.sol
 blockchain/solidity/contracts/common/interfaces/IUsdtOFT.sol
+blockchain/solidity/lib
+blockchain/solidity/test
+blockchain/solidity/node_modules

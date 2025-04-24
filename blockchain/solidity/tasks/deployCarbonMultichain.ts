@@ -5,7 +5,6 @@ import { task } from 'hardhat/config';
 
 import { getEnvironment } from '../scripts/utils/deployUtils';
 
-// TODO
 task('deployCarbonMultichain', 'Deploys Carbon to multiple networks')
     .addParam('environment', 'Deployment environment')
     .setAction(async (taskArgs, hre) => {

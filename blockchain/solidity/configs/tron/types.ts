@@ -20,6 +20,8 @@ export type TronNetworkConfig = {
     ACCOUNTANT_AUTHORIZED_LZ_CONFIGURATOR: TronAddress;
     TREASURY_AUTHORIZED_LZ_CONFIGURATOR: TronAddress;
     // Token info
+    MUSD_TOKEN_NAME: string;
+    MUSD_TOKEN_SYMBOL: string;
     MUSD_TOKEN_DECIMALS: number;
     MUSD_TOKEN_MIN_DEPOSIT: bigint;
     MUSD_TOKEN_MIN_REDEEM: bigint;

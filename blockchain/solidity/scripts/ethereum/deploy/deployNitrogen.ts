@@ -4,7 +4,7 @@ import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
-import { getConfig, getNonce, increaseBalance } from '../../utils/deployUtils';
+import { getConfig, increaseBalance } from '../../utils/deployUtils';
 
 export async function deployNitrogen(
     hre: HardhatRuntimeEnvironment,
@@ -32,7 +32,7 @@ export async function deployNitrogen(
     await increaseBalance('moleculaPool', moleculaPool, config.INITIAL_USDT_SUPPLY, USDT);
 
     // calc future addresses
-    const transactionCount = await getNonce(account);
+    const transactionCount = await account.getNonce();
     const rebaseTokenFutureAddress = hre.ethers.getCreateAddress({
         from: account.address,
         nonce: transactionCount + 1,
@@ -112,6 +112,8 @@ export async function deployNitrogen(
         poolKeeper,
         mUSDLock: await musdLock.getAddress(),
         mUSDe,
+        router: '',
+        routerAgents: {},
         ethena: {
             USDe: config.USDE_ADDRESS,
             sUSDe: config.SUSDE_ADDRESS,

@@ -6,11 +6,16 @@ import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 import { tronMainnetBetaConfig } from '../../configs/tron/mainnetBetaTyped';
 
 import { generateRandomWallet } from './Common';
+import { deployNitrogenV11WithUSDT } from './NitrogenCommonV1.1';
 import { grantERC20, grantETH } from './grant';
 
-export const INITIAL_SUPPLY = 100_000_000_000_000_000_000n;
+export const INITIAL_SUPPLY = 100n * 10n ** 18n;
+export const enforcedOptionData = '0x00030100110100000000000000000000000000030d40';
 
 export async function deployCarbon() {
+    const { moleculaPool, supplyManager, poolOwner, rebaseTokenOwner, user0, user1 } =
+        await deployNitrogenV11WithUSDT();
+
     // Contracts are deployed using the first signer/account by default
     const [owner, user] = await ethers.getSigners();
     const poolKeeper = await generateRandomWallet();
@@ -29,40 +34,54 @@ export async function deployCarbon() {
     // Grant ETH to POOL_KEEPER
     await grantETH(poolKeeper.address, ethers.parseEther('20'));
 
-    // calc supply manager future address
-    const transactionCount = await owner!.getNonce();
-    const addr = owner!.address;
-    const smFutureAddress = ethers.getCreateAddress({
-        from: addr,
-        nonce: transactionCount + 1,
-    });
-
-    // deploy moleculaPool
-    const MoleculaPool = await ethers.getContractFactory('MoleculaPool');
-    const moleculaPool = await MoleculaPool.connect(owner!).deploy(
-        owner!.address,
-        owner!.address,
-        ethMainnetBetaConfig.TOKENS.map(x => ({ pool: x.token, n: x.n })),
-        [],
-        poolKeeper.address,
-        smFutureAddress,
-    );
-
-    // deploy supply manager
-    const SupplyManager = await ethers.getContractFactory('SupplyManager');
-
-    const supplyManager = await SupplyManager.connect(owner!).deploy(
-        owner!.address,
-        owner!.address,
-        await moleculaPool.getAddress(),
-        4000,
-    );
-
-    expect(await supplyManager.getAddress()).to.equal(smFutureAddress);
-
     // deploy mock LayerZero Endpoint
     const MockLZEndpoint = await ethers.getContractFactory('MockLZEndpoint');
     const mockLZEndpoint = await MockLZEndpoint.connect(owner!).deploy();
+
+    // deploy MockUsdtOFT without LZ
+    const MockUsdtOFT = await ethers.getContractFactory('MockUsdtOFTNoLZ');
+    const mockUsdtOFT = await MockUsdtOFT.deploy(
+        ethMainnetBetaConfig.LAYER_ZERO_ARBITRUM_EID,
+        ethMainnetBetaConfig.LAYER_ZERO_CELO_EID,
+        ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+        ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
+        ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
+        ethMainnetBetaConfig.USDT_ADDRESS,
+        await mockLZEndpoint.getAddress(),
+        owner!.address,
+    );
+
+    // usdtOFT initial balance
+    const initialBalance = 10_000_000_000n;
+
+    // increase usdtOFT balance of USDT token
+    const USDT = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.USDT_ADDRESS);
+    await grantERC20(await mockUsdtOFT.getAddress(), USDT, initialBalance);
+
+    // increase usdtOFT credits for tron eid
+    await mockUsdtOFT.increaseCredits(ethMainnetBetaConfig.LAYER_ZERO_TRON_EID, initialBalance);
+
+    // increase usdtOFT credits for eth eid
+    await mockUsdtOFT.increaseCredits(ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID, initialBalance);
+
+    // set enforced options for usdtOFT
+    await mockUsdtOFT.setEnforcedOptions([
+        {
+            eid: ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+            msgType: 1,
+            options: enforcedOptionData,
+        },
+        {
+            eid: ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+            msgType: 2,
+            options: enforcedOptionData,
+        },
+        {
+            eid: ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+            msgType: 3,
+            options: enforcedOptionData,
+        },
+    ]);
 
     // calc agent LZ future address
     const trxCount = await owner!.getNonce();
@@ -79,15 +98,13 @@ export async function deployCarbon() {
         owner!.address,
         await mockLZEndpoint.getAddress(),
         await supplyManager.getAddress(),
-        ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
+        ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
         ethMainnetBetaConfig.USDT_ADDRESS,
-        ethMainnetBetaConfig.USDT_OFT,
+        await mockUsdtOFT.getAddress(),
     );
     expect(await agentLZ.getAddress()).to.equal(agentLZFutureAddress);
 
     await supplyManager.setAgent(await agentLZ.getAddress(), true);
-
-    const USDT = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.USDT_ADDRESS);
 
     // deploy Tron contracts
 
@@ -104,41 +121,45 @@ export async function deployCarbon() {
     const accountantLZ = await AccountantLZ.connect(owner!).deploy(
         owner!.address,
         owner!.address,
-        ethMainnetBetaConfig.LAYER_ZERO_ENDPOINT,
-        ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
+        await mockLZEndpoint.getAddress(),
+        ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
         ethMainnetBetaConfig.USDT_ADDRESS,
-        ethMainnetBetaConfig.USDT_ADDRESS,
-        await agentLZ.getAddress(),
+        await mockUsdtOFT.getAddress(),
         await oracle.getAddress(),
     );
 
-    // Set Accountant to Oracle
     await oracle.setAccountant(await accountantLZ.getAddress());
 
     const RebaseTokenCommon = await ethers.getContractFactory('RebaseTokenTron');
-    const rebaseToken = await RebaseTokenCommon.connect(owner!).deploy(
+    const rebaseTokenTron = await RebaseTokenCommon.connect(owner!).deploy(
         owner!.address,
         await accountantLZ.getAddress(),
         0n,
         await oracle.getAddress(),
+        'mUSD release candidate',
+        'mUSDrec',
         tronMainnetBetaConfig.MUSD_TOKEN_DECIMALS,
         tronMainnetBetaConfig.MUSD_TOKEN_MIN_DEPOSIT,
         tronMainnetBetaConfig.MUSD_TOKEN_MIN_REDEEM,
     );
 
-    await accountantLZ.setUnderlyingToken(await rebaseToken.getAddress());
+    await accountantLZ.setUnderlyingToken(await rebaseTokenTron.getAddress());
 
     // deploy mUSDLock
     const MUSDLock = await ethers.getContractFactory('MUSDLock');
-    const mUSDLock = await MUSDLock.connect(owner!).deploy(await rebaseToken.getAddress());
+    const mUSDLock = await MUSDLock.connect(owner!).deploy(await rebaseTokenTron.getAddress());
 
-    // set AccountantLZ to AgentLZ
-    await agentLZ.setAccountant(await accountantLZ.getAddress());
+    // set peers for AccountantLZ and AgentLZ
+    const bytes32FromAddressAccountant = ethers.zeroPadValue(await accountantLZ.getAddress(), 32);
+    const bytes32FromAddressAgent = ethers.zeroPadValue(await agentLZ.getAddress(), 32);
 
-    // add Peer
     await agentLZ.setPeer(
-        ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
-        ethMainnetBetaConfig.LAYER_ZERO_TRON_MAINNET_OAPP_MOCK,
+        ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+        bytes32FromAddressAccountant,
+    );
+    await accountantLZ.setPeer(
+        ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+        bytes32FromAddressAgent,
     );
 
     // Deploy mock lz message decoder
@@ -151,13 +172,16 @@ export async function deployCarbon() {
         agentLZ,
         oracle,
         accountantLZ,
-        rebaseToken,
+        rebaseTokenTron,
         mUSDLock,
         mockLZEndpoint,
         lzMessageDecoder,
-        owner,
-        user,
+        poolOwner,
+        rebaseTokenOwner,
+        user0,
+        user1,
         USDT,
+        mockUsdtOFT,
         poolKeeper,
     };
 }

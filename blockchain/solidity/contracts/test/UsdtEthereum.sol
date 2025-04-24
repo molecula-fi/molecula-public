@@ -1,12 +1,12 @@
 /* solhint-disable, prettier-ignore*/
 // SPDX-License-Identifier: MIT
 /**
- *Submitted for verification at Etherscan.io on 2017-11-28
+ * Submitted for verification at Etherscan.io on 2017-11-28
  * link to original contract https://etherscan.io/address/0xdac17f958d2ee523a2206206994597c13d831ec7#code
  */
 
 // solhint-disable-next-line compiler-version
-pragma solidity ^0.4.18;
+pragma solidity 0.4.18;
 
 /**
  * @title SafeMath
@@ -112,8 +112,8 @@ contract BasicToken is Ownable, ERC20Basic {
     mapping(address => uint256) public balances;
 
     // additional variables for use if transaction fees ever became necessary
-    uint256 public basisPointsRate = 0;
-    uint256 public maximumFee = 0;
+    uint256 public basisPointsRate;
+    uint256 public maximumFee;
 
     /**
      * @dev Fix for the ERC20 short address attack.
@@ -327,7 +327,7 @@ contract UpgradedStandardToken is StandardToken {
     function approveByLegacy(address from, address spender, uint256 value) public;
 }
 
-contract MockUsdtEthereum is Pausable, StandardToken, BlackList {
+contract UsdtEthereum is Pausable, StandardToken, BlackList {
     string public name;
     string public symbol;
     uint256 public decimals;
@@ -342,7 +342,7 @@ contract MockUsdtEthereum is Pausable, StandardToken, BlackList {
     // @param _symbol Token symbol
     // @param _decimals Token decimals
     // solhint-disable-next-line func-name-mixedcase
-    function TetherToken(
+    function UsdtEthereum(
         uint256 _initialSupply,
         string _name,
         string _symbol,

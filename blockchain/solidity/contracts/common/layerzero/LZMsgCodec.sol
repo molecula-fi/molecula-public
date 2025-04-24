@@ -33,15 +33,15 @@ library LZMsgCodec {
     /**
      * @dev Custom error for message length mismatch indication.
      */
-    error EMalformedMasssage();
+    error EMalformedMessage();
 
     /**
      * @dev Decodes a message containing two uint256 values.
      * Applicable for messages of types:
-     * - REQUEST_DEPOSIT
-     * - CONFIRM_DEPOSIT
-     * - REQUEST_REDEEM
-     * - UPDATE_ORACLE
+     * - `REQUEST_DEPOSIT`.
+     * - `CONFIRM_DEPOSIT`.
+     * - `REQUEST_REDEEM`.
+     * - `UPDATE_ORACLE`.
      * @param message Encoded message.
      * @return value1 First uint256 value in a pair.
      * @return value2 Second uint256 value in a pair.
@@ -49,7 +49,7 @@ library LZMsgCodec {
     function lzDecodeUint256Pair(
         bytes calldata message
     ) internal pure returns (uint256 value1, uint256 value2) {
-        if (message.length != 64) revert EMalformedMasssage();
+        if (message.length != 64) revert EMalformedMessage();
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             value1 := calldataload(add(message.offset, 0))
@@ -122,7 +122,7 @@ library LZMsgCodec {
         pure
         returns (uint256 requestId, uint256 shares, uint256 totalValue, uint256 totalShares)
     {
-        if (message.length != 128) revert EMalformedMasssage();
+        if (message.length != 128) revert EMalformedMessage();
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
             requestId := calldataload(add(message.offset, 0))
@@ -149,29 +149,29 @@ library LZMsgCodec {
         message[0] = bytes1(DISTRIBUTE_YIELD);
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let dataPtr := add(message, 32) // Pointer to the start of message data
-            let offset := 1 // Skip the first byte (message type)
+            let dataPtr := add(message, 32) // Pointer to the start of the message data.
+            let offset := 1 // Skip the first byte that represents the message type.
 
-            // Store users addresses (each 20 bytes)
+            // Store users' addresses, each 20 bytes.
             for {
                 let i := 0
             } lt(i, usersLen) {
                 i := add(i, 1)
             } {
-                let user := mload(add(users, add(32, mul(i, 32)))) // Load user address
-                mstore(add(dataPtr, offset), shl(96, user)) // Store as bytes20 (shifted left 96 bits)
-                offset := add(offset, 20) // Move forward by 20 bytes
+                let user := mload(add(users, add(32, mul(i, 32)))) // Load the user address.
+                mstore(add(dataPtr, offset), shl(96, user)) // Store as `bytes20`, shifted 96 bits left.
+                offset := add(offset, 20) // Move forward by 20 bytes.
             }
 
-            // Store shares (each 32 bytes)
+            // Store shares, each 32 bytes.
             for {
                 let i := 0
             } lt(i, usersLen) {
                 i := add(i, 1)
             } {
-                let share := mload(add(shares, add(32, mul(i, 32)))) // Load share value
-                mstore(add(dataPtr, offset), share) // Store as uint256
-                offset := add(offset, 32) // Move forward by 32 bytes
+                let share := mload(add(shares, add(32, mul(i, 32)))) // Load the share value.
+                mstore(add(dataPtr, offset), share) // Store as `uint256`.
+                offset := add(offset, 32) // Move forward by 32 bytes.
             }
         }
     }
@@ -186,33 +186,34 @@ library LZMsgCodec {
         bytes memory message
     ) internal pure returns (address[] memory users, uint256[] memory shares) {
         uint256 length = message.length;
-        if (length % 52 != 0) revert EMalformedMasssage();
+        if (length % 52 != 0) revert EMalformedMessage();
+        length = length / 52;
         users = new address[](length);
         shares = new uint256[](length);
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let dataPtr := add(message, 32) // message already starts at users[0]
+            let dataPtr := add(message, 32) // Message already starts at `users[0]`.
 
-            // Decode users (each stored as bytes20)
+            // Decode users, each stored as `bytes20`.
             for {
                 let i := 0
             } lt(i, length) {
                 i := add(i, 1)
             } {
-                let userBytes := shr(96, mload(dataPtr)) // Extract last 20 bytes as address
-                mstore(add(users, add(32, mul(i, 32))), userBytes) // Store in users array
-                dataPtr := add(dataPtr, 20) // Move forward by 20 bytes
+                let userBytes := shr(96, mload(dataPtr)) // Extract last 20 bytes as an address.
+                mstore(add(users, add(32, mul(i, 32))), userBytes) // Store in the users' array.
+                dataPtr := add(dataPtr, 20) // Move forward by 20 bytes.
             }
 
-            // Decode shares (each stored as uint256)
+            // Decode shares, each stored as `uint256`.
             for {
                 let i := 0
             } lt(i, length) {
                 i := add(i, 1)
             } {
-                let share := mload(dataPtr) // Load full 32-byte value
-                mstore(add(shares, add(32, mul(i, 32))), share) // Store in shares array
-                dataPtr := add(dataPtr, 32) // Move forward by 32 bytes
+                let share := mload(dataPtr) // Load the full 32-byte value.
+                mstore(add(shares, add(32, mul(i, 32))), share) // Store in the shares' array.
+                dataPtr := add(dataPtr, 32) // Move forward by 32 bytes.
             }
         }
     }
@@ -229,18 +230,18 @@ library LZMsgCodec {
         uint256[] memory shares = new uint256[](count);
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let usersPtr := add(users, 32) // Pointer to the first element in users[]
-            let sharesPtr := add(shares, 32) // Pointer to the first element in shares[]
-            let user := shl(96, 1) // Predefine address(1) as bytes20
+            let usersPtr := add(users, 32) // Pointer to the first element in `users[]`.
+            let sharesPtr := add(shares, 32) // Pointer to the first element in `shares[]`.
+            let user := 1 // Predefine `address(1)` as `bytes20`.
 
-            // Loop through count and initialize users and shares arrays
+            // Loop through the count and initialize users' and shares' arrays.
             for {
                 let i := 0
             } lt(i, count) {
                 i := add(i, 1)
             } {
-                mstore(add(usersPtr, mul(i, 32)), user) // Store address(1) in users[i]
-                mstore(add(sharesPtr, mul(i, 32)), i) // Store i in shares[i]
+                mstore(add(usersPtr, mul(i, 32)), user) // Store `address(1)` in `users[i]`.
+                mstore(add(sharesPtr, mul(i, 32)), i) // Store `i` in `shares[i]`.
             }
         }
 
@@ -283,33 +284,35 @@ library LZMsgCodec {
     function lzDecodeConfirmRedeemMessage(
         bytes memory message
     ) internal pure returns (uint256[] memory requestIds, uint256[] memory values) {
-        // Calculate the number of uint256 elements in the message.
+        // Calculate the number of `uint256` elements in the message.
+        uint256 length = message.length;
+        if (length % 64 != 0) revert EMalformedMessage();
         // slither-disable-next-line divide-before-multiply
-        uint256 numEntries = message.length / 64;
-        requestIds = new uint256[](numEntries);
-        values = new uint256[](numEntries);
+        length = length / 64;
+        requestIds = new uint256[](length);
+        values = new uint256[](length);
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let dataPtr := add(message, 32) // Start of the actual data
+            let dataPtr := add(message, 32) // Start of the actual data.
 
             for {
                 let i := 0
-            } lt(i, numEntries) {
+            } lt(i, length) {
                 i := add(i, 1)
             } {
-                let requestId := mload(dataPtr) // Load 32 bytes for request ID
-                mstore(add(requestIds, add(32, mul(i, 32))), requestId) // Store in requestIds array
-                dataPtr := add(dataPtr, 32) // Move to the next request ID
+                let requestId := mload(dataPtr) // Load 32 bytes for the request ID.
+                mstore(add(requestIds, add(32, mul(i, 32))), requestId) // Store in the `requestIds` array.
+                dataPtr := add(dataPtr, 32) // Move to the next request ID.
             }
 
             for {
                 let i := 0
-            } lt(i, numEntries) {
+            } lt(i, length) {
                 i := add(i, 1)
             } {
-                let value := mload(dataPtr) // Load 32 bytes for value
-                mstore(add(values, add(32, mul(i, 32))), value) // Store in values array
-                dataPtr := add(dataPtr, 32) // Move to the next value
+                let value := mload(dataPtr) // Load 32 bytes for the value.
+                mstore(add(values, add(32, mul(i, 32))), value) // Store in the values' array.
+                dataPtr := add(dataPtr, 32) // Move to the next value.
             }
         }
     }
@@ -326,16 +329,16 @@ library LZMsgCodec {
         uint256[] memory values = new uint256[](idsCount);
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let requestIdPtr := add(requestId, 32) // Pointer to first element in requestId[]
-            let valuesPtr := add(values, 32) // Pointer to first element in values[]
+            let requestIdPtr := add(requestId, 32) // Pointer to the first element in `requestId[]`.
+            let valuesPtr := add(values, 32) // Pointer to the first element in `values[]`.
 
             for {
                 let i := 0
             } lt(i, idsCount) {
                 i := add(i, 1)
             } {
-                mstore(add(requestIdPtr, mul(i, 32)), i) // Store i at requestId[i]
-                mstore(add(valuesPtr, mul(i, 32)), i) // Store i at values[i]
+                mstore(add(requestIdPtr, mul(i, 32)), i) // Store `i` at `requestId[i]`.
+                mstore(add(valuesPtr, mul(i, 32)), i) // Store `i` at `values[i]`.
             }
         }
 
@@ -363,7 +366,7 @@ library LZMsgCodec {
         message[0] = bytes1(DISTRIBUTE_YIELD_AND_UPDATE_ORACLE);
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let offset := 1 // Skip message type byte
+            let offset := 1 // Skip the message type byte.
             let dataPtr := add(message, 32)
 
             // Store totalValue and totalShares
@@ -459,17 +462,17 @@ library LZMsgCodec {
         uint256[] memory shares = new uint256[](count);
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            let usersPtr := add(users, 32) // Get pointer to first element in users[]
-            let sharesPtr := add(shares, 32) // Get pointer to first element in shares[]
+            let usersPtr := add(users, 32) // Get the pointer to the first element in `users[]`.
+            let sharesPtr := add(shares, 32) // Get the pointer to the first element in `shares[]`.
+            let user := 1 // Address `0x0000000000000000000000000000000000000001`.
 
-            let user := shl(96, 1) // Address 0x0000000000000000000000000000000000000001
             for {
                 let i := 0
             } lt(i, count) {
                 i := add(i, 1)
             } {
-                mstore(add(usersPtr, mul(i, 32)), user) // Store address(1) at users[i]
-                mstore(add(sharesPtr, mul(i, 32)), i) // Store i at shares[i]
+                mstore(add(usersPtr, mul(i, 32)), user) // Store `address(1)` at `users[i]`.
+                mstore(add(sharesPtr, mul(i, 32)), i) // Store `i` at `shares[i]`.
             }
         }
 

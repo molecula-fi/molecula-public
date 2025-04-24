@@ -30,7 +30,7 @@ const checkCircularDependencies = async () => {
         './backend/rebalance-service/src/index.ts',
         './backend/rpc-proxy/src/index.ts',
         './backend/atoms-service/src/index.ts',
-        './backend-nest/_template/src/main.ts',
+        './backend-nest/atoms-service/src/main.ts',
         './backend-nest/packages/app/src/index.ts',
         './backend-nest/packages/common/src/index.ts',
         './backend-nest/packages/database/src/index.ts',

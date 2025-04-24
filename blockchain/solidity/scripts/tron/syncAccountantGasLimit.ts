@@ -1,6 +1,6 @@
 import TronWeb from 'tronweb';
 
-import { ContractsCarbon } from '@molecula-monorepo/blockchain.addresses/deploy/devnet';
+import { DevnetContractsCarbon } from '@molecula-monorepo/blockchain.addresses/deploy/devnet';
 
 import { abi as AccountantLZ } from '../../artifacts/contracts/solutions/Carbon/tron/AccountantLZ.sol/AccountantLZ.json';
 import { shastaConfig } from '../../configs/tron/shastaTyped';
@@ -42,7 +42,7 @@ async function syncAccountantGasLimit() {
     const oldAccountantAddress = 'TLkrjzX2jYWwMxTfdVRbJ41K4fFoh6952q';
     const oldAccountant = tronWeb.contract(AccountantLZ, oldAccountantAddress);
 
-    const accountantAddress = ContractsCarbon.tron.accountantLZ;
+    const accountantAddress = DevnetContractsCarbon.tron.accountantLZ;
     const accountant = tronWeb.contract(AccountantLZ, accountantAddress);
 
     const gasLimitPromises = Object.entries(MESSAGE_TYPES).map(async ([name, msgType]) => {

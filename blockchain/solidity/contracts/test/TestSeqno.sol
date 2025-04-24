@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 /// @dev Contract for testing MultisigWallet.sol.
 contract TestSeqno {
     /// @dev Number updated by calling `inc()`.
-    uint256 public seqno = 0;
+    uint256 public seqno;
 
     /// @dev Increases seqno by the count.
     /// @param count Value to add to seqno.
@@ -20,7 +20,9 @@ contract TestSeqno {
 
     /// @dev Increases seqno by 1.
     function touch() external payable {
-        ++seqno;
+        unchecked {
+            ++seqno;
+        }
     }
 
     /// @dev Increases seqno by 10 when receiving ether.

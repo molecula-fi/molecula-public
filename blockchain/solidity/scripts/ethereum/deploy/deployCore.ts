@@ -6,7 +6,7 @@ import type { EVMAddress, NetworkType } from '@molecula-monorepo/blockchain.addr
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
-import { getConfig, increaseBalance, getNonce } from '../../utils/deployUtils';
+import { getConfig, increaseBalance } from '../../utils/deployUtils';
 
 async function deploymUSDe(
     hre: HardhatRuntimeEnvironment,
@@ -47,7 +47,7 @@ export async function deployCore(
     // deploy moleculaPool
     const supplyManagerFutureAddress = hre.ethers.getCreateAddress({
         from: account.address,
-        nonce: (await getNonce(account)) + 2, // deploy moleculaPool + transfer tokens
+        nonce: (await account.getNonce()) + 2, // deploy moleculaPool + transfer tokens
     });
     const MoleculaPoolFactory = await hre.ethers.getContractFactory('MoleculaPoolTreasury');
     if (config.GUARDIAN_ADDRESS === '0x') {

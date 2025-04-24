@@ -1,6 +1,6 @@
 import {
-    ContractsCarbon,
-    ContractsNitrogen,
+    DevnetContractsCarbon,
+    DevnetContractsNitrogen,
     MainBetaContractsCarbon,
     MainBetaContractsNitrogen,
     DevnetContractsEthena,
@@ -91,7 +91,7 @@ export const evmMoleculaTokenAddresses = {
             beta: MainBetaContractsNitrogen.eth.mUSDe as EVMAddress,
             prod: MainProdContractsNitrogen.eth.mUSDe as EVMAddress,
         },
-        [EVMChainIDs.Sepolia]: ContractsNitrogen.eth.mUSDe as EVMAddress,
+        [EVMChainIDs.Sepolia]: DevnetContractsNitrogen.eth.mUSDe as EVMAddress,
     },
 } as const;
 
@@ -118,49 +118,49 @@ export const evmMoleculaContractAddresses = {
             beta: MainBetaContractsNitrogen.eth.supplyManager as EVMAddress,
             prod: MainProdContractsNitrogen.eth.supplyManager as EVMAddress,
         },
-        [EVMChainIDs.Sepolia]: ContractsNitrogen.eth.supplyManager as EVMAddress,
+        [EVMChainIDs.Sepolia]: DevnetContractsNitrogen.eth.supplyManager as EVMAddress,
     },
     PoolKeeper: {
         [EVMChainIDs.Mainnet]: {
             beta: MainBetaContractsNitrogen.eth.poolKeeper as EVMAddress,
             prod: MainProdContractsNitrogen.eth.poolKeeper as EVMAddress,
         },
-        [EVMChainIDs.Sepolia]: ContractsNitrogen.eth.poolKeeper as EVMAddress,
+        [EVMChainIDs.Sepolia]: DevnetContractsNitrogen.eth.poolKeeper as EVMAddress,
     },
     MoleculaPool: {
         [EVMChainIDs.Mainnet]: {
             beta: MainBetaContractsNitrogen.eth.moleculaPool as EVMAddress,
             prod: MainProdContractsNitrogen.eth.moleculaPool as EVMAddress,
         },
-        [EVMChainIDs.Sepolia]: ContractsNitrogen.eth.moleculaPool as EVMAddress,
+        [EVMChainIDs.Sepolia]: DevnetContractsNitrogen.eth.moleculaPool as EVMAddress,
     },
     AccountantAgent: {
         [EVMChainIDs.Mainnet]: {
             beta: MainBetaContractsNitrogen.eth.accountantAgent as EVMAddress,
             prod: MainProdContractsNitrogen.eth.accountantAgent as EVMAddress,
         },
-        [EVMChainIDs.Sepolia]: ContractsNitrogen.eth.accountantAgent as EVMAddress,
+        [EVMChainIDs.Sepolia]: DevnetContractsNitrogen.eth.accountantAgent as EVMAddress,
     },
     RebaseToken: {
         [EVMChainIDs.Mainnet]: {
             beta: MainBetaContractsNitrogen.eth.rebaseToken as EVMAddress,
             prod: MainProdContractsNitrogen.eth.rebaseToken as EVMAddress,
         },
-        [EVMChainIDs.Sepolia]: ContractsNitrogen.eth.rebaseToken as EVMAddress,
+        [EVMChainIDs.Sepolia]: DevnetContractsNitrogen.eth.rebaseToken as EVMAddress,
     },
     MUSDLock: {
         [EVMChainIDs.Mainnet]: {
             beta: MainBetaContractsNitrogen.eth.mUSDLock as EVMAddress,
             prod: MainProdContractsNitrogen.eth.mUSDLock as EVMAddress,
         },
-        [EVMChainIDs.Sepolia]: ContractsNitrogen.eth.mUSDLock as EVMAddress,
+        [EVMChainIDs.Sepolia]: DevnetContractsNitrogen.eth.mUSDLock as EVMAddress,
     },
     AgentLZ: {
         [EVMChainIDs.Mainnet]: {
             beta: MainBetaContractsCarbon.eth.agentLZ as EVMAddress,
             prod: MainProdContractsCarbon.eth.agentLZ as EVMAddress,
         },
-        [EVMChainIDs.Sepolia]: ContractsCarbon.eth.agentLZ as EVMAddress,
+        [EVMChainIDs.Sepolia]: DevnetContractsCarbon.eth.agentLZ as EVMAddress,
     },
     SwftBridge: {
         [EVMChainIDs.Mainnet]: undefined,

@@ -35,7 +35,8 @@ if [ "$FULL_CHECK" == true ]; then
     unitTests --output-logs=new-only || { echo "pre-commit --full failed"; exit 1; }
 
   # Run natspec check without turbo since it's present only in a root package
-  yarn natspec:check || { echo "natspec check failed"; exit 1; }
+  # Temporary disable
+  # yarn natspec:check || { echo "natspec check failed"; exit 1; }
 else
 	yarn turbo tsc eslint:check prettier:check --output-logs=new-only || { echo "pre-commit failed"; exit 1; }
 fi

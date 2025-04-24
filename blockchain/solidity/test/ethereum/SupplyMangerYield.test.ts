@@ -10,7 +10,7 @@ import { grantERC20, grantETH } from '../utils/grant';
 
 describe('Test SupplyManger yield', () => {
     describe('Test SupplyManager pool yield lock and out of gas distribution', () => {
-        it.skip('SupplyManager.distributeYield() out of gas for', async () => {
+        it('SupplyManager.distributeYield() out of gas for', async () => {
             const { moleculaPool, supplyManager, agent, USDT } = await loadFixture(deployNitrogen);
 
             const income = 250_000_000n;
@@ -18,13 +18,12 @@ describe('Test SupplyManger yield', () => {
 
             // Create an array for users
             const users = [];
-            const portionPerUser = 2_000_000_000_000_000n; // Adjust portion as needed
+            const portionPerUser = 2n * 10n ** 15n; // Adjust portion as needed
 
             for (let i = 0; i < 500; i += 1) {
-                // console.log(i);
-                const user = ethers.Wallet.createRandom(); // Generate a new user account
+                const user = ethers.getAddress(`0x${i.toString(16).padStart(40, '0')}`); // Generate a new user account
                 users.push({
-                    party: user.address, // Use user address
+                    party: user, // Use user address
                     portion: portionPerUser,
                 });
             }
@@ -105,11 +104,11 @@ describe('Test SupplyManger yield', () => {
                 parties: [
                     {
                         party: user0,
-                        portion: 500_000_000_000_000_000n,
+                        portion: 500n * 10n ** 15n,
                     },
                     {
                         party: user1,
-                        portion: 500_000_000_000_000_000n,
+                        portion: 500n * 10n ** 15n,
                     },
                 ],
                 agent,
@@ -167,7 +166,7 @@ describe('Test SupplyManger yield', () => {
                 parties: [
                     {
                         party: caller,
-                        portion: 1_000_000_000_000_000_000n,
+                        portion: 10n ** 18n,
                     },
                 ],
                 agent,

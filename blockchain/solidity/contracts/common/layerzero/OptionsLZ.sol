@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.23;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {OptionsBuilder} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
 
-uint16 constant BASE = 0x100;
-uint16 constant UNIT = 0x200;
-
-contract OptionsLZ is Ownable {
+contract OptionsLZ is Ownable2Step {
     using OptionsBuilder for bytes;
+
+    uint16 private constant _BASE = 0x100;
+    uint16 private constant _UNIT = 0x200;
 
     /// @dev Authorized LayerZero configurator.
     address public authorizedLZConfigurator;
@@ -50,9 +50,9 @@ contract OptionsLZ is Ownable {
         uint8 msgType,
         uint256 gasLimitBase,
         uint256 gasLimitUnit
-    ) public onlyAuthorizedLZConfigurator {
-        gasLimit[BASE | msgType] = gasLimitBase;
-        gasLimit[UNIT | msgType] = gasLimitUnit;
+    ) external onlyAuthorizedLZConfigurator {
+        gasLimit[_BASE | msgType] = gasLimitBase;
+        gasLimit[_UNIT | msgType] = gasLimitUnit;
     }
 
     /**
@@ -65,7 +65,7 @@ contract OptionsLZ is Ownable {
         uint8 msgType,
         uint256 count
     ) public view returns (bytes memory lzOptions) {
-        uint256 gasLimitTotal = gasLimit[BASE | msgType] + gasLimit[UNIT | msgType] * count;
+        uint256 gasLimitTotal = gasLimit[_BASE | msgType] + gasLimit[_UNIT | msgType] * count;
         lzOptions = OptionsBuilder.newOptions().addExecutorLzReceiveOption(
             uint128(gasLimitTotal),
             0

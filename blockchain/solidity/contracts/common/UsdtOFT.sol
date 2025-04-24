@@ -1,3 +1,6 @@
+/**
+ * Link to original contract https://etherscan.io/address/0x811ed79dB9D34E83BDB73DF6c3e07961Cfb0D5c0#code
+ */
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.22;
 
@@ -40,8 +43,8 @@ contract UsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
     address public planner;
 
     // Fees
-    uint256 public feeBalance = 0;
-    uint16 public feeBps = 0;
+    uint256 public feeBalance;
+    uint16 public feeBps;
     uint16 public constant BPS_DENOMINATOR = 10000;
 
     constructor(

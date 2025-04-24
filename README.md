@@ -34,7 +34,7 @@ Besides, you should have [Docker](https://hub.docker.com/) installed for your op
 -   Now you are ready to clone the project:
 
 ```sh
-git clone git@github.com:molecula-fi/molecula-public.git
+git clone git@github.com:molecula-fi/molecula-public.git --recurse-submodules
 ```
 
 -   Install all the required dependencies using:

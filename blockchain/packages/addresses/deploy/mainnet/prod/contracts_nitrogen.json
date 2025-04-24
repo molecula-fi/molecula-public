@@ -7,6 +7,10 @@
         "poolKeeper": "0xD6a625Bc1AeD44e4F0F8E1Fee6F2578f4105Cd06",
         "mUSDLock": "0x2e56dF0AB1Dc02f2cb05b96A7dc6F37010D9eF51",
         "mUSDe": "",
+        "lmUSD": "",
+        "wmUSD": "",
+        "router": "",
+        "routerAgents": {},
         "ethena": {
             "USDe": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
             "sUSDe": "0x9d39a5de30e57443bff2a8307a4256c8797a3497"

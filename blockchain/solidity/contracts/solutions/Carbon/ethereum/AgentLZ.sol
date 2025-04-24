@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.28;
+pragma solidity 0.8.28;
 
 import {IAgent} from "../../../common/interfaces/IAgent.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -9,14 +9,14 @@ import {ISupplyManager} from "../../../common/interfaces/ISupplyManager.sol";
 
 import {LZMsgCodec} from "../../../common/layerzero/LZMsgCodec.sol";
 import {OApp, Origin, MessagingFee} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
-import {OptionsLZ} from "../../../common/layerzero/OptionsLZ.sol";
+import {OptionsLZ, Ownable2Step, Ownable} from "../../../common/layerzero/OptionsLZ.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {UsdtOFT, SendParam, MessagingFee} from "../../../common/UsdtOFT.sol";
 import {ZeroValueChecker} from "../../../common/ZeroValueChecker.sol";
 
 /// @title AgentLZ - Agent contract for LayerZero cross-chain communication.
-contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
+contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
     using SafeERC20 for IERC20;
 
     /// @dev LayerZero destination chain ID.
@@ -30,9 +30,6 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
 
     /// @dev Interface for UsdtOFT token.
     UsdtOFT public immutable USDT_OFT;
-
-    /// @dev Address of the Accountant contract on Tron.
-    address public accountant;
 
     /// @dev Flag indicating whether oracle data should be sent via LayerZero.
     bool public updateOracleData;
@@ -152,6 +149,14 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
     }
 
     /**
+     * @dev Overrides the `_transferOwnership` function to resolve conflicts.
+     * @param newOwner The address of the new owner.
+     */
+    function _transferOwnership(address newOwner) internal override(Ownable2Step, Ownable) {
+        super._transferOwnership(newOwner);
+    }
+
+    /**
      * @dev Deposit method.
      * @param requestId Deposit request ID.
      * @param value Deposit amount.
@@ -199,23 +204,19 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
     }
 
     /**
+     * @dev Overrides the `transferOwnership` function to resolve conflicts.
+     * @param newOwner The address of the new owner.
+     */
+    function transferOwnership(address newOwner) public override(Ownable2Step, Ownable) onlyOwner {
+        super.transferOwnership(newOwner);
+    }
+
+    /**
      * @dev Sets the `updateOracleData` status.
      * @param isSend `updateOracleData` status.
      */
     function setSendOracleData(bool isSend) external onlyOwner {
         updateOracleData = isSend;
-    }
-
-    /**
-     * @dev Sets the AccontantLZ contract's address.
-     * @param accontantAddress Address of AccountantLZ contract on TRON.
-     */
-    function setAccountant(
-        address accontantAddress
-    ) external onlyOwner checkNotZero(accontantAddress) {
-        accountant = accontantAddress;
-        bytes32 account = bytes32(uint256(uint160(accontantAddress)));
-        _setPeer(DST_EID, account);
     }
 
     /**
@@ -320,21 +321,22 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         // Approve the total USDT amount for spending by the UsdtOFT contract.
         USDT.forceApprove(address(USDT_OFT), totalValue);
 
+        bytes32 accountant = _getPeerOrRevert(DST_EID);
+        uint16 bpsDenominator = USDT_OFT.BPS_DENOMINATOR();
+        uint16 bpsFee = USDT_OFT.feeBps();
+
         // Deduct the commission from each value.
         uint256 length = values.length;
         for (uint256 i = 0; i < length; ++i) {
-            values[i] =
-                (values[i] * (USDT_OFT.BPS_DENOMINATOR() - USDT_OFT.feeBps())) /
-                USDT_OFT.BPS_DENOMINATOR();
+            values[i] = (values[i] * (bpsDenominator - bpsFee)) / bpsDenominator;
         }
 
         // Prepare structured parameters for the cross-chain USDT transfer via the UsdtOFT contract.
         SendParam memory sendParam = SendParam({
-            dstEid: DST_EID, // Destination LayerZero Endpoint ID. TRON in this caseю
-            to: bytes32(uint256(uint160(accountant))), // Recipient on the destination chain. Value converted to bytes32.
+            dstEid: DST_EID, // Destination LayerZero Endpoint ID. TRON in this case.
+            to: accountant, // Recipient on the destination chain. Value converted to bytes32.
             amountLD: totalValue, // Total USDT amount being sent.
-            minAmountLD: (totalValue -
-                ((totalValue * USDT_OFT.feeBps()) / USDT_OFT.BPS_DENOMINATOR())), // Minimum acceptable amount after fees.
+            minAmountLD: (totalValue - ((totalValue * bpsFee) / bpsDenominator)), // Minimum acceptable amount after fees.
             extraOptions: "", // No extra options provided.
             composeMsg: "", // No additional message composition needed.
             oftCmd: "" // No special OFT command required.
@@ -464,7 +466,7 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
         // Retrieve the latest total value and total shares from the Supply Manager's Oracle.
         (uint256 totalValue, uint256 totalShares) = IOracle(SUPPLY_MANAGER).getTotalSupply();
 
-        // Retrieve LayerZero options specific to the `updateOracle`` message.
+        // Retrieve LayerZero options specific to the `updateOracle` message.
         bytes memory lzOptions = getLzOptions(LZMsgCodec.UPDATE_ORACLE, 0);
 
         // Encode the total value and total shares into the LayerZero payload.
@@ -540,10 +542,11 @@ contract AgentLZ is OApp, IAgent, OptionsLZ, ReentrancyGuard, ZeroValueChecker {
             // Confirm redeem request for multiple deposit IDs.
             payload = LZMsgCodec.lzDefaultConfirmRedeemMessage(arrLen);
             lzOptions = getLzOptions(LZMsgCodec.CONFIRM_REDEEM, arrLen);
+            bytes32 accountant = _getPeerOrRevert(DST_EID);
             // Create a mock SendParam struct for fee estimation with minimal values.
             SendParam memory sendParam = SendParam({
                 dstEid: DST_EID, // Destination LayerZero Endpoint ID. E.g., Ethereum.
-                to: bytes32(uint256(uint160(accountant))), // Mock recipient address on the destination chain.
+                to: accountant, // Mock recipient address on the destination chain.
                 amountLD: 1e6, // 1 USDT for estimation.
                 minAmountLD: 1, // Minimum acceptable amount. Value mocked.
                 extraOptions: "", // No additional options provided.

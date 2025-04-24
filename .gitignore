@@ -18,11 +18,9 @@ blockchain/packages/ethena/.env.test
 blockchain/solidity/.env.test
 configs/frontend-environments/shared/.env
 configs/frontend-environments/shared/.env.production
-configs/frontend-environments/prelaunch/.env
 configs/frontend-environments/website/.env
 configs/frontend-environments/retail/.env
 configs/frontend-environments/website/.env.production
-configs/frontend-environments/prelaunch/.env.production
 configs/frontend-environments/retail/.env.production
 
 # Ui tests repo

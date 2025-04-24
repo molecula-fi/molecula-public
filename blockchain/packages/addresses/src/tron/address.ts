@@ -1,4 +1,8 @@
-import { ContractsCarbon, MainBetaContractsCarbon, MainProdContractsCarbon } from '../../deploy';
+import {
+    DevnetContractsCarbon,
+    MainBetaContractsCarbon,
+    MainProdContractsCarbon,
+} from '../../deploy';
 
 import { TronChainIDs } from './chains';
 
@@ -23,28 +27,28 @@ export const tronMoleculaContractAddresses = {
             prod: MainProdContractsCarbon.tron.rebaseToken as TronAddress,
             beta: MainBetaContractsCarbon.tron.rebaseToken as TronAddress,
         },
-        [TronChainIDs.Shasta]: ContractsCarbon.tron.rebaseToken as TronAddress,
+        [TronChainIDs.Shasta]: DevnetContractsCarbon.tron.rebaseToken as TronAddress,
     },
     Oracle: {
         [TronChainIDs.Mainnet]: {
             prod: MainProdContractsCarbon.tron.oracle as TronAddress,
             beta: MainBetaContractsCarbon.tron.oracle as TronAddress,
         },
-        [TronChainIDs.Shasta]: ContractsCarbon.tron.oracle as TronAddress,
+        [TronChainIDs.Shasta]: DevnetContractsCarbon.tron.oracle as TronAddress,
     },
     AccountantLZ: {
         [TronChainIDs.Mainnet]: {
             prod: MainProdContractsCarbon.tron.accountantLZ as TronAddress,
             beta: MainBetaContractsCarbon.tron.accountantLZ as TronAddress,
         },
-        [TronChainIDs.Shasta]: ContractsCarbon.tron.accountantLZ as TronAddress,
+        [TronChainIDs.Shasta]: DevnetContractsCarbon.tron.accountantLZ as TronAddress,
     },
     MUSDLock: {
         [TronChainIDs.Mainnet]: {
             prod: MainProdContractsCarbon.tron.mUSDLock as TronAddress,
             beta: MainBetaContractsCarbon.tron.mUSDLock as TronAddress,
         },
-        [TronChainIDs.Shasta]: ContractsCarbon.tron.mUSDLock as TronAddress,
+        [TronChainIDs.Shasta]: DevnetContractsCarbon.tron.mUSDLock as TronAddress,
     },
     SwftBridge: {
         [TronChainIDs.Mainnet]: {

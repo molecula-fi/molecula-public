@@ -4,15 +4,11 @@ import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import TronWeb from 'tronweb';
 
-import type {
-    ContractsCarbon,
-    MainBetaContractsCarbon,
-    MainProdContractsCarbon,
-    NetworkType,
-} from '@molecula-monorepo/blockchain.addresses';
+import type { ContractsCarbon, NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
-import { setOwnerFromConfig } from '../helpers';
 import { getTronNetworkConfig, readFromFile } from '../utils/deployUtils';
+
+import { setOwner } from '../utils/setOwner';
 
 import { setTronOwnerFromConfig } from './deploy/deployCarbonTron';
 
@@ -22,26 +18,24 @@ export async function setCarbonOwner(
     mnemonic: string,
     path: string,
 ) {
-    const config:
-        | typeof ContractsCarbon
-        | typeof MainBetaContractsCarbon
-        | typeof MainProdContractsCarbon = await readFromFile(
+    const contractsCarbon: ContractsCarbon = await readFromFile(
         `${environment}/contracts_carbon.json`,
     );
+    const config = getTronNetworkConfig(environment);
 
-    if ('supplyManager' in config.eth) {
-        console.log('Supply manager exists in config');
+    if ('supplyManager' in contractsCarbon.eth) {
+        console.log('Supply manager exists in contractsCarbon');
     } else {
-        throw new Error('Invalid supplyManager address returned from config.eth.');
+        throw new Error('Invalid supplyManager address returned from contractsCarbon.eth.');
     }
 
     {
         const contracts = [
-            { name: 'SupplyManager', addr: config.eth.supplyManager },
-            { name: 'MoleculaPool', addr: config.eth.moleculaPool },
-            { name: 'AgentLZ', addr: config.eth.agentLZ },
+            { name: 'SupplyManager', addr: contractsCarbon.eth.supplyManager },
+            { name: 'MoleculaPool', addr: contractsCarbon.eth.moleculaPool },
+            { name: 'AgentLZ', addr: contractsCarbon.eth.agentLZ },
         ];
-        await setOwnerFromConfig(hre, environment, contracts);
+        await setOwner(hre, contracts, config.OWNER);
     }
     let network;
     if (environment === 'devnet') {
@@ -69,17 +63,17 @@ export async function setCarbonOwner(
 
     const privateKey = accountInfo.privateKey.substring(2);
 
-    if ('tron' in config) {
-        console.log('Tron contracts exist in the config');
+    if ('tron' in contractsCarbon) {
+        console.log('Tron contracts exist in the contractsCarbon');
     } else {
         throw new Error(`Network ${network} not found in Hardhat config`);
     }
 
     {
         const contracts = [
-            { name: 'Oracle', addr: config.tron.oracle },
-            { name: 'AccountantLZ', addr: config.tron.accountantLZ },
-            { name: 'RebaseToken', addr: config.tron.rebaseToken },
+            { name: 'Oracle', addr: contractsCarbon.tron.oracle },
+            { name: 'AccountantLZ', addr: contractsCarbon.tron.accountantLZ },
+            { name: 'RebaseToken', addr: contractsCarbon.tron.rebaseToken },
         ];
         await setTronOwnerFromConfig(hre, privateKey, environment, contracts);
     }

@@ -20,6 +20,9 @@ rm_global "build"
 echo "Removing cache..."
 rm_global "cache"
 
+echo "Removing forge cache..."
+rm_global "cache_forge"
+
 echo "Removing typechain files..."
 rm_global "typechain"
 rm_global "typechain-types"

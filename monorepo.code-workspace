@@ -24,6 +24,10 @@
             "name": "🖥️ Frontend",
             "path": "frontend",
         },
+        {
+            "name": "🔌 SDK",
+            "path": "middleware/packages",
+        },
     ],
     "extensions": {
         "recommendations": [

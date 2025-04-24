@@ -6,27 +6,336 @@ import { ethers } from 'hardhat';
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 
 import {
+    REQUEST_DEPOSIT,
     CONFIRM_DEPOSIT,
+    REQUEST_REDEEM,
+    CONFIRM_REDEEM,
     CONFIRM_DEPOSIT_AND_UPDATE_ORACLE,
     DISTRIBUTE_YIELD,
+    DISTRIBUTE_YIELD_AND_UPDATE_ORACLE,
     UPDATE_ORACLE,
 } from '../../scripts/utils/lzShastaSetupUtils';
-
 import { deployCarbon, INITIAL_SUPPLY } from '../utils/deployCarbon';
+import {
+    findRequestRedeemEvent,
+    findRequestDepositEvent,
+    findConfirmDepositEvent,
+    findRedeemRequestEvent,
+    findDistributeYieldEvent,
+} from '../utils/event';
 
 import { grantERC20 } from '../utils/grant';
 
 describe('Test Carbon', () => {
     describe('General solution tests', () => {
-        it('Should set the right owner', async () => {
-            const { moleculaPool, supplyManager, owner } = await loadFixture(deployCarbon);
+        it('Should set the right poolOwner', async () => {
+            const { moleculaPool, supplyManager, poolOwner, oracle, user0 } =
+                await loadFixture(deployCarbon);
 
-            expect(await moleculaPool.owner!()).to.equal(await owner!.getAddress());
-            expect(await supplyManager.owner!()).to.equal(await owner!.getAddress());
+            expect(await moleculaPool.owner()).to.equal(await poolOwner.getAddress());
+            expect(await supplyManager.owner()).to.equal(await poolOwner.getAddress());
             expect(await moleculaPool.totalSupply()).to.equal(100_000_000_000_000_000_000n);
             expect(await supplyManager.totalSupply()).to.equal(100_000_000_000_000_000_000n);
+
+            expect(await oracle.owner()).to.equal(await poolOwner.getAddress());
+            expect(await oracle.transferOwnership!(user0)).to.ok;
+
+            // transferOwnership shouldn't change owner
+            expect(await oracle.owner()).to.equal(await poolOwner.getAddress());
+
+            // acceptOwnership should change owner
+            expect(await oracle.connect(user0).acceptOwnership()).to.ok;
+            expect(await oracle.owner()).to.equal(await user0.getAddress());
         });
-        it('Test set lzOptions', async () => {
+        it('Test set lzOptions and quotes', async () => {
+            const { agentLZ, accountantLZ, user0 } = await loadFixture(deployCarbon);
+
+            await agentLZ.setGasLimit(CONFIRM_DEPOSIT, 300_000n, 0n);
+            await agentLZ.setGasLimit(CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 350_000n, 0n);
+            await agentLZ.setGasLimit(DISTRIBUTE_YIELD, 200_000n, 50_000n);
+
+            expect(await agentLZ.getLzOptions(CONFIRM_DEPOSIT, 0)).to.equal(
+                '0x000301001101000000000000000000000000000493e0',
+            );
+            expect(await agentLZ.getLzOptions(CONFIRM_DEPOSIT, 5)).to.equal(
+                '0x000301001101000000000000000000000000000493e0',
+            );
+            expect(await agentLZ.getLzOptions(CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 0)).to.equal(
+                '0x00030100110100000000000000000000000000055730',
+            );
+            expect(await agentLZ.getLzOptions(DISTRIBUTE_YIELD, 0)).to.equal(
+                '0x00030100110100000000000000000000000000030d40',
+            );
+            expect(await agentLZ.getLzOptions(DISTRIBUTE_YIELD, 1)).to.equal(
+                '0x0003010011010000000000000000000000000003d090',
+            );
+            expect(await agentLZ.getLzOptions(DISTRIBUTE_YIELD, 3)).to.equal(
+                '0x00030100110100000000000000000000000000055730',
+            );
+
+            expect((await agentLZ.quote(CONFIRM_DEPOSIT, 0)).nativeFee).to.not.equal(0n);
+            expect(
+                (await agentLZ.quote(CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 0)).nativeFee,
+            ).to.not.equal(0n);
+            await expect(agentLZ.quote(REQUEST_REDEEM, 0)).to.be.reverted;
+            expect((await agentLZ.quote(CONFIRM_REDEEM, 0)).nativeFee).to.not.equal(0n);
+            expect((await agentLZ.quote(REQUEST_DEPOSIT, 0)).nativeFee).to.be.equal(0n);
+
+            expect((await accountantLZ.quote(REQUEST_REDEEM)).nativeFee).to.be.equal(0n);
+            expect((await accountantLZ.quote(REQUEST_DEPOSIT)).nativeFee).to.not.equal(0n);
+            await expect(accountantLZ.quote(CONFIRM_DEPOSIT)).to.be.reverted;
+
+            expect((await accountantLZ.quote(REQUEST_DEPOSIT)).nativeFee).to.not.equal(0n);
+
+            await agentLZ.setSendOracleData(true);
+            await expect(agentLZ.connect(user0).setSendOracleData(true)).to.be.reverted;
+            await expect(agentLZ.connect(user0).redeem(user0, [0n], [0n], 0n)).to.be.reverted;
+            await expect(agentLZ.connect(user0).distribute([user0], [0n])).to.be.reverted;
+        });
+        it('Test update oracle', async () => {
+            const { supplyManager, agentLZ, moleculaPool } = await loadFixture(deployCarbon);
+
+            const val = INITIAL_SUPPLY * 3n;
+            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY);
+            expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY);
+            const DAI = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.DAI_ADDRESS);
+            // generate income
+            await grantERC20(await moleculaPool.poolKeeper(), DAI, val);
+
+            // get quote
+            const quote = await agentLZ.quote(UPDATE_ORACLE, 0);
+
+            // update oracle
+            await agentLZ.updateOracle({ value: quote.nativeFee });
+        });
+        it('LZ Deposit and Redeem Flow', async () => {
+            const {
+                moleculaPool,
+                agentLZ,
+                accountantLZ,
+                mockLZEndpoint,
+                mockUsdtOFT,
+                user0,
+                USDT,
+                rebaseTokenTron,
+            } = await loadFixture(deployCarbon);
+
+            const depositValue = 100_000_000n;
+
+            await grantERC20(user0, USDT, depositValue);
+            expect(await USDT.balanceOf(user0)).to.equal(depositValue);
+            expect(await USDT.balanceOf(await agentLZ.getAddress())).to.equal(0n);
+            expect(await USDT.balanceOf(mockUsdtOFT)).to.equal(10_000_000_000n);
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(0n);
+
+            // Owner approves USDT for accountantLZ
+            await USDT.connect(user0).approve(await accountantLZ.getAddress(), depositValue);
+
+            // Owner calls requestDeposit on rebaseToken
+            let tx = await rebaseTokenTron
+                .connect(user0)
+                .requestDeposit(depositValue, user0, user0, { value: 100_000_000_000_000_000n });
+
+            const eventRequestDeposit = await findRequestDepositEvent(tx);
+
+            const { requestId } = eventRequestDeposit;
+
+            expect(await USDT.balanceOf(user0)).to.equal(0n);
+            expect(await USDT.balanceOf(await agentLZ.getAddress())).to.equal(99_900_000n);
+            expect(await USDT.balanceOf(mockUsdtOFT)).to.equal(10_000_100_000n);
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(0n);
+
+            // send lz requestDeposit data for ethereum agentLZ
+            await mockLZEndpoint.lzReceive(
+                await agentLZ.getAddress(),
+                ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                ethers.zeroPadValue(await accountantLZ.getAddress(), 32),
+                REQUEST_DEPOSIT,
+                requestId,
+                99_900_000n,
+            );
+
+            tx = await agentLZ.confirmDeposit(requestId);
+            const eventConfirmDeposit = await findConfirmDepositEvent(tx);
+
+            const { shares } = eventConfirmDeposit;
+
+            expect(await USDT.balanceOf(await agentLZ.getAddress())).to.equal(0n);
+
+            expect(await rebaseTokenTron.sharesOf(user0)).to.equal(0n);
+
+            // send lz requestDeposit data for ethereum agentLZ
+            await mockLZEndpoint.lzReceive(
+                await accountantLZ.getAddress(),
+                ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                ethers.zeroPadValue(await agentLZ.getAddress(), 32),
+                CONFIRM_DEPOSIT,
+                requestId,
+                shares,
+            );
+
+            expect(await rebaseTokenTron.sharesOf(user0)).to.be.equal(shares);
+
+            tx = await rebaseTokenTron
+                .connect(user0)
+                .requestRedeem(ethers.MaxUint256, user0, user0);
+            const eventRequestRedeem = await findRedeemRequestEvent(tx);
+
+            const requestIdForRedeem = eventRequestRedeem.requestId;
+            const sharesToRedeem = eventRequestRedeem.shares;
+
+            // send lz requestDeposit data for ethereum agentLZ
+            tx = await mockLZEndpoint.lzReceive(
+                await agentLZ.getAddress(),
+                ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                ethers.zeroPadValue(await accountantLZ.getAddress(), 32),
+                REQUEST_REDEEM,
+                requestIdForRedeem,
+                sharesToRedeem,
+            );
+
+            const eventData = await findRequestRedeemEvent(tx);
+            const { operationId } = eventData;
+
+            expect(await USDT.balanceOf(accountantLZ)).to.equal(0n);
+
+            tx = await moleculaPool.redeem([operationId], { value: 1_000_000_000_000_000_000n });
+
+            expect(await USDT.balanceOf(accountantLZ)).to.equal(99_800_100n);
+
+            tx = await mockLZEndpoint.lzReceive(
+                await accountantLZ.getAddress(),
+                ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                ethers.zeroPadValue(await agentLZ.getAddress(), 32),
+                CONFIRM_REDEEM,
+                requestIdForRedeem,
+                99_800_100n,
+            );
+
+            expect(await USDT.balanceOf(user0)).to.equal(0n);
+
+            await rebaseTokenTron.confirmRedeem(requestIdForRedeem);
+
+            expect(await USDT.balanceOf(user0)).to.equal(99_800_100n);
+            expect(await USDT.balanceOf(accountantLZ)).to.equal(0n);
+        });
+        it('Distribute yield', async () => {
+            const {
+                moleculaPool,
+                supplyManager,
+                agentLZ,
+                user0,
+                USDT,
+                rebaseTokenTron,
+                mockLZEndpoint,
+                accountantLZ,
+            } = await loadFixture(deployCarbon);
+
+            const val = 100n * 10n ** 18n;
+            const incomeValue = 100_000_000n;
+            expect(await supplyManager.totalSupply()).to.equal(val);
+            expect(await supplyManager.totalSharesSupply()).to.equal(val);
+
+            // generate income
+            await grantERC20(await moleculaPool.getAddress(), USDT, incomeValue);
+
+            expect(await supplyManager.totalSupply()).to.equal(val + 40n * 10n ** 18n);
+            expect(await supplyManager.totalSharesSupply()).to.equal(val);
+            expect(await rebaseTokenTron.sharesOf(user0)).to.equal(0n);
+
+            // distribute yield params
+            const party = {
+                parties: [
+                    {
+                        party: user0.address,
+                        portion: 10n ** 18n,
+                    },
+                ],
+                agent: agentLZ,
+                ethValue: 100_000_000_000_000_000n,
+            };
+            // distribute yield
+            let tx = await supplyManager.distributeYield([party], 5000, {
+                value: 100_000_000_000_000_000n,
+            });
+            let distributeEventData = await findDistributeYieldEvent(tx);
+
+            expect(await supplyManager.apyFormatter()).to.equal(5000);
+            expect(await supplyManager.totalSupply()).to.equal(200n * 10n ** 18n);
+            expect(await supplyManager.totalSharesSupply()).to.equal(142857142857142857142n);
+
+            const users = [...distributeEventData.users];
+            const shares = [...distributeEventData.shares];
+
+            tx = await mockLZEndpoint.lzReceiveDistributeYield(
+                await accountantLZ.getAddress(),
+                ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                ethers.zeroPadValue(await agentLZ.getAddress(), 32),
+                DISTRIBUTE_YIELD,
+                users,
+                shares,
+            );
+
+            expect(await rebaseTokenTron.sharesOf(user0)).to.equal(shares[0]);
+
+            // generate income
+            await grantERC20(await moleculaPool.getAddress(), USDT, incomeValue);
+
+            // distribute yield and update oracle
+            tx = await supplyManager.distributeYield([party], 5000, {
+                value: 100_000_000_000_000_000n,
+            });
+            distributeEventData = await findDistributeYieldEvent(tx);
+
+            const users1 = [...distributeEventData.users];
+            const shares2 = [...distributeEventData.shares];
+
+            const totalData = await supplyManager.getTotalSupply();
+
+            tx = await mockLZEndpoint.lzReceiveDistributeYieldAndUpdateOracle(
+                await accountantLZ.getAddress(),
+                ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                ethers.zeroPadValue(await agentLZ.getAddress(), 32),
+                DISTRIBUTE_YIELD_AND_UPDATE_ORACLE,
+                users1,
+                shares2,
+                totalData[0],
+                totalData[1],
+            );
+
+            tx = await mockLZEndpoint.lzReceive(
+                await accountantLZ.getAddress(),
+                ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                ethers.zeroPadValue(await agentLZ.getAddress(), 32),
+                UPDATE_ORACLE,
+                totalData[0],
+                totalData[1],
+            );
+
+            await expect(
+                mockLZEndpoint.lzReceive(
+                    await accountantLZ.getAddress(),
+                    ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                    ethers.zeroPadValue(await agentLZ.getAddress(), 32),
+                    REQUEST_REDEEM,
+                    totalData[0],
+                    totalData[1],
+                ),
+            ).to.be.reverted;
+
+            await expect(
+                mockLZEndpoint.lzReceive(
+                    await agentLZ.getAddress(),
+                    ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                    ethers.zeroPadValue(await accountantLZ.getAddress(), 32),
+                    UPDATE_ORACLE,
+                    totalData[0],
+                    totalData[1],
+                ),
+            ).to.be.reverted;
+        });
+
+        it('Test branches for agents', async () => {
             const { agentLZ } = await loadFixture(deployCarbon);
 
             await agentLZ.setGasLimit(CONFIRM_DEPOSIT, 300_000n, 0n);
@@ -51,222 +360,86 @@ describe('Test Carbon', () => {
             expect(await agentLZ.getLzOptions(DISTRIBUTE_YIELD, 3)).to.equal(
                 '0x00030100110100000000000000000000000000055730',
             );
+
+            expect((await agentLZ.quote(CONFIRM_DEPOSIT, 0)).nativeFee).to.not.equal(0n);
+            expect(
+                (await agentLZ.quote(CONFIRM_DEPOSIT_AND_UPDATE_ORACLE, 0)).nativeFee,
+            ).to.not.equal(0n);
+            await expect(agentLZ.quote(REQUEST_REDEEM, 0)).to.be.reverted;
+            expect((await agentLZ.quote(CONFIRM_REDEEM, 0)).nativeFee).to.not.equal(0n);
+            expect((await agentLZ.quote(REQUEST_DEPOSIT, 0)).nativeFee).to.be.equal(0n);
         });
-        it('Test update oracle', async () => {
-            const { supplyManager, agentLZ, moleculaPool } = await loadFixture(deployCarbon);
 
-            const val = INITIAL_SUPPLY * 3n;
-            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY);
-            expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY);
-            const DAI = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.DAI_ADDRESS);
-            // generate income
-            await grantERC20(await moleculaPool.poolKeeper(), DAI, val);
+        it('Test confirm deposit with update oracle', async () => {
+            const {
+                moleculaPool,
+                agentLZ,
+                accountantLZ,
+                mockLZEndpoint,
+                mockUsdtOFT,
+                user0,
+                USDT,
+                rebaseTokenTron,
+                supplyManager,
+            } = await loadFixture(deployCarbon);
 
-            // get quote
-            const quote = await agentLZ.quote(UPDATE_ORACLE, 0);
+            const depositValue = 100_000_000n;
 
-            // update oracle
-            await agentLZ.updateOracle({ value: quote.nativeFee });
-        });
-        // it('LZ Deposit and Redeem Flow', async () => {
-        //     const {
-        //         moleculaPool,
-        //         supplyManager,
-        //         agentLZ,
-        //         mockLZEndpoint,
-        //         user,
-        //         owner,
-        //         lzMessageDecoder,
-        //         USDT,
-        //         poolKeeper,
-        //     } = await loadFixture(deployCarbon);
-        //     // We have LZ query from Tron after requestDeposit call
-        //     // We receive requestId and minted mUSD depositValue from Tron
-        //     // Emulate LZ query from Tron with our mock endpoint
-        //     const requestId = 1;
-        //     const depositValue = 100_000_000n;
-        //     const shares = depositValue * 10n ** 12n;
-        //     const txDeposit = await mockLZEndpoint.lzReceive(
-        //         await agentLZ.getAddress(),
-        //         ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
-        //         ethMainnetBetaConfig.LAYER_ZERO_TRON_MAINNET_OAPP_MOCK,
-        //         REQUEST_DEPOSIT,
-        //         requestId,
-        //         depositValue,
-        //     );
+            await grantERC20(user0, USDT, depositValue);
+            expect(await USDT.balanceOf(user0)).to.equal(depositValue);
+            expect(await USDT.balanceOf(await agentLZ.getAddress())).to.equal(0n);
+            expect(await USDT.balanceOf(mockUsdtOFT)).to.equal(10_000_000_000n);
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(0n);
 
-        // await expect(txDeposit)
-        //     .to.emit(agentLZ, 'Deposit')
-        //     .withArgs(requestId, depositValue, shares);
-        // expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 2n);
-        // expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY * 2n);
-        // expect((await agentLZ.deposits(requestId)).status).to.equal(1);
+            // Owner approves USDT for accountantLZ
+            await USDT.connect(user0).approve(await accountantLZ.getAddress(), depositValue);
 
-        // // Ready to confirm deposit now anyone can do it
-        // // Note: before confirm deposit in real life we should build options and
-        // // add depositValue to message from qoute() call
-        // // get quote
-        // const quoteConfirmDeposit = await agentLZ.quote(CONFIRM_DEPOSIT, 0);
-        // expect(quoteConfirmDeposit.nativeFee).to.not.equal(0n);
-        // // call confirm deposit
-        // await agentLZ
-        //     .connect(user!)
-        //     .confirmDeposit(requestId, { value: quoteConfirmDeposit.nativeFee });
-        // expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 2n);
-        // expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY * 2n);
-        // expect((await agentLZ.deposits(requestId)).status).to.equal(2);
-        // const cdRes = await lzMessageDecoder.decodeConfirmDepositMessageAndUpdateOracle(
-        //     await mockLZEndpoint.lastMessage(),
-        // );
-        // expect(cdRes.requestId).to.equal(requestId);
-        // expect(cdRes.shares).to.equal(INITIAL_SUPPLY);
-        // expect(cdRes.totalValue).to.equal(INITIAL_SUPPLY * 2n);
-        // expect(cdRes.totalShares).to.equal(INITIAL_SUPPLY * 2n);
+            // Owner calls requestDeposit on rebaseToken
+            let tx = await rebaseTokenTron
+                .connect(user0)
+                .requestDeposit(depositValue, user0, user0, { value: 100_000_000_000_000_000n });
 
-        // // generate income. make x2 share price.
-        // const income = 500_000_000n;
-        // await grantERC20(await moleculaPool.poolKeeper(), USDT, income);
-        // expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 4n);
-        // expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY * 2n);
+            const eventRequestDeposit = await findRequestDepositEvent(tx);
 
-        // // Layer Zero call deposit on agentLZ
-        // // oops same requestId
-        // await expect(
-        //     mockLZEndpoint.lzReceive(
-        //         await agentLZ.getAddress(),
-        //         ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
-        //         ethMainnetBetaConfig.LAYER_ZERO_TRON_MAINNET_OAPP_MOCK,
-        //         REQUEST_DEPOSIT,
-        //         requestId,
-        //         depositValue,
-        //     ),
-        // ).to.be.revertedWithCustomError(agentLZ, 'EOperationAlreadyExists');
+            const { requestId } = eventRequestDeposit;
 
-        // // make a new deposit
-        // const secondRequestId = 4;
-        // const txSecondDeposit = await mockLZEndpoint.lzReceive(
-        //     await agentLZ.getAddress(),
-        //     ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
-        //     ethMainnetBetaConfig.LAYER_ZERO_TRON_MAINNET_OAPP_MOCK,
-        //     REQUEST_DEPOSIT,
-        //     secondRequestId,
-        //     depositValue,
-        // );
-        // const secondSares = (depositValue * 10n ** 12n) / 2n;
-        // await expect(txSecondDeposit)
-        //     .to.emit(agentLZ, 'Deposit')
-        //     .withArgs(secondRequestId, depositValue, secondSares);
-        // expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 5n);
-        // expect(await supplyManager.totalSharesSupply()).to.equal(
-        //     INITIAL_SUPPLY + shares + secondSares,
-        // );
-        // expect((await agentLZ.deposits(secondRequestId)).status).to.equal(1);
+            expect(await USDT.balanceOf(user0)).to.equal(0n);
+            expect(await USDT.balanceOf(await agentLZ.getAddress())).to.equal(99_900_000n);
+            expect(await USDT.balanceOf(mockUsdtOFT)).to.equal(10_000_100_000n);
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(0n);
 
-        // // Ready to confirm deposit now anyone can do it
-        // // Note: before confirm deposit in real life we should build options and
-        // // add depositValue to message from qoute() call
-        // // get quote
-        // // Did it before: const quoteConfirmDeposit = await agentLZ.quote(CONFIRM_DEPOSIT, 0);
-        // expect(quoteConfirmDeposit.nativeFee).to.not.equal(0n);
-        // // call confirm deposit
-        // await agentLZ
-        //     .connect(user!)
-        //     .confirmDeposit(secondRequestId, { value: quoteConfirmDeposit.nativeFee });
-        // expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 5n);
-        // expect(await supplyManager.totalSharesSupply()).to.equal(
-        //     INITIAL_SUPPLY + shares + secondSares,
-        // );
-        // expect((await agentLZ.deposits(secondRequestId)).status).to.equal(2);
+            // send lz requestDeposit data for ethereum agentLZ
+            await mockLZEndpoint.lzReceive(
+                await agentLZ.getAddress(),
+                ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                ethers.zeroPadValue(await accountantLZ.getAddress(), 32),
+                REQUEST_DEPOSIT,
+                requestId,
+                99_900_000n,
+            );
 
-        // // call redeem request
-        // const redeemRequestId = 4;
-        // const redeemShares = shares / 2n;
-        // await mockLZEndpoint.lzReceive(
-        //     await agentLZ.getAddress(),
-        //     ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
-        //     ethMainnetBetaConfig.LAYER_ZERO_TRON_MAINNET_OAPP_MOCK,
-        //     REQUEST_REDEEM,
-        //     redeemRequestId,
-        //     redeemShares,
-        // );
+            tx = await agentLZ.confirmDeposit(requestId);
+            const eventConfirmDeposit = await findConfirmDepositEvent(tx);
 
-        // expect(await supplyManager.totalSupply()).to.equal(460000000000000000000n);
-        // expect(await supplyManager.totalSharesSupply()).to.equal(230000000000000000000n);
-        // expect((await supplyManager.redeemRequests(redeemRequestId)).status).to.equal(1);
-        // expect((await supplyManager.redeemRequests(redeemRequestId)).value).to.equal(
-        //     depositValue,
-        // );
+            const { shares } = eventConfirmDeposit;
 
-        // // call second redeem request
-        // const secondRedeemRequestId = 5;
-        // const secondRedeemShares = redeemShares;
-        // await mockLZEndpoint.lzReceive(
-        //     await agentLZ.getAddress(),
-        //     ethMainnetBetaConfig.LAYER_ZERO_TRON_EID,
-        //     ethMainnetBetaConfig.LAYER_ZERO_TRON_MAINNET_OAPP_MOCK,
-        //     REQUEST_REDEEM,
-        //     secondRedeemRequestId,
-        //     secondRedeemShares,
-        // );
-        // expect(await supplyManager.totalSupply()).to.equal(412173913043478260869n);
-        // expect(await supplyManager.totalSharesSupply()).to.equal(206086956521739130434n);
-        // expect((await supplyManager.redeemRequests(secondRedeemRequestId)).status).to.equal(1);
-        // expect((await supplyManager.redeemRequests(secondRedeemRequestId)).value).to.equal(
-        //     depositValue,
-        // );
+            expect(await USDT.balanceOf(await agentLZ.getAddress())).to.equal(0n);
 
-        //         // Approve depositValue to redeem from poolKeeper
-        //         // const poolKeeperSigner = await ethers.getImpersonatedSigner(
-        //         //     await moleculaPool.poolKeeper(),
-        //         // );
-        //         // const totalRedeem =
-        //         //     (await supplyManager.redeemRequests(secondRedeemRequestId)).value +
-        //         //     (await supplyManager.redeemRequests(redeemRequestId)).value;
+            expect(await rebaseTokenTron.sharesOf(user0)).to.equal(0n);
 
-        //         // call confirm redeem
-        //         const quote = await agentLZ.quote(CONFIRM_REDEEM, 2);
-        //         await moleculaPool
-        //             .connect(owner!)
-        //             .redeem([redeemRequestId, secondRedeemRequestId], { value: quote.nativeFee });
-        //         expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY * 6n);
-        //         expect(await supplyManager.totalSupply()).to.equal(412173913043478260869n);
-        //         expect(await supplyManager.totalSharesSupply()).to.equal(206086956521739130434n);
-        //         expect((await supplyManager.redeemRequests(secondRedeemRequestId)).status).to.equal(2);
-        // });
-        it('Distribute yield', async () => {
-            const { moleculaPool, supplyManager, agentLZ, user } = await loadFixture(deployCarbon);
+            const totalData = await supplyManager.getTotalSupply();
 
-            const val = 100_000_000_000_000_000_000n;
-            expect(await supplyManager.totalSupply()).to.equal(val);
-            expect(await supplyManager.totalSharesSupply()).to.equal(val);
-            const DAI = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.DAI_ADDRESS);
-
-            // generate income
-            await grantERC20(await moleculaPool.poolKeeper(), DAI, val);
-
-            expect(await supplyManager.totalSupply()).to.equal(140n * 10n ** 18n);
-            expect(await supplyManager.totalSharesSupply()).to.equal(val);
-
-            // get quote
-            const quote = await agentLZ.quote(DISTRIBUTE_YIELD, 1);
-
-            // distribute yield params
-            const party = {
-                parties: [
-                    {
-                        party: user!.address,
-                        portion: 1_000_000_000_000_000_000n,
-                    },
-                ],
-                agent: agentLZ,
-                ethValue: quote.nativeFee,
-            };
-            // distribute yield
-            await supplyManager.distributeYield([party], 5000, { value: quote.nativeFee });
-
-            expect(await supplyManager.apyFormatter()).to.equal(5000);
-            expect(await supplyManager.totalSupply()).to.equal(200n * 10n ** 18n);
-            expect(await supplyManager.totalSharesSupply()).to.equal(142857142857142857142n);
+            // send lz requestDeposit data for ethereum agentLZ
+            await mockLZEndpoint.lzReceiveAndUpdateOracle(
+                await accountantLZ.getAddress(),
+                ethMainnetBetaConfig.LAYER_ZERO_ETHEREUM_EID,
+                ethers.zeroPadValue(await agentLZ.getAddress(), 32),
+                CONFIRM_DEPOSIT_AND_UPDATE_ORACLE,
+                requestId,
+                shares,
+                totalData[0],
+                totalData[1],
+            );
         });
     });
 });

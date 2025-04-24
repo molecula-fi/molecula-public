@@ -2,14 +2,16 @@ import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import type { ContractsCore, NetworkType } from '@molecula-monorepo/blockchain.addresses';
 
-import { setOwnerFromConfig } from '../helpers';
-import { readFromFile } from '../utils/deployUtils';
+import { getNetworkConfig, readFromFile } from '../utils/deployUtils';
+import { setOwner } from '../utils/setOwner';
 
 export async function setCoreOwner(hre: HardhatRuntimeEnvironment, environment: NetworkType) {
-    const config: typeof ContractsCore = await readFromFile(`${environment}/contracts_core.json`);
+    const contractsCore: ContractsCore = await readFromFile(`${environment}/contracts_core.json`);
     const contracts = [
-        { name: 'SupplyManager', addr: config.eth.supplyManager },
-        { name: 'MoleculaPool', addr: config.eth.moleculaPool },
+        { name: 'SupplyManager', addr: contractsCore.eth.supplyManager },
+        { name: 'MoleculaPool', addr: contractsCore.eth.moleculaPool },
     ];
-    await setOwnerFromConfig(hre, environment, contracts);
+
+    const config = getNetworkConfig(environment);
+    await setOwner(hre, contracts, config.OWNER);
 }

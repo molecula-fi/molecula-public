@@ -117,5 +117,6 @@
         "object-curly-newline": "off",
         "operator-linebreak": "off",
         "prefer-arrow-callback": ["error", { "allowNamedFunctions": true }]
-    }
+    },
+    "ignorePatterns": ["**/autogen.ts"]
 }

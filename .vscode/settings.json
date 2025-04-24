@@ -49,7 +49,7 @@
         "./backend/atoms-service",
         "./backend/rebalance-service",
         "./backend/rpc-proxy",
-        "./backend-nest/_template",
+        "./backend-nest/atoms-service",
         "./backend-nest/packages/app",
         "./backend-nest/packages/common",
         "./backend-nest/packages/database",
@@ -87,7 +87,6 @@
         "./frontend/packages/extensions-test-helpers",
         "./frontend/packages/test-ids",
         "./frontend/website",
-        "./frontend/prelaunch",
         "./frontend/retail",
         "./frontend/rpc-proxy",
         "./frontend/feature-flags-sync-service",
@@ -116,11 +115,7 @@
     },
     "solidity.compileUsingRemoteVersion": "v0.8.28+commit.7893614a",
     "solidity.linter": "solhint",
-    "solidity.monoRepoSupport": false,
-    "solidity.remappingsUnix": [
-        "@layerzerolabs/=node_modules/@layerzerolabs/",
-        "@openzeppelin/=node_modules/@openzeppelin/"
-    ],
+    "solidity.monoRepoSupport": true,
     "typescript.tsdk": "node_modules/typescript/lib",
     "slither.hiddenDetectors": [
         "assembly",

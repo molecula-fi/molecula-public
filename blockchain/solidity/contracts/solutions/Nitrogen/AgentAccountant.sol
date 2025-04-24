@@ -23,7 +23,7 @@ contract AgentAccountant is Ownable, IAccountant, IAgent, ZeroValueChecker {
     /// @dev SupplyManager interface.
     ISupplyManager public immutable SUPPLY_MANAGER;
 
-    /// @dev USDT token's address.
+    /// @dev erc20 token's address.
     IERC20 public immutable ERC20_TOKEN;
 
     /// @dev Error: Invalid swap initializer address.
@@ -84,7 +84,7 @@ contract AgentAccountant is Ownable, IAccountant, IAgent, ZeroValueChecker {
     }
 
     /**
-     * @dev Emitted when processing deposits.
+     * @dev Creates a new deposit request.
      * @param requestId Withdrawal operation unique identifier.
      * @param user User address.
      * @param value A deposited value.

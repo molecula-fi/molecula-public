@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 // solhint-disable-next-line no-unused-import
 import {ISetterOracle, IOracle} from "../../../common/interfaces/ISetterOracle.sol";
@@ -11,12 +11,12 @@ import {ISetterOracle, IOracle} from "../../../common/interfaces/ISetterOracle.s
  * @title TronOracle
  * @dev Contract for managing shares and pool information, implementing the IOracle interface.
  */
-contract TronOracle is Ownable, ISetterOracle {
+contract TronOracle is Ownable2Step, ISetterOracle {
     /// @dev Total pool value tracked by the Oracle.
-    uint256 private _pool = 0;
+    uint256 private _pool;
 
     /// @dev Total shares value tracked by the Oracle.
-    uint256 private _shares = 0;
+    uint256 private _shares;
 
     /// @dev Accountant address.
     address public accountant;

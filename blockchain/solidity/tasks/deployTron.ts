@@ -27,13 +27,7 @@ tronMajorScope
             const contractsCarbon = await readFromFile(`${environment}/contracts_carbon.json`);
 
             // Execute deployment
-            const tron = await deployCarbon(
-                hre,
-                accounts.mnemonic,
-                accounts.path,
-                environment,
-                contractsCarbon.eth.agentLZ,
-            );
+            const tron = await deployCarbon(hre, accounts.mnemonic, accounts.path, environment);
 
             writeToFile(`${environment}/contracts_carbon.json`, {
                 eth: contractsCarbon.eth,

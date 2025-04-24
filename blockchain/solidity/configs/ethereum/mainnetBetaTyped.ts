@@ -49,9 +49,6 @@ export const ethMainnetBetaConfig: EthereumNetworkConfig = {
     /** @deprecated Dai initial supply. */
     INITIAL_DAI_SUPPLY: 5_000_000_000_000_000_000n,
 
-    /** @deprecated decimals for DAI solution. */
-    DAI_TOKEN_DECIMALS: 18,
-
     /** Initial Supply Manager balance. */
     INITIAL_USDT_SUPPLY: 10_000_000n,
 
@@ -105,4 +102,12 @@ export const ethMainnetBetaConfig: EthereumNetworkConfig = {
     /** Agent Authorized lz configurator address. */
     AGENT_AUTHORIZED_LZ_CONFIGURATOR:
         evmAuthorizedAddresses.AGENT_AUTHORIZED_LZ_CONFIGURATOR[EVMChainIDs.Mainnet].beta,
+
+    WMUSD_TOKEN_NAME: 'Wrapped mUSD beta',
+    WMUSD_TOKEN_SYMBOL: 'wmUSDb',
+
+    LMUSD_TOKEN_NAME: 'Locked mUSD beta',
+    LMUSD_TOKEN_SYMBOL: 'lmUSDb',
+    LMUSD_PERIODS: [],
+    LMUSD_MULTIPLIERS: [],
 };

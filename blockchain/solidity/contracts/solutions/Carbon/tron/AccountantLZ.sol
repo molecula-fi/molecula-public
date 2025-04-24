@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 import {IAccountant} from "../../../common/interfaces/IAccountant.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -9,14 +9,14 @@ import {ISetterOracle} from "../../../common/interfaces/ISetterOracle.sol";
 
 import {LZMsgCodec} from "../../../common/layerzero/LZMsgCodec.sol";
 import {OApp, Origin} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
-import {OptionsLZ} from "../../../common/layerzero/OptionsLZ.sol";
+import {OptionsLZ, Ownable2Step, Ownable} from "../../../common/layerzero/OptionsLZ.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../../../common/UsdtOFT.sol";
 import {ZeroValueChecker} from "../../../common/ZeroValueChecker.sol";
 
 /// @title AccountantLZ - Accountant contract for handling LayerZero-based cross-chain transactions.
 /// @notice This contract facilitates cross-chain USDT transactions using LayerZero and UsdtOFT.
-contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
+contract AccountantLZ is OApp, OptionsLZ, ZeroValueChecker, IAccountant {
     using SafeERC20 for IERC20;
 
     /// @dev LayerZero destination chain ID for cross-chain communication.
@@ -31,10 +31,7 @@ contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
     /// @dev Address of the Oracle contract for updating the supply data.
     ISetterOracle public immutable ORACLE;
 
-    /// @dev Ethereum address of the destination's AgentLZ contract.
-    address public agent;
-
-    /// @dev Address of the underyling token contract being managed by Accountant. E.g., mUSD token.
+    /// @dev Address of the underlying token contract being managed by Accountant. E.g., mUSD token.
     address public underlyingToken;
 
     /// @dev Tracks the amount of locked USDT pending redemption.
@@ -68,7 +65,6 @@ contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
      * @param lzDstEid LayerZero destination chain ID.
      * @param usdtAddress Address of the USDT token contract.
      * @param usdtOFTAddress Address of the UsdtOFT contract for cross-chain transfers.
-     * @param agentAddress Address of the AgentLZ contract on Ethereum.
      * @param oracleAddress Address of the Oracle contract.
      */
     constructor(
@@ -78,17 +74,12 @@ contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
         uint32 lzDstEid,
         address usdtAddress,
         address usdtOFTAddress,
-        address agentAddress,
         address oracleAddress
     ) OApp(endpoint, initialOwner) OptionsLZ(initialOwner, authorizedLZConfiguratorAddress) {
         DST_EID = lzDstEid;
         USDT = IERC20(usdtAddress);
         USDT_OFT = UsdtOFT(usdtOFTAddress);
-        agent = agentAddress;
         ORACLE = ISetterOracle(oracleAddress);
-        // Set the LayerZero peer for the destination endpoint.
-        bytes32 account = bytes32(uint256(uint160(agent)));
-        _setPeer(DST_EID, account);
     }
 
     /**
@@ -154,6 +145,14 @@ contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
     }
 
     /**
+     * @dev Overrides the `_transferOwnership` function to resolve conflicts.
+     * @param newOwner The address of the new owner.
+     */
+    function _transferOwnership(address newOwner) internal override(Ownable2Step, Ownable) {
+        super._transferOwnership(newOwner);
+    }
+
+    /**
      * @dev Sets the oracle data.
      * @param totalValue Total value.
      * @param totalShares Total shares.
@@ -204,6 +203,14 @@ contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
     }
 
     /**
+     * @dev Overrides the `transferOwnership` function to resolve conflicts.
+     * @param newOwner The address of the new owner.
+     */
+    function transferOwnership(address newOwner) public override(Ownable2Step, Ownable) onlyOwner {
+        super.transferOwnership(newOwner);
+    }
+
+    /**
      * @dev Sets the underlying token address.
      * @param underlyingTokenAddress Underlying token address.
      */
@@ -211,16 +218,6 @@ contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
         address underlyingTokenAddress
     ) external onlyOwner checkNotZero(underlyingTokenAddress) {
         underlyingToken = underlyingTokenAddress;
-    }
-
-    /**
-     * @dev Sets the AgentLZ contract's address.
-     * @param agentAddress Address of AgentLZ contract on Ethereum.
-     */
-    function setAgent(address agentAddress) external onlyOwner checkNotZero(agentAddress) {
-        agent = agentAddress;
-        bytes32 account = bytes32(uint256(uint160(agent)));
-        _setPeer(DST_EID, account);
     }
 
     /**
@@ -275,10 +272,12 @@ contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
             // Approve the transferred USDT for spending by the UsdtOFT contract.
             USDT.forceApprove(address(USDT_OFT), value);
 
+            bytes32 agent = _getPeerOrRevert(DST_EID);
+
             // Prepare structured parameters for sending USDT cross-chain via UsdtOFT.
             SendParam memory sendParam = SendParam({
                 dstEid: DST_EID, // Ethereum endpoint ID: LayerZero destination chain.
-                to: bytes32(uint256(uint160(agent))), // Recipient on Ethereum, converted to bytes32.
+                to: agent, // Recipient on Ethereum, converted to bytes32.
                 amountLD: value, // Amount to transfer
                 minAmountLD: (value - ((value * USDT_OFT.feeBps()) / USDT_OFT.BPS_DENOMINATOR())), // Minimum acceptable amount after fees.
                 extraOptions: "", // No extra options provided.
@@ -393,10 +392,12 @@ contract AccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
             lzOptions = getLzOptions(LZMsgCodec.REQUEST_DEPOSIT, 0);
             payload = LZMsgCodec.lzEncodeRequestDepositMessage(1, 1);
 
+            bytes32 agent = _getPeerOrRevert(DST_EID);
+
             // Prepare a mock `SendParam` for fee estimation.
             SendParam memory sendParam = SendParam({
                 dstEid: DST_EID, // Destination endpoint: Ethereum.
-                to: bytes32(uint256(uint160(agent))), // Mock recipient address on Ethereum.
+                to: agent, // Mock recipient address on Ethereum.
                 amountLD: 1e6, // 1 USDT for estimation.
                 minAmountLD: 0, // Min acceptable amount. Mock value.
                 extraOptions: "", // No extra options.
