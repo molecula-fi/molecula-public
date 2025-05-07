@@ -1,6 +1,6 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type { ContractsNitrogen, NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import type { ContractsNitrogen, EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
@@ -8,7 +8,7 @@ import { getConfig } from '../../utils/deployUtils';
 
 export async function deployRouter(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
     contractsNitrogen: ContractsNitrogen,
 ) {
     const { config, account } = await getConfig(hre, environment);
@@ -30,7 +30,7 @@ export async function deployRouter(
 
 export async function deployRouterAgent(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
     contractsNitrogen: ContractsNitrogen,
     tokenAddress: string,
 ) {

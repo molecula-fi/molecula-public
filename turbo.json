@@ -1,41 +1,42 @@
 {
     "$schema": "./node_modules/turbo/schema.json",
     "tasks": {
-        "compile": {
-            "dependsOn": ["transitNode"],
-            "outputs": ["artifacts/**", "cache/**", "./build/contracts/**"]
+        "transitNode": {
+            "dependsOn": ["^transitNode"]
         },
-        "cycles:check": {},
+        "compile": {
+            "dependsOn": ["transitNode"]
+        },
         "eslint:check": {},
         "eslint:fix": {},
+        "//#eslint:fix": {},
         "gql:generate": {
             "cache": false
         },
-        "natspec:check": {},
+        "//#natspec:check": {
+            "inputs": [
+                "./blockchain/solidity/contracts/**",
+                "!./blockchain/solidity/contracts/mock/**",
+                "!./blockchain/solidity/contracts/test/**",
+                "!./blockchain/solidity/contracts/common/UsdtOFT.sol",
+                "!./blockchain/solidity/contracts/common/interfaces/IUsdtOFT.sol"
+            ]
+        },
         "prettier:check": {},
         "prettier:fix": {},
+        "//#prettier:fix": {},
         "slither": {
             "dependsOn": ["transitNode"],
             "cache": false
         },
         "solhint:check": {},
-        "transitNode": {
-            "dependsOn": ["^transitNode"]
-        },
+        "//#cycles:check": {},
+        "test": {},
         "tsc": {
             "dependsOn": ["transitNode"]
         },
-        "unitTests": {},
-        "hardhatUnitTests": {},
-
-        "back:build": {
-            "dependsOn": ["^back:build"],
-            "outputs": ["dist/**"]
-        },
-        "back:dev": {
-            "dependsOn": ["^back:build"],
-            "cache": false,
-            "persistent": true
+        "unitTests": {
+            "dependsOn": ["tsc"]
         }
     },
     "globalEnv": [
@@ -119,7 +120,8 @@
         "TRON_SEED_PHRASE",
         "MAVA_WIDGET_TOKEN",
         "API_TESTS_AUTH_TOKEN",
-        "API_TESTS_TARGET"
+        "API_TESTS_TARGET",
+        "usdtContractAccount"
     ],
     "globalDependencies": [".env"]
 }

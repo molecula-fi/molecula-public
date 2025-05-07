@@ -1,6 +1,6 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import type { EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
@@ -8,7 +8,7 @@ import { getConfig, increaseBalance } from '../../utils/deployUtils';
 
 export async function deployNitrogen(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
     contractsCore: {
         mUSDe: string;
         moleculaPool: string;

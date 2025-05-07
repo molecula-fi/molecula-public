@@ -1,7 +1,7 @@
 {
     "name": "@molecula-monorepo/blockchain.ethena",
     "description": "A package responsible for compiling ethena contracts",
-    "version": "0.16.0",
+    "version": "1.0.0",
     "private": true,
     "license": "GPL-3.0-only",
     "main": "src/index.ts",

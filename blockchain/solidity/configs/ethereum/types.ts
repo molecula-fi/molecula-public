@@ -4,6 +4,7 @@ import type { EVMAddress } from '@molecula-monorepo/common.evm-utilities';
 export type EthereumNetworkConfig = {
     // LAYER ZERO
     LAYER_ZERO_ENDPOINT: EVMAddress;
+    LAYER_ZERO_EXECUTOR: EVMAddress;
     LAYER_ZERO_TRON_EID: number;
     LAYER_ZERO_ETHEREUM_EID: number;
     LAYER_ZERO_ARBITRUM_EID: number;
@@ -40,9 +41,6 @@ export type EthereumNetworkConfig = {
     MUSD_TOKEN_MIN_DEPOSIT: bigint;
     MUSD_TOKEN_MIN_REDEEM: bigint;
 
-    AUTHORIZED_REDEEMER: EVMAddress;
-    AUTHORIZED_AGENT_SERVER: EVMAddress;
-    AUTHORIZED_WMUSDT_SERVER: EVMAddress;
     AGENT_AUTHORIZED_LZ_CONFIGURATOR: EVMAddress;
 
     WMUSD_TOKEN_NAME: string;

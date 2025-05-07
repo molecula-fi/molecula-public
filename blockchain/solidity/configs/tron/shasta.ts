@@ -11,5 +11,3 @@ export const LAYER_ZERO_SEPOLIA = '0x0963116AB61F7f060D83812D73651C2F2bF436fB';
 export const LAYER_ZERO_SHASTA = 'TMAL62wjdMTHKaAmsufF1oxkGg8aDFcmuP';
 // Shasta USDT
 export const USDT_ADDRESS = 'TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs';
-// Shasta SWFT bridge
-export const SWFT_BRIDGE_ADDRESS = 'TSB8wbUZYCRa6MdVixwsja38priMhCwZhy';

@@ -1,7 +1,7 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import {
-    type NetworkType,
+    type EnvironmentType,
     type ContractsNitrogen,
     type EVMAddress,
     type PoolData,
@@ -12,7 +12,7 @@ import { getConfig, readFromFile } from '../../utils/deployUtils';
 
 export async function deployMoleculaPoolTreasury(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
 ) {
     const { config } = await getConfig(hre, environment);
     const contractsNitrogen: ContractsNitrogen = await readFromFile(

@@ -162,8 +162,4 @@ export const evmMoleculaContractAddresses = {
         },
         [EVMChainIDs.Sepolia]: DevnetContractsCarbon.eth.agentLZ as EVMAddress,
     },
-    SwftBridge: {
-        [EVMChainIDs.Mainnet]: undefined,
-        [EVMChainIDs.Sepolia]: undefined,
-    },
 } as const;

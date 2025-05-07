@@ -1,14 +1,14 @@
-import type { TronContract } from 'tronweb/interfaces';
+import type { Contract as TronContract } from 'tronweb';
 
 import { BlockKeeper } from '@molecula-monorepo/common.evm-utilities/src/helpers';
 
 import { Log } from '@molecula-monorepo/common.utilities';
 
 import type {
-    TronEvent,
     TronEventsLoadParams,
     TronEventCallback,
     TronEventsLoadOptions,
+    InternalTronEvent,
 } from '../types';
 
 import { MAX_PART_SIZE, tronEventsLoad } from './tronEventsLoader';
@@ -53,6 +53,10 @@ export class TronSubscriber {
         this.contract = contract;
         this.method = method;
 
+        if (!this.contract.address) {
+            throw new Error('Failed to define contract address');
+        }
+
         const addressShort = this.contract.address.slice(0, 6);
 
         this.log = new Log(`Tron Subscriber ${this.method}~${addressShort}`);
@@ -64,12 +68,12 @@ export class TronSubscriber {
      * Start to watch contract events.
      * @param callback - a callback function.
      */
-    public start = async <T>(callback: TronEventCallback<T>) => {
+    public start = async <FilterName, Result>(callback: TronEventCallback<FilterName, Result>) => {
         // Init subscriber first if it's needed
         const lastBlockTimestamp = this.blockKeeper.findNewestBlock();
         if (!lastBlockTimestamp) {
             // load last event to save the last timestamp
-            const events = await this.loadLastEvents<T>({
+            const events = await this.loadLastEvents<FilterName, Result>({
                 size: 1,
                 sort: '-block_timestamp',
             });
@@ -101,11 +105,11 @@ export class TronSubscriber {
      * @param options - contain partSize to specify the maximum portion to load (default 200).
      * @returns loaded events array.
      */
-    public async loadLastEvents<T>(
+    public async loadLastEvents<FilterName, Result>(
         params: TronEventsLoadParams,
         options?: TronEventsLoadOptions,
-    ): Promise<TronEvent<T>[]> {
-        return tronEventsLoad(
+    ): Promise<InternalTronEvent<FilterName, Result>[]> {
+        return tronEventsLoad<FilterName, Result>(
             {
                 log: this.log,
                 method: this.method,
@@ -119,17 +123,19 @@ export class TronSubscriber {
     /**
      * Load new events if exists
      */
-    private async checkNewEvents<T>(callback: TronEventCallback<T>): Promise<void> {
+    private async checkNewEvents<FilterName, Result>(
+        callback: TronEventCallback<FilterName, Result>,
+    ): Promise<void> {
         const sinceTimestamp = this.blockKeeper.findNewestBlock();
 
-        const events = await this.loadLastEvents<T>({
+        const events = await this.loadLastEvents<FilterName, Result>({
             sort: 'block_timestamp',
             size: MAX_PART_SIZE,
             sinceTimestamp: sinceTimestamp ? sinceTimestamp + 1 : this.startTimestamp,
         });
 
         events.forEach(event => {
-            this.processEvent(event, callback);
+            this.processEvent<FilterName, Result>(event, callback);
         });
     }
 
@@ -137,7 +143,10 @@ export class TronSubscriber {
      * Function to process an event.
      * @param event - an event to process.
      */
-    private processEvent<T>(event: TronEvent<T>, callback: TronEventCallback<T>): boolean {
+    private processEvent<FilterName, Result>(
+        event: InternalTronEvent<FilterName, Result>,
+        callback: TronEventCallback<FilterName, Result>,
+    ): boolean {
         // Callback an event if it's not processed yet
         const processed = this.blockKeeper.checkTransaction({
             block: event.timestamp,

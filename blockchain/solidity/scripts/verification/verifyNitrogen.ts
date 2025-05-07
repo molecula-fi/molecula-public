@@ -5,25 +5,25 @@ import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import {
     type ContractsCore,
     type EVMAddress,
-    NetworkType,
+    EnvironmentType,
 } from '@molecula-monorepo/blockchain.addresses';
 import type { ContractsNitrogen } from '@molecula-monorepo/blockchain.addresses/deploy';
 
-import { readFromFile, getNetworkConfig } from '../utils/deployUtils';
+import { readFromFile, getEnvironmentConfig } from '../utils/deployUtils';
 
 import { verifyContract } from './verificationUtils';
 
 export async function runVerify(hre: HardhatRuntimeEnvironment) {
-    const networkType =
-        hre.network.name === 'sepolia' ? NetworkType.devnet : NetworkType['mainnet/beta'];
-    const config = getNetworkConfig(networkType);
+    const envType =
+        hre.network.name === 'sepolia' ? EnvironmentType.devnet : EnvironmentType['mainnet/beta'];
+    const config = getEnvironmentConfig(envType);
 
-    const contractsCore: ContractsCore = await readFromFile(`${networkType}/contracts_core.json`);
+    const contractsCore: ContractsCore = await readFromFile(`${envType}/contracts_core.json`);
 
     const account = (await hre.ethers.getSigners())[0]!;
 
     const contractsNitrogen: ContractsNitrogen = await readFromFile(
-        `${networkType}/contracts_nitrogen.json`,
+        `${envType}/contracts_nitrogen.json`,
     );
 
     const tokens = [...config.TOKENS];

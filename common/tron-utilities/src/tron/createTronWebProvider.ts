@@ -1,6 +1,6 @@
 import type { AxiosInstance } from 'axios';
 import axiosThrottle from 'axios-request-throttle';
-import TronWeb from 'tronweb';
+import { TronWeb } from 'tronweb';
 
 import type { TronWebOptions } from '../types/provider';
 

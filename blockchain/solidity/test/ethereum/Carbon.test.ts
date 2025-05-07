@@ -14,7 +14,7 @@ import {
     DISTRIBUTE_YIELD,
     DISTRIBUTE_YIELD_AND_UPDATE_ORACLE,
     UPDATE_ORACLE,
-} from '../../scripts/utils/lzShastaSetupUtils';
+} from '../../scripts/utils/lzTronSetupUtils';
 import { deployCarbon, INITIAL_SUPPLY } from '../utils/deployCarbon';
 import {
     findRequestRedeemEvent,

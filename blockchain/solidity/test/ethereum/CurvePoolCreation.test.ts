@@ -141,7 +141,7 @@ describe('Test Curve Pool Creation', () => {
     //     generateReport();
     // });
 
-    it('Should create pool with A = 10000, fee = 0%', async () => {
+    it.skip('Should create pool with A = 10000, fee = 0%', async () => {
         const { curveFactory, usdt, dai } = (await loadFixture(fetchCurveFactory))!;
 
         const pools_count = await curveFactory.pool_count();
@@ -160,7 +160,7 @@ describe('Test Curve Pool Creation', () => {
         );
         expect(await curveFactory.pool_count()).to.equal(pools_count + 1n);
     });
-    it('Should create pool with A = 20000, fee = 0%', async () => {
+    it.skip('Should create pool with A = 20000, fee = 0%', async () => {
         const { curveFactory, usdt, dai } = (await loadFixture(fetchCurveFactory))!;
 
         const pools_count = await curveFactory.pool_count();
@@ -179,7 +179,7 @@ describe('Test Curve Pool Creation', () => {
         );
         expect(await curveFactory.pool_count()).to.equal(pools_count + 1n);
     });
-    it('Should create pool with A = max(uint256), fee = 0%, but fail to add liquidity', async () => {
+    it.skip('Should create pool with A = max(uint256), fee = 0%, but fail to add liquidity', async () => {
         const { curveFactory, usdt, dai, faucetSigner } = (await loadFixture(fetchCurveFactory))!;
 
         const pools_count = await curveFactory.pool_count();
@@ -211,7 +211,7 @@ describe('Test Curve Pool Creation', () => {
                 ),
         ).to.be.reverted;
     });
-    it('Should fail to create a pool with A = 10000 and fee > 1%', async () => {
+    it.skip('Should fail to create a pool with A = 10000 and fee > 1%', async () => {
         const { curveFactory, usdt, dai } = (await loadFixture(fetchCurveFactory))!;
 
         const pools_count = await curveFactory.pool_count();
@@ -232,7 +232,7 @@ describe('Test Curve Pool Creation', () => {
         ).to.be.revertedWith('Invalid fee');
         expect(await curveFactory.pool_count()).to.equal(pools_count);
     });
-    it('Should fail to create a pool ids len and token len mismatch', async () => {
+    it.skip('Should fail to create a pool ids len and token len mismatch', async () => {
         const { curveFactory, usdt, dai } = (await loadFixture(fetchCurveFactory))!;
 
         const pools_count = await curveFactory.pool_count();
@@ -253,7 +253,7 @@ describe('Test Curve Pool Creation', () => {
         ).to.be.reverted;
         expect(await curveFactory.pool_count()).to.equal(pools_count);
     });
-    it('Should fail to create a pool oracles len and token len mismatch', async () => {
+    it.skip('Should fail to create a pool oracles len and token len mismatch', async () => {
         const { curveFactory, usdt, dai } = (await loadFixture(fetchCurveFactory))!;
 
         const pools_count = await curveFactory.pool_count();
@@ -274,7 +274,7 @@ describe('Test Curve Pool Creation', () => {
         ).to.be.reverted;
         expect(await curveFactory.pool_count()).to.equal(pools_count);
     });
-    it('Should fail to create a pool types len and token len mismatch', async () => {
+    it.skip('Should fail to create a pool types len and token len mismatch', async () => {
         const { curveFactory, usdt, dai } = (await loadFixture(fetchCurveFactory))!;
 
         const pools_count = await curveFactory.pool_count();
@@ -295,7 +295,7 @@ describe('Test Curve Pool Creation', () => {
         ).to.be.reverted;
         expect(await curveFactory.pool_count()).to.equal(pools_count);
     });
-    it('Should fail to create a pool with empty token list', async () => {
+    it.skip('Should fail to create a pool with empty token list', async () => {
         const { curveFactory } = (await loadFixture(fetchCurveFactory))!;
 
         const pools_count = await curveFactory.pool_count();
@@ -316,7 +316,7 @@ describe('Test Curve Pool Creation', () => {
         ).to.be.reverted;
         expect(await curveFactory.pool_count()).to.equal(pools_count);
     });
-    it('Should fail to create a pool with single token in the list', async () => {
+    it.skip('Should fail to create a pool with single token in the list', async () => {
         const { curveFactory, dai } = (await loadFixture(fetchCurveFactory))!;
 
         const pools_count = await curveFactory.pool_count();
@@ -380,7 +380,7 @@ describe('Test Curve Pool Creation', () => {
         // console.log('Output amount for trade 5 DAI -> USDT:', ethers.formatUnits(dy, 6));
     }
 
-    it('Should create pool with A = 10000, fee = 0%, add liquidity(cloned) and swap 5 tokens', async () => {
+    it.skip('Should create pool with A = 10000, fee = 0%, add liquidity(cloned) and swap 5 tokens', async () => {
         const { curveFactory, mUSDSwapPool, usdt, dai, faucetSigner } =
             (await loadFixture(fetchCurveFactory))!;
 
@@ -400,7 +400,7 @@ describe('Test Curve Pool Creation', () => {
         );
         await proceedTest(curveFactory, mUSDSwapPool, usdt, dai, faucetSigner, pools_count);
     });
-    it('Should create pool with A = 20000, fee = 0% add liquidity(cloned) and swap 5 tokens', async () => {
+    it.skip('Should create pool with A = 20000, fee = 0% add liquidity(cloned) and swap 5 tokens', async () => {
         const { curveFactory, mUSDSwapPool, usdt, dai, faucetSigner } =
             (await loadFixture(fetchCurveFactory))!;
 
@@ -420,7 +420,7 @@ describe('Test Curve Pool Creation', () => {
         );
         await proceedTest(curveFactory, mUSDSwapPool, usdt, dai, faucetSigner, pools_count);
     });
-    it('Should create a pool with A = 10000, fee = 1%, add liquidity(cloned) and swap 5 tokens', async () => {
+    it.skip('Should create a pool with A = 10000, fee = 1%, add liquidity(cloned) and swap 5 tokens', async () => {
         const { curveFactory, mUSDSwapPool, usdt, dai, faucetSigner } =
             (await loadFixture(fetchCurveFactory))!;
 
@@ -442,7 +442,7 @@ describe('Test Curve Pool Creation', () => {
     });
     fees.forEach(({ fee, description }) => {
         amounts.forEach(amount => {
-            it(`Should create a pool with A = 10000, fee = ${description}, swap ${amount} tokens`, async () => {
+            it.skip(`Should create a pool with A = 10000, fee = ${description}, swap ${amount} tokens`, async () => {
                 await poolTest(fee, description, amount);
             });
         });

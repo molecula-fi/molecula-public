@@ -9,8 +9,14 @@ import type { EthereumNetworkConfig } from './types';
 
 /** Ethereum Mainnet config for prod. */
 export const ethMainnetProdConfig: EthereumNetworkConfig = {
-    /** LayerZero Ethereum endpoint. */
+    /**
+     * LayerZero Ethereum configuration parameters.
+     * Endpoint is a primary entrypoint into LayerZero V2 responsible for managing cross-chain communications.
+     * Executor is a contract responsible for executing received cross-chain messages automatically
+     * https://docs.layerzero.network/v2/deployments/deployed-contracts?chains=ethereum
+     */
     LAYER_ZERO_ENDPOINT: '0x1a44076050125825900e736c501f859c50fE728c',
+    LAYER_ZERO_EXECUTOR: '0x173272739Bd7Aa6e4e214714048a9fE699453059',
 
     /** LayerZero Tron EID. */
     LAYER_ZERO_TRON_EID: 30420,
@@ -85,17 +91,6 @@ export const ethMainnetProdConfig: EthereumNetworkConfig = {
 
     /** mUSD token minimum redeem. */
     MUSD_TOKEN_MIN_REDEEM: 500_000_000_000_000_000n,
-
-    /** Authorized redeemer address. */
-    AUTHORIZED_REDEEMER: evmAuthorizedAddresses.AUTHORIZED_REDEEMER[EVMChainIDs.Mainnet].prod,
-
-    /** Authorized agent server address. */
-    AUTHORIZED_AGENT_SERVER:
-        evmAuthorizedAddresses.AUTHORIZED_AGENT_SERVER[EVMChainIDs.Mainnet].prod,
-
-    /** Authorized wmUSDT server address. */
-    AUTHORIZED_WMUSDT_SERVER:
-        evmAuthorizedAddresses.AUTHORIZED_WMUSDT_SERVER[EVMChainIDs.Mainnet].prod,
 
     /** Agent Authorized lz configurator address. */
     AGENT_AUTHORIZED_LZ_CONFIGURATOR:

@@ -5,8 +5,14 @@ import type { TronNetworkConfig } from './types';
 export const shastaConfig: TronNetworkConfig = {
     RPC_URL: 'https://api.shasta.trongrid.io/',
 
-    // Layer zero
+    /**
+     * LayerZero Tron configuration parameters.
+     * Endpoint is a primary entrypoint into LayerZero V2 responsible for managing cross-chain communications.
+     * Executor is a contract responsible for executing received cross-chain messages automatically
+     * https://docs.layerzero.network/v2/deployments/deployed-contracts?chains=tron-testnet
+     */
     LAYER_ZERO_TRON_ENDPOINT: 'TCT5FvMTuUCspdY689LbKbUThCwBVUw4tM',
+    LAYER_ZERO_TRON_EXECUTOR: '0xd9F0144AC7cED407a12dE2649b560b0a68a59A3D',
     LAYER_ZERO_ETHEREUM_EID: 40161, // sepolia
     LAYER_ZERO_TRON_EID: 40420, // shasta
     LAYER_ZERO_ARBITRUM_EID: 40231, // arbitrum sepolia
@@ -20,14 +26,8 @@ export const shastaConfig: TronNetworkConfig = {
     OWNER: 'TNSphg4KJNTvhNzZZsvAXDpUESC11HT4T3',
     ORACLE_AUTHORIZED_UPDATER:
         tronAuthorizedAddresses.ORACLE_AUTHORIZED_UPDATER[TronChainIDs.Shasta],
-    ACCOUNTANT_AUTHORIZED_SERVER:
-        tronAuthorizedAddresses.ACCOUNTANT_AUTHORIZED_SERVER[TronChainIDs.Shasta],
-    TREASURY_AUTHORIZED_SERVER:
-        tronAuthorizedAddresses.TREASURY_AUTHORIZED_SERVER[TronChainIDs.Shasta],
     ACCOUNTANT_AUTHORIZED_LZ_CONFIGURATOR:
         tronAuthorizedAddresses.ACCOUNTANT_AUTHORIZED_LZ_CONFIGURATOR[TronChainIDs.Shasta],
-    TREASURY_AUTHORIZED_LZ_CONFIGURATOR:
-        tronAuthorizedAddresses.TREASURY_AUTHORIZED_LZ_CONFIGURATOR[TronChainIDs.Shasta],
 
     // Token info
     MUSD_TOKEN_NAME: 'mUSD retail test v0.14',

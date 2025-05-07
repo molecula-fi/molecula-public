@@ -1,9 +1,10 @@
-import type { TronAddress } from '@molecula-monorepo/blockchain.addresses';
+import type { TronAddress, EVMAddress } from '@molecula-monorepo/blockchain.addresses';
 
 export type TronNetworkConfig = {
     RPC_URL: string;
     // Layer zero
     LAYER_ZERO_TRON_ENDPOINT: TronAddress;
+    LAYER_ZERO_TRON_EXECUTOR: EVMAddress;
     LAYER_ZERO_ETHEREUM_EID: number;
     LAYER_ZERO_TRON_EID: number;
     LAYER_ZERO_ARBITRUM_EID: number;
@@ -15,10 +16,7 @@ export type TronNetworkConfig = {
     // Authorized wallets
     OWNER: TronAddress;
     ORACLE_AUTHORIZED_UPDATER: TronAddress;
-    ACCOUNTANT_AUTHORIZED_SERVER: TronAddress;
-    TREASURY_AUTHORIZED_SERVER: TronAddress;
     ACCOUNTANT_AUTHORIZED_LZ_CONFIGURATOR: TronAddress;
-    TREASURY_AUTHORIZED_LZ_CONFIGURATOR: TronAddress;
     // Token info
     MUSD_TOKEN_NAME: string;
     MUSD_TOKEN_SYMBOL: string;

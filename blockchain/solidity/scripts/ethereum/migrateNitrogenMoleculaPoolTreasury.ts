@@ -2,13 +2,16 @@
 
 import type { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import { type ContractsNitrogen, type NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import {
+    type ContractsNitrogen,
+    type EnvironmentType,
+} from '@molecula-monorepo/blockchain.addresses';
 
 import { getConfig, readFromFile, writeToFile } from '../utils/deployUtils';
 
 export async function migrateNitrogenMoleculaPoolTreasury(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
 ) {
     const { account } = await getConfig(hre, environment);
 
@@ -48,10 +51,10 @@ export async function migrateNitrogenMoleculaPoolTreasury(
             const allowance = await erc20.allowance(poolKeeper, moleculaPoolTreasuryAddress);
             if (allowance !== (1n << 256n) - 1n) {
                 throw new Error(`Bad allowance:
-    balance: ${balance}
-    allowance: ${allowance}
-    token: ${pool}
-    poolKeeper: ${poolKeeper}`);
+                balance: ${balance}
+                allowance: ${allowance}
+                token: ${pool}
+                poolKeeper: ${poolKeeper}`);
             }
         }
     }

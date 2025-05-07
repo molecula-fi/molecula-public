@@ -1,4 +1,6 @@
-import './deployEthereum';
 import './deployCarbonMultichain';
-import './setUpEthereum';
+import './deployEthereum';
 import './deployTron';
+import './setupCarbonMultichain';
+import './setUpEthereum';
+import './setUpTron';

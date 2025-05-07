@@ -22,6 +22,8 @@ configs/frontend-environments/website/.env
 configs/frontend-environments/retail/.env
 configs/frontend-environments/website/.env.production
 configs/frontend-environments/retail/.env.production
+configs/turbo-environments/.env
+configs/turbo-environments/.env.merge
 
 # Ui tests repo
 ui-tests/extensions/
@@ -44,3 +46,18 @@ tfState.json
 # Tests
 ui-tests/transactionHash.json
 tests-results/allure-results/
+ui-tests/transactionDeposit.json
+
+ui-tests/transactionDeposit.small.json
+
+ui-tests/transactionDeposit.swap.json
+
+ui-tests/transactionHashValue.json
+
+ui-tests/transactionHashValueTron.json
+
+ui-tests/transactionWithdraw.small.json
+
+ui-tests/transactionWithdraw.swap.json
+
+ui-tests/withdrawTransactionHashValue.json

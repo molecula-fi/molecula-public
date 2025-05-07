@@ -1,13 +1,13 @@
 import { keccak256 } from 'ethers';
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type { ContractsNitrogen, NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import type { ContractsNitrogen, EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
 import { getConfig, readFromFile } from '../utils/deployUtils';
 
 export async function setupRouter(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
     minDepositValue: bigint,
     minRedeemShares: bigint,
     tokenName: string,

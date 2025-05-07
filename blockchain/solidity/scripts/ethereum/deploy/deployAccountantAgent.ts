@@ -1,6 +1,9 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import { type NetworkType, type ContractsNitrogen } from '@molecula-monorepo/blockchain.addresses';
+import {
+    type EnvironmentType,
+    type ContractsNitrogen,
+} from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
@@ -8,7 +11,7 @@ import { getConfig, readFromFile } from '../../utils/deployUtils';
 
 export async function deployAccountantAgent(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
 ) {
     const { config } = await getConfig(hre, environment);
     const contractsNitrogen: ContractsNitrogen = await readFromFile(

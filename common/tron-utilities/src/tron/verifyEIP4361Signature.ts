@@ -1,4 +1,4 @@
-import TronWeb from 'tronweb';
+import { TronWeb } from 'tronweb';
 
 import { Log } from '@molecula-monorepo/common.utilities';
 
@@ -100,12 +100,10 @@ export async function verifyEIP4361Signature(options: VerifyOptions): Promise<vo
         fullHost: fullNode,
     });
 
-    const hexMessage = tronWeb.toHex(message);
-
     let recoveredAddress: string;
 
     try {
-        recoveredAddress = await tronWeb.trx.verifyMessageV2(hexMessage, signature);
+        recoveredAddress = await tronWeb.trx.verifyMessageV2(message, signature);
     } catch (error) {
         log.debug('Failed to verify the signature with error:', error);
 

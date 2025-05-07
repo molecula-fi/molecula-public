@@ -1,4 +1,4 @@
-import type TronWeb from 'tronweb';
+import type { TronWeb } from 'tronweb';
 
 import TRC20Abi from '@molecula-monorepo/common.tron-contracts/abis/TRC-20.json';
 

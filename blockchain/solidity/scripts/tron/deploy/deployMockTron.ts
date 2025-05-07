@@ -1,7 +1,6 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
-import type { Transaction } from 'tronweb/interfaces';
 
-import { type NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import { type EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
 import { getTronWeb } from './deployCarbonTron';
 import { waitForDeployment } from './waitForDeployment';
@@ -10,15 +9,18 @@ export async function deployMockUSDT(
     hre: HardhatRuntimeEnvironment,
     mnemonic: string,
     path: string,
-    network: NetworkType,
+    network: EnvironmentType,
 ) {
     const { tronWeb, privateKey } = await getTronWeb(mnemonic, path, network);
     // Find an account address corresponding to the given PRIVATE_KEY
     const issuerAddress = tronWeb.address.fromPrivateKey(privateKey);
 
+    if (!issuerAddress) {
+        throw new Error('Invalid private key');
+    }
     const artifact = await hre.artifacts.readArtifact('UsdtTron');
 
-    const transaction = (await tronWeb.transactionBuilder.createSmartContract(
+    const transaction = await tronWeb.transactionBuilder.createSmartContract(
         {
             feeLimit: 1000000000, // The maximum TRX burns for resource consumption（1TRX = 1,000,000 sun
             // @ts-ignore (probably wrong type annotation)
@@ -28,7 +30,7 @@ export async function deployMockUSDT(
             parameters: [hre.ethers.formatUnits(1000000, 6), 'Tether token', 'USDT', 6],
         },
         issuerAddress,
-    )) as Transaction;
+    );
 
     // Send the transactions
     await tronWeb.trx.sendRawTransaction(await tronWeb.trx.sign(transaction, privateKey));
@@ -41,15 +43,19 @@ export async function deployUsdtOFT(
     hre: HardhatRuntimeEnvironment,
     mnemonic: string,
     path: string,
-    network: NetworkType,
+    network: EnvironmentType,
 ) {
     const { config, tronWeb, privateKey } = await getTronWeb(mnemonic, path, network);
     // Find an account address corresponding to the given PRIVATE_KEY
     const issuerAddress = tronWeb.address.fromPrivateKey(privateKey);
 
+    if (!issuerAddress) {
+        throw new Error('Invalid private key');
+    }
+
     const artifact = await hre.artifacts.readArtifact('UsdtOFT');
 
-    const transaction = (await tronWeb.transactionBuilder.createSmartContract(
+    const transaction = await tronWeb.transactionBuilder.createSmartContract(
         {
             feeLimit: 3000000000, // The maximum TRX burns for resource consumption（3TRX = 3,000,000 sun
             // @ts-ignore (probably wrong type annotation)
@@ -68,7 +74,7 @@ export async function deployUsdtOFT(
             ],
         },
         issuerAddress,
-    )) as Transaction;
+    );
 
     // Send the transactions
     await tronWeb.trx.sendRawTransaction(await tronWeb.trx.sign(transaction, privateKey));

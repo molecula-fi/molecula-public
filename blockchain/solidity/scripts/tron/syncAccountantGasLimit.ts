@@ -1,4 +1,4 @@
-import TronWeb from 'tronweb';
+import { TronWeb } from 'tronweb';
 
 import { DevnetContractsCarbon } from '@molecula-monorepo/blockchain.addresses/deploy/devnet';
 
@@ -64,10 +64,11 @@ async function syncAccountantGasLimit() {
                 return;
             }
 
-            await accountant.methods
-                // @ts-ignore
-                .setGasLimit(msgType, baseGas, unitGas)
-                .send();
+            if (!('setGasLimit' in accountant.methods)) {
+                throw new Error('SetGasLimit method not supported');
+            }
+
+            await accountant.methods.setGasLimit(msgType, baseGas, unitGas).send();
 
             console.log(`Set gasLimit for ${name} (msgType: 0x${msgType.toString(16)})`);
             console.log(`   → base: ${baseGas}, unit: ${unitGas}`);

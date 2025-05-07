@@ -1,10 +1,9 @@
-import type TronWeb from 'tronweb';
-import type { Transaction } from 'tronweb/interfaces';
+import type { TronWeb, CreateSmartContractTransaction } from 'tronweb';
 
 // Wait for the smart-contract deployment
 export async function waitForDeployment(
     tronWeb: TronWeb,
-    transaction: Transaction,
+    transaction: CreateSmartContractTransaction,
 ): Promise<string> {
     // Sleep for 5 seconds
     // Wait to ensure that the transaction appears in the scanner.

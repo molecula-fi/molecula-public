@@ -1,5 +1,4 @@
-import type TronWeb from 'tronweb';
-import type { Transaction, BlockTransaction } from 'tronweb/interfaces';
+import type { TronWeb, GetTransactionResponse, TransactionInfo } from 'tronweb';
 
 import { Async, Log } from '@molecula-monorepo/common.utilities';
 
@@ -41,7 +40,7 @@ export async function waitForTronTransaction(
     tronWeb: TronWeb,
     transactionId: string,
     options: Options = {},
-): Promise<Transaction | BlockTransaction> {
+): Promise<TransactionInfo | GetTransactionResponse> {
     const { silent = false, printEnergyInfo = false, signal } = options;
     // Note: the transaction is supposed to succeed if one of two conditions is met:
     // 1. Either the transaction info's "receipt" object has a "SUCCESS" "result"
@@ -49,12 +48,12 @@ export async function waitForTronTransaction(
 
     // Get the transaction info and tne transaction data
 
-    let info: Transaction | undefined;
-    let data: BlockTransaction | undefined;
+    let info: TransactionInfo | undefined;
+    let data: GetTransactionResponse | undefined;
     try {
         [info, data] = await Promise.all([
-            tronWeb.trx.getTransactionInfo(transactionId) as Promise<Transaction>,
-            tronWeb.trx.getTransaction(transactionId) as Promise<BlockTransaction>,
+            tronWeb.trx.getTransactionInfo(transactionId),
+            tronWeb.trx.getTransaction(transactionId),
         ]);
     } catch (error) {
         log.debug('Failed to get the transaction details with error:', error);

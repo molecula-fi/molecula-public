@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { scope } from 'hardhat/config';
 
+import type { HardhatNetworkHDAccountsConfig } from 'hardhat/types/config';
+
 import { deployCarbon } from '../scripts/tron/deploy/deployCarbonTron';
 import { deployMockUSDT, deployUsdtOFT } from '../scripts/tron/deploy/deployMockTron';
 import {
@@ -20,7 +22,7 @@ tronMajorScope
         console.log('Environment:', taskArgs.environment);
         console.log('Network:', hre.network.name);
 
-        const accounts: any = await hre.network.config.accounts;
+        const accounts = hre.network.config.accounts as HardhatNetworkHDAccountsConfig;
         const environment = getEnvironment(hre, taskArgs.environment);
 
         try {
@@ -48,7 +50,7 @@ tronMajorScope
         console.log('Environment:', taskArgs.environment);
         console.log('Network:', hre.network.name);
 
-        const accounts: any = await hre.network.config.accounts;
+        const accounts = hre.network.config.accounts as HardhatNetworkHDAccountsConfig;
         const environment = getEnvironment(hre, taskArgs.environment);
         try {
             // Execute deployment
@@ -68,7 +70,7 @@ tronMajorScope
         console.log('Environment:', taskArgs.environment);
         console.log('Network:', hre.network.name);
 
-        const accounts: any = await hre.network.config.accounts;
+        const accounts = hre.network.config.accounts as HardhatNetworkHDAccountsConfig;
         const environment = getEnvironment(hre, taskArgs.environment);
         try {
             // Execute deployment

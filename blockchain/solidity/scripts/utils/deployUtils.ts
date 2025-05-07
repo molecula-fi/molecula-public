@@ -4,10 +4,10 @@ import { readFile, writeFileSync, mkdirSync, existsSync } from 'fs';
 
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import * as path from 'path';
-import TronWeb from 'tronweb';
+import { TronWeb } from 'tronweb';
 
 import {
-    NetworkType,
+    EnvironmentType,
     MoleculaPoolVersion,
     getMoleculaPoolVersion,
 } from '@molecula-monorepo/blockchain.addresses';
@@ -48,9 +48,9 @@ export function verifyEnvironment(network: string, environment: string) {
 }
 
 export function getEnvironment(hre: HardhatRuntimeEnvironment, network: string) {
-    const environment = NetworkType[network as keyof typeof NetworkType];
+    const environment = EnvironmentType[network as keyof typeof EnvironmentType];
     if (environment === undefined) {
-        const expectedValues = Object.values(NetworkType).filter(item => {
+        const expectedValues = Object.values(EnvironmentType).filter(item => {
             return isNaN(Number(item));
         });
         throw new Error(
@@ -112,36 +112,36 @@ export const readFromFile = (fileName: string): Promise<any> => {
     });
 };
 
-export function getNetworkConfig(network: NetworkType) {
+export function getEnvironmentConfig(network: EnvironmentType) {
     switch (network) {
-        case NetworkType['mainnet/beta']:
+        case EnvironmentType['mainnet/beta']:
             return ethMainnetBetaConfig;
-        case NetworkType['mainnet/prod']:
+        case EnvironmentType['mainnet/prod']:
             return ethMainnetProdConfig;
-        case NetworkType.devnet:
+        case EnvironmentType.devnet:
             return sepoliaConfig;
         default:
             throw new Error('Unsupported network type!');
     }
 }
 
-export function getTronNetworkConfig(network: NetworkType) {
+export function getTronEnvironmentConfig(network: EnvironmentType) {
     switch (network) {
-        case NetworkType['mainnet/beta']:
+        case EnvironmentType['mainnet/beta']:
             return tronMainnetBetaConfig;
-        case NetworkType['mainnet/prod']:
+        case EnvironmentType['mainnet/prod']:
             return tronMainnetProdConfig;
-        case NetworkType.devnet:
+        case EnvironmentType.devnet:
             return shastaConfig;
         default:
             throw new Error('Unsupported network type!');
     }
 }
 
-export async function getConfig(hre: HardhatRuntimeEnvironment, network: NetworkType) {
+export async function getConfig(hre: HardhatRuntimeEnvironment, network: EnvironmentType) {
     console.log('Network:', network);
 
-    const config = getNetworkConfig(network);
+    const config = getEnvironmentConfig(network);
 
     const USDT = await hre.ethers.getContractAt('IERC20', config.USDT_ADDRESS);
     const account = (await hre.ethers.getSigners())[0]!;
@@ -186,8 +186,8 @@ export async function getDeployerPrivateKey(hre: HardhatRuntimeEnvironment) {
     return accounts[0] || '';
 }
 
-export function getEthereumAddress(environment: NetworkType, contract: string) {
-    const config = getTronNetworkConfig(environment);
+export function getEthereumAddress(environment: EnvironmentType, contract: string) {
+    const config = getTronEnvironmentConfig(environment);
 
     // Create TronWeb instance
     const tronWeb = new TronWeb({

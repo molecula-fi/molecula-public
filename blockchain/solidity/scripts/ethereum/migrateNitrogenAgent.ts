@@ -2,7 +2,7 @@ import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import {
     MoleculaPoolVersion,
-    type NetworkType,
+    type EnvironmentType,
     type ContractsNitrogen,
     type ContractAccountantAgent,
 } from '@molecula-monorepo/blockchain.addresses';
@@ -38,7 +38,7 @@ async function ensureNoValueToRedeem(
 
 export async function migrateNitrogenAgent(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
     version: MoleculaPoolVersion,
 ) {
     const accountantAgentAddress = (

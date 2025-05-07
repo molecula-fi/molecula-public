@@ -2,15 +2,13 @@
  * Filter for load events
  */
 export type LoadEventsFilter = {
+    /**
+     * Block number
+     */
     blockNumber: number;
-    timestamp: number;
-};
 
-export type InternalTronEvent<EventName, Result> = {
-    block: number;
+    /**
+     * Block timestamp
+     */
     timestamp: number;
-    contract: number;
-    name: EventName;
-    transaction: string;
-    result: Result;
 };

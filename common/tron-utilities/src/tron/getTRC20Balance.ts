@@ -1,5 +1,5 @@
-import TronWeb from 'tronweb';
-import type { TronWebConstructor } from 'tronweb/interfaces';
+import { TronWeb } from 'tronweb';
+import type { TronWebOptions } from 'tronweb';
 
 import type { TronAddress } from '../types';
 
@@ -19,12 +19,7 @@ type GetTRC20BalanceOptions = {
     /**
      * Tron web options required for Tron provider.
      */
-    tronWebOptions: TronWebConstructor & {
-        /**
-         * Optional event server endpoint.
-         */
-        eventServer?: string;
-    };
+    tronWebOptions: TronWebOptions;
 };
 
 /**

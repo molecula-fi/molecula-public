@@ -1,5 +1,4 @@
-import type TronWeb from 'tronweb';
-import type { Transaction } from 'tronweb/interfaces';
+import type { TronWeb, TransactionInfo } from 'tronweb';
 
 import { Async, Log } from '@molecula-monorepo/common.utilities';
 
@@ -17,12 +16,12 @@ export async function fetchTronTransactionInfo(
     tronWeb: TronWeb,
     transactionId: string,
     silent?: boolean,
-): Promise<Transaction> {
+): Promise<TransactionInfo> {
     // Get the transaction info
 
-    let info: Transaction | undefined;
+    let info: TransactionInfo | undefined;
     try {
-        info = (await tronWeb.trx.getTransactionInfo(transactionId)) as Transaction;
+        info = await tronWeb.trx.getTransactionInfo(transactionId);
     } catch (error) {
         log.debug('Failed to get the transaction details with error:', error);
 

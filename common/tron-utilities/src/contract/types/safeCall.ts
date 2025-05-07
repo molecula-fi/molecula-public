@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { Transaction, TriggerSmartContract } from 'tronweb';
+
 import type { Hex } from '@molecula-monorepo/common.evm-utilities';
 
 import type { TypedContractEvent as CommonTypedContractEvent } from '@molecula-monorepo/common.tron-contracts';
@@ -7,10 +9,10 @@ import type { TypedContractEvent } from '@molecula-monorepo/solidity/typechain-t
 
 import type { TronSubscriber } from '../../tron';
 
-import type { TronAddress } from '../../types';
+import type { TronAddress, InternalTronEvent } from '../../types';
 
-import type { InternalTronEvent, LoadEventsFilter } from './events';
-import type { TronContractTransaction } from './transactions';
+import type { LoadEventsFilter } from './events';
+
 import type { BigIntToString } from './utils';
 
 type AnyFunction = () => void;
@@ -41,7 +43,7 @@ export type TronSafePayableTxCall<Contract extends PickAnyFunctions<Contract>> =
 export type CreateTxData = {
     fromAddress: TronAddress;
     feeLimit?: number | undefined;
-    callValue?: number | string | undefined;
+    callValue?: number | undefined;
 };
 
 export type TronSafeParams = {
@@ -66,7 +68,7 @@ export type TronSafeCreateTx<Contract extends PickAnyFunctions<Contract>> = <
     createData: CreateTxData,
     method: Method,
     ...args: Parameters<Contract[Method]>
-) => Promise<TronContractTransaction>;
+) => Promise<Transaction<TriggerSmartContract>>;
 
 export type TronSafeEstimateEnergy<Contract extends PickAnyFunctions<Contract>> = <
     Method extends keyof Contract,

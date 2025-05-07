@@ -1,6 +1,6 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import type { EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
@@ -8,7 +8,7 @@ import { getConfig } from '../../utils/deployUtils';
 
 export async function deploywmUSDlmUSD(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
     mUSD: string,
 ) {
     const { account, config } = await getConfig(hre, environment);

@@ -26,6 +26,7 @@ import {
     SavingsUSDS__factory,
     SFrxUSD__factory,
     Curve__factory,
+    Aragon__factory,
 } from '../typechain';
 
 import { ERC20Safe } from './contracts';
@@ -56,6 +57,7 @@ import type {
     ICurveStableSwapFactoryNG,
     ICurveStableSwapNG,
     UsdtOFT,
+    Aragon,
 } from './types';
 
 export const EvmContractSafeFactory = {
@@ -269,6 +271,15 @@ export const EvmContractSafeFactory = {
         return new EvmContractSafe<UsdtOFT>(
             {
                 factory: UsdtOFT__factory,
+                address,
+            },
+            rpcProvider,
+        );
+    },
+    Aragon: (address: string, rpcProvider: ProviderOrRunner) => {
+        return new EvmContractSafe<Aragon>(
+            {
+                factory: Aragon__factory,
                 address,
             },
             rpcProvider,

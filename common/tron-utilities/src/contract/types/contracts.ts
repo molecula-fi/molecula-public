@@ -1,6 +1,4 @@
-import type { JsonFragment } from 'ethers';
-
-import type { TronWeb } from 'tronweb';
+import type { TronWeb, ContractAbiInterface } from 'tronweb';
 
 import type { SunCurve, TRC20 } from '@molecula-monorepo/common.tron-contracts';
 import { type UsdtOFT } from '@molecula-monorepo/solidity/typechain-types';
@@ -26,6 +24,6 @@ export type AllTronContracts =
 export type TronContractParams = {
     client: TronWeb;
     contractAddress: string;
-    abi: JsonFragment[];
+    abi: ContractAbiInterface;
     apiUrl?: string | undefined;
 };

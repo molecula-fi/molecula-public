@@ -1,6 +1,6 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import { NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import { EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 import { getConfig } from '../../utils/deployUtils';
@@ -20,7 +20,7 @@ async function deployUSDT(hre: HardhatRuntimeEnvironment) {
 }
 
 async function deployUsdtOFT(hre: HardhatRuntimeEnvironment) {
-    const { config, account } = await getConfig(hre, NetworkType.devnet);
+    const { config, account } = await getConfig(hre, EnvironmentType.devnet);
 
     // deploy UsdtOFT
     const UsdtOFT = await hre.ethers.getContractFactory('UsdtOFT');

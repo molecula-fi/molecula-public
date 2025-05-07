@@ -25,6 +25,7 @@ import type {
     IERC20Metadata,
     SparkPool,
     UsdtOFT,
+    Aragon,
 } from '../types';
 
 type AnyFunction = () => void;
@@ -76,6 +77,7 @@ export type AllEvmContracts =
     | SparkPool
     | ICurveStableSwapFactoryNG
     | ICurveStableSwapNG
-    | UsdtOFT;
+    | UsdtOFT
+    | Aragon;
 
 export type ProviderOrRunner = Provider | ContractRunner;

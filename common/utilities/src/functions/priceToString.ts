@@ -172,7 +172,10 @@ export function priceChangeToString(
     // the stringified price change does not have `<` sign added by `priceToChange` function
     // Note: there is no need to add the `minus` sign manually here,
     // since it's going to be already added by `priceToChange` function
-    if (priceChange.comparedTo(new BigNumber(0)) > 0 && !stringifiedPriceChange.startsWith('<')) {
+    if (
+        (priceChange.comparedTo(new BigNumber(0)) ?? 0) > 0 &&
+        !stringifiedPriceChange.startsWith('<')
+    ) {
         stringifiedPriceChange = `+${stringifiedPriceChange}`;
     }
 

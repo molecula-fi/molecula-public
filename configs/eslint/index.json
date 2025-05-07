@@ -21,7 +21,7 @@
             "legacyDecorators": true
         }
     },
-    "plugins": ["@babel", "@typescript-eslint", "eslint-plugin-tsdoc", "import"],
+    "plugins": ["@babel", "@typescript-eslint", "eslint-plugin-tsdoc", "import", "turbo"],
     "root": true,
     "rules": {
         "@typescript-eslint/ban-ts-comment": "off",

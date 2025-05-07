@@ -4,7 +4,6 @@
         "agentLZ": "",
         "supplyManager": "",
         "poolKeeper": "",
-        "swftBridge": "",
         "ethena": {
             "USDe": "",
             "sUSDe": ""
@@ -15,7 +14,6 @@
         "rebaseToken": "",
         "oracle": "",
         "accountantLZ": "",
-        "mUSDLock": "",
-        "swftBridge": ""
+        "mUSDLock": ""
     }
 }

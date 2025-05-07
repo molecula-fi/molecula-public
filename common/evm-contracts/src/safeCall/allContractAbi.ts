@@ -28,6 +28,7 @@ import {
     StakedUSDe__factory,
     SavingsUSDS__factory,
     SFrxUSD__factory,
+    Aragon__factory,
 } from '../../typechain';
 
 import type { ContractNameType } from '../types';
@@ -56,6 +57,7 @@ const EvmAllContractsAbi: Record<ContractNameType, readonly JsonFragment[]> = {
     ICurveStableSwapFactoryNG: ICurveStableSwapFactoryNG__factory.abi,
     ICurveStableSwapNG: ICurveStableSwapFactoryNG__factory.abi,
     UsdtOFT: UsdtOFT__factory.abi,
+    Aragon: Aragon__factory.abi,
 } as const;
 
 export const allContractAbi: JsonFragment[][] = Object.values(

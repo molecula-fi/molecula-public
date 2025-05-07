@@ -45,10 +45,10 @@ fi
 yarn run secret:reveal
 
 echo "Compiling smart contracts..."
-yarn run compile:all
+yarn turbo run compile
 
 echo "Generating GQL types..."
-yarn run gql:generate
+yarn turbo run gql:generate
 
 echo "Reinstall completed!"
 if [ -x "$(command -v osascript)" ]

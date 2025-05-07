@@ -1,0 +1,11 @@
+{
+    "extends": ["//"],
+    "tasks": {
+        "compile": {
+            "outputs": ["artifacts/**", "cache/**", "typechain-types/**"]
+        },
+        "slither": {
+            "outputs": ["artifacts/**", "cache/**"]
+        }
+    }
+}

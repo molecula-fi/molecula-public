@@ -46,6 +46,7 @@ const contractsNames = [
     'ICurveStableSwapFactoryNG',
     'ICurveStableSwapNG',
     'UsdtOFT',
+    'Aragon',
 ] as const;
 
 export type ContractNameType = (typeof contractsNames)[number];

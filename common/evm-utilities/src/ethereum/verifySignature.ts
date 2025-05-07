@@ -8,7 +8,7 @@ import {
     utf8ToBytes,
 } from '@ethereumjs/util';
 
-import type { EVMAddress } from './types';
+import type { EVMAddress, Hex } from './types';
 
 type VerifySignatureOptions = {
     /**
@@ -18,7 +18,7 @@ type VerifySignatureOptions = {
     /**
      * Signature made when signing a message.
      */
-    signature: string;
+    signature: Hex;
     /**
      * ETH-address corresponding to the keys the message was signed with.
      */

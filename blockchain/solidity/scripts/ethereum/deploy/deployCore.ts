@@ -2,7 +2,7 @@ import type { AddressLike } from 'ethers';
 
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type { EVMAddress, NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import type { EVMAddress, EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 
@@ -25,7 +25,7 @@ async function deploymUSDe(
 
 export async function deployCore(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
     nomusde: boolean,
 ) {
     const { config, account, USDT } = await getConfig(hre, environment);

@@ -1,3 +1,30 @@
+export type InternalTronEvent<EventName, Result> = {
+    /**
+     * Block number
+     */
+    block: number;
+
+    /**
+     * Block timestamp
+     */
+    timestamp: number;
+
+    /**
+     * Event name
+     */
+    name: EventName;
+
+    /**
+     * Transaction hash
+     */
+    transaction: string;
+
+    /**
+     * Event data
+     */
+    result: Result;
+};
+
 export type TronBaseEvent = {
     /**
      * Transaction id.
@@ -12,9 +39,9 @@ export type TronBaseEvent = {
 
 export type TronEvent<T> = TronBaseEvent & T;
 
-export type TronEventCallback<T> = (
+export type TronEventCallback<FilterName, Result> = (
     err: object | undefined,
-    data?: TronEvent<T>,
+    data?: InternalTronEvent<FilterName, Result>,
 ) => void | Promise<void>;
 
 /**

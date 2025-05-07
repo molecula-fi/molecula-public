@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Get the current branch name
+branch_name=$(git symbolic-ref --short HEAD)
+
+# If pushing a tag, allow it
+if [ -n "$(git describe --exact-match --tags HEAD)" ]; then
+  echo "✅ Pushing tag is allowed."
+  exit 0
+fi
+
+# If no branch name (detached HEAD), exit
+if [ -z "$branch_name" ]; then
+  echo "❌ Cannot determine branch name. Are you in a detached HEAD state?"
+  exit 1
+fi
+
+# For other branches, enforce MLC- prefix pattern
+if [[ ! $branch_name =~ ^MLC-[0-9]+.*$ ]]; then
+  echo "❌ Branch name '$branch_name' is invalid. It must start with 'MLC-<number>' (e.g., MLC-123-my-feature)"
+  exit 1
+fi
+
+echo "✅ Branch name '$branch_name' is valid."

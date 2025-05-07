@@ -7,9 +7,13 @@ import { type DecodedError, ErrorDecoder } from 'ethers-decode-error';
 
 import PQueue from 'p-queue';
 
-import type { TronWeb } from 'tronweb';
-
-import type { TronContract } from 'tronweb/interfaces';
+import type {
+    TronWeb,
+    Contract as TronContract,
+    ContractAbiInterface,
+    Transaction,
+    TriggerSmartContract,
+} from 'tronweb';
 
 import type { Hex } from '@molecula-monorepo/common.evm-utilities';
 
@@ -31,7 +35,6 @@ import type {
     LoadEventsFilter,
     TronContractParams,
     TronSafeCreateTx,
-    TronContractTransaction,
     TronSafeEstimateEnergy,
     TronSafeBuildParams,
 } from './types';
@@ -56,7 +59,7 @@ export class TronContractSafe<Contract extends AllTronContracts> {
      */
     public readonly client: TronWeb;
 
-    private readonly abi: JsonFragment[];
+    private readonly abi: ContractAbiInterface;
 
     private readonly apiUrl: string | undefined;
 
@@ -81,13 +84,17 @@ export class TronContractSafe<Contract extends AllTronContracts> {
 
         this.contract = this.client.contract(abi, contractAddress);
 
-        this.errorDecoder = ErrorDecoder.create([abi]);
+        this.errorDecoder = ErrorDecoder.create([abi as JsonFragment[]]);
     }
 
     /**
      * Contract address
      */
     public get address(): TronAddress {
+        if (!this.contract.address) {
+            throw new Error('Failed to calculate the address from the key');
+        }
+
         return this.contract.address as TronAddress;
     }
 
@@ -101,7 +108,7 @@ export class TronContractSafe<Contract extends AllTronContracts> {
         txData,
         method,
         ...args
-    ): Promise<TronContractTransaction> => {
+    ): Promise<Transaction<TriggerSmartContract>> => {
         const { fromAddress, feeLimit, callValue } = txData;
         const methodName = method.toString();
 
@@ -109,7 +116,7 @@ export class TronContractSafe<Contract extends AllTronContracts> {
 
         const functionSelector = `${methodName}(${selectorTypes.join(',')})`;
 
-        const callOptions: { feeLimit?: string | number; callValue?: string | number } = {};
+        const callOptions: { feeLimit?: number; callValue?: number } = {};
         if (feeLimit) {
             callOptions.feeLimit = feeLimit;
         }
@@ -118,16 +125,14 @@ export class TronContractSafe<Contract extends AllTronContracts> {
         }
 
         const result = await this.client.transactionBuilder.triggerSmartContract(
-            this.contract.address,
+            this.address,
             functionSelector,
             callOptions,
             parameters,
             fromAddress,
         );
 
-        const { transaction } = result as unknown as { transaction: TronContractTransaction };
-
-        return transaction;
+        return result.transaction;
     };
 
     /**
@@ -277,7 +282,7 @@ export class TronContractSafe<Contract extends AllTronContracts> {
 
             const energy = await this.estimateEnergyRequest({
                 owner_address: fromAddress,
-                contract_address: this.contract.address,
+                contract_address: this.address,
                 function_selector: functionSelector,
                 parameter,
                 visible: true,
@@ -316,7 +321,9 @@ export class TronContractSafe<Contract extends AllTronContracts> {
     private buildParameters: TronSafeBuildParams<Contract> = (txData, method, ...args) => {
         const methodName = method.toString();
 
-        const abiItem = this.abi.find(item => item.type === 'function' && item.name === method);
+        const abiItem = this.abi.find(
+            item => item.type === 'function' && 'name' in item && item.name === method,
+        );
         if (!abiItem) {
             throw new SafeCallError(`Not found method in abi`, {
                 method: methodName,

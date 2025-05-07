@@ -5,8 +5,14 @@ import type { TronNetworkConfig } from './types';
 export const tronMainnetBetaConfig: TronNetworkConfig = {
     RPC_URL: 'https://api.trongrid.io/',
 
-    // Layer zero
+    /**
+     * LayerZero Tron configuration parameters.
+     * Endpoint is a primary entrypoint into LayerZero V2 responsible for managing cross-chain communications.
+     * Executor is a contract responsible for executing received cross-chain messages automatically
+     * https://docs.layerzero.network/v2/deployments/deployed-contracts?chains=tron
+     */
     LAYER_ZERO_TRON_ENDPOINT: 'TAy9xwjYjBBN6kutzrZJaAZJHCAejjK1V9',
+    LAYER_ZERO_TRON_EXECUTOR: '0x67DE40af19C0C0a6D0278d96911889fAF4EBc1Bc',
     LAYER_ZERO_ETHEREUM_EID: 30101,
     LAYER_ZERO_TRON_EID: 30420,
     LAYER_ZERO_ARBITRUM_EID: 30110,
@@ -20,14 +26,8 @@ export const tronMainnetBetaConfig: TronNetworkConfig = {
     OWNER: 'TULz7cGhfbBWJr7SYkhFhVkGL9ezjUivjx',
     ORACLE_AUTHORIZED_UPDATER:
         tronAuthorizedAddresses.ORACLE_AUTHORIZED_UPDATER[TronChainIDs.Mainnet].beta,
-    ACCOUNTANT_AUTHORIZED_SERVER:
-        tronAuthorizedAddresses.ACCOUNTANT_AUTHORIZED_SERVER[TronChainIDs.Mainnet].beta,
-    TREASURY_AUTHORIZED_SERVER:
-        tronAuthorizedAddresses.TREASURY_AUTHORIZED_SERVER[TronChainIDs.Mainnet].beta,
     ACCOUNTANT_AUTHORIZED_LZ_CONFIGURATOR:
         tronAuthorizedAddresses.ACCOUNTANT_AUTHORIZED_LZ_CONFIGURATOR[TronChainIDs.Mainnet].beta,
-    TREASURY_AUTHORIZED_LZ_CONFIGURATOR:
-        tronAuthorizedAddresses.TREASURY_AUTHORIZED_LZ_CONFIGURATOR[TronChainIDs.Mainnet].beta,
 
     // Token info
     MUSD_TOKEN_NAME: 'mUSD release candidate',

@@ -1,20 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { scope } from 'hardhat/config';
 
-import { migrateNitrogenAgent, migrateNitrogenMoleculaPoolTreasury } from '../scripts/ethereum';
-import { setAccountant } from '../scripts/ethereum/deploy/deployCarbon';
-import { setCoreOwner } from '../scripts/ethereum/setCoreOwner';
-import { setNitrogenOwner } from '../scripts/ethereum/setNitrogenOwner';
+import {
+    migrateNitrogenAgent,
+    migrateNitrogenMoleculaPoolTreasury,
+    setOAppPeer,
+    setCarbonOwner,
+    setCoreOwner,
+    setNitrogenOwner,
+} from '../scripts/ethereum';
 import { setupRouter } from '../scripts/ethereum/setRouter';
-import { setCarbonOwner } from '../scripts/tron/setCarbonOwner';
 
+import { setupOAppDVN } from '../scripts/ethereum/setupOAppDVN';
+import { setupUsdtOftDVN } from '../scripts/ethereum/setupUsdtOFTDVN';
 import { getEnvironment, getVersion, readFromFile } from '../scripts/utils/deployUtils';
 
 const ethereumSetupScope = scope('ethereumSetupScope', 'Scope for set ethereum script flow');
-const multichainSetupScope = scope(
-    'multichainSetupScope',
-    'Scope for set in ethereum and tron script flow',
-);
 
 ethereumSetupScope
     .task('migrateNitrogenAgent', 'Nitrogen Migration of Agent')
@@ -125,7 +126,7 @@ ethereumSetupScope
         const contractsCarbon = await readFromFile(`${environment}/contracts_carbon.json`);
 
         // Execute the migration function with the retrieved parameters
-        await setAccountant(hre, environment, {
+        await setOAppPeer(hre, environment, {
             agentLZ: contractsCarbon.eth.agentLZ,
             accountantLZ: contractsCarbon.tron.accountantLZ,
         })
@@ -139,23 +140,63 @@ ethereumSetupScope
             });
     });
 
-multichainSetupScope
+ethereumSetupScope
     .task('setCarbonOwner', 'Carbon set owner')
     .addParam('environment', 'Set owner environment') // Required parameter for specifying the set script environment
     .setAction(async (taskArgs, hre) => {
         console.log('Environment:', taskArgs.environment); // Log the selected migration environment
         console.log('Network:', hre.network.name); // Log the Hardhat network being used
 
-        // Get deployer account for Tron
-        const accounts: any = await hre.network.config.accounts;
+        // Retrieve environment details using the helper function
+        const environment = getEnvironment(hre, taskArgs.environment);
+
+        // Execute the migration function with the retrieved parameters
+        await setCarbonOwner(hre, environment)
+            .then(() => {
+                console.log('Set Carbon owner completed successfully.');
+            })
+            .catch(error => {
+                console.error('Set failed:', error.message);
+                console.error(error.stack); // Log full error stack trace for debugging
+                process.exit(1); // Exit with an error code to indicate failure
+            });
+    });
+ethereumSetupScope
+    .task('setupCarbonDVN', 'Carbon OApp DVN config setup')
+    .addParam('environment', 'Set owner environment') // Required parameter for specifying the set script environment
+    .setAction(async (taskArgs, hre) => {
+        console.log('Environment:', taskArgs.environment); // Log the selected migration environment
+        console.log('Network:', hre.network.name); // Log the Hardhat network being used
 
         // Retrieve environment details using the helper function
         const environment = getEnvironment(hre, taskArgs.environment);
 
         // Execute the migration function with the retrieved parameters
-        await setCarbonOwner(hre, environment, accounts.mnemonic, accounts.path)
+        await setupOAppDVN(hre, environment)
             .then(() => {
-                console.log('Set Carbon owner completed successfully.');
+                console.log('Setup of OApp DVN is completed successfully.');
+            })
+            .catch(error => {
+                console.error('Set failed:', error.message);
+                console.error(error.stack); // Log full error stack trace for debugging
+                process.exit(1); // Exit with an error code to indicate failure
+            });
+    });
+
+ethereumSetupScope
+    .task('setupUsdtOftDVN', 'UsdtOFT OApp DVN config setup')
+    .addParam('environment', 'Set owner environment') // Required parameter for specifying the set script environment
+    .setAction(async (taskArgs, hre) => {
+        console.log('Environment:', taskArgs.environment); // Log the selected migration environment
+        console.log('Network:', hre.network.name); // Log the Hardhat network being used
+
+        // Retrieve environment details using the helper function
+        const environment = getEnvironment(hre, taskArgs.environment);
+
+        // Execute the migration function with the retrieved parameters
+        await setupUsdtOftDVN(hre, environment)
+            .then(() => {
+                console.log('UsdtOFT DVN setup completed completed successfully.');
             })
             .catch(error => {
                 console.error('Set failed:', error.message);

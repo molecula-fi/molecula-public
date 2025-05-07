@@ -1,14 +1,14 @@
 /* eslint-disable no-await-in-loop */
 
-import type { TronContract } from 'tronweb/interfaces';
+import type { Contract as TronContract, EventResponse } from 'tronweb';
 
 import type { Log } from '@molecula-monorepo/common.utilities';
 
 import type {
     TronBaseEvent,
-    TronEvent,
     TronEventsLoadOptions,
     TronEventsLoadParams,
+    InternalTronEvent,
 } from '../types';
 
 /**
@@ -34,22 +34,36 @@ type Subscriber = {
 /**
  * Load events from tronWeb api
  */
-async function loadPartEvents<T>(
+async function loadPartEvents<FilterName, Result>(
     subscriber: Subscriber,
     params: TronEventsLoadParams,
-): Promise<TronEvent<T>[]> {
+): Promise<InternalTronEvent<FilterName, Result>[]> {
     try {
-        // @ts-ignore (Missing types for contracts)
-        const events = await subscriber.contract.tronWeb.event.getEventsByContractAddress(
-            subscriber.contract.address,
-            {
-                eventName: subscriber.method,
-                // https://github.com/tronprotocol/tronweb/blob/3a81bf15f790f35f03b5f9d9b7154afb653ef5f3/src/lib/event.js#L38
-                ...params,
-            },
-        );
+        if (!subscriber.contract.address) {
+            throw new Error('Failed to define contract address');
+        }
 
-        return events;
+        const events: EventResponse =
+            await subscriber.contract.tronWeb.event.getEventsByContractAddress(
+                subscriber.contract.address,
+                {
+                    eventName: subscriber.method,
+                    // https://github.com/tronprotocol/tronweb/blob/3a81bf15f790f35f03b5f9d9b7154afb653ef5f3/src/lib/event.js#L38
+                    ...params,
+                },
+            );
+
+        return events.data
+            ? events.data.map(data => {
+                  return {
+                      transaction: data.transaction_id,
+                      timestamp: data.block_timestamp,
+                      block: data.block_number,
+                      name: subscriber.method as FilterName,
+                      result: data.result as Result,
+                  };
+              })
+            : [];
     } catch (error) {
         subscriber.log.error('Failed to find the last events with error:', error);
         return [];
@@ -105,7 +119,7 @@ export const MAX_PART_SIZE = 199;
  * @param params - Parameters for loading events.
  * @param options - Optional options for loader
  */
-export async function tronEventsLoad<T>(
+export async function tronEventsLoad<FilterName, Result>(
     subscriber: Subscriber,
     params: TronEventsLoadParams,
     options?: TronEventsLoadOptions,
@@ -128,7 +142,7 @@ export async function tronEventsLoad<T>(
         );
     }
 
-    let events: TronEvent<T>[] = [];
+    let events: InternalTronEvent<FilterName, Result>[] = [];
 
     let complete: boolean = false;
 
@@ -152,7 +166,7 @@ export async function tronEventsLoad<T>(
         const totalSizeFinal = Math.min(loadSizeWithoutDoubles, MAX_DOWNLOAD_COUNT);
 
         // Loading events from the Tron network
-        const loadedEvents: TronEvent<T>[] = await loadPartEvents(subscriber, {
+        const loadedEvents = await loadPartEvents<FilterName, Result>(subscriber, {
             ...params,
             size: totalSizeFinal,
             sinceTimestamp: prevEventsInOneBlock?.sinceTimestamp || sinceTimestamp,

@@ -1,6 +1,5 @@
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
-import type TronWeb from 'tronweb';
-import type { Transaction } from 'tronweb/interfaces';
+import type { TronWeb } from 'tronweb';
 
 import { waitForDeployment } from './waitForDeployment';
 
@@ -23,9 +22,13 @@ export async function deployRebaseToken(
     // Find an account address corresponding to the given PRIVATE_KEY
     const issuerAddress = tronWeb.address.fromPrivateKey(privateKey);
 
+    if (!issuerAddress) {
+        throw new Error('Invalid private key');
+    }
+
     const artifact = await hre.artifacts.readArtifact('RebaseTokenTron');
 
-    const transaction = (await tronWeb.transactionBuilder.createSmartContract(
+    const transaction = await tronWeb.transactionBuilder.createSmartContract(
         {
             feeLimit: 2000000000, // The maximum TRX burns for resource consumption（1TRX = 1,000,000SUN
             // @ts-ignore (probably wrong type annotation)
@@ -45,7 +48,7 @@ export async function deployRebaseToken(
             ],
         },
         issuerAddress,
-    )) as Transaction;
+    );
 
     // Send the transactions
     await tronWeb.trx.sendRawTransaction(await tronWeb.trx.sign(transaction, privateKey));

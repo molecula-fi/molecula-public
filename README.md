@@ -34,7 +34,7 @@ Besides, you should have [Docker](https://hub.docker.com/) installed for your op
 -   Now you are ready to clone the project:
 
 ```sh
-git clone git@github.com:molecula-fi/molecula-public.git --recurse-submodules
+git clone git@github.com:molecula-io/molecula-public.git --recurse-submodules
 ```
 
 -   Install all the required dependencies using:
@@ -53,13 +53,13 @@ yarn secret:reveal
 -   To compile the smart-contracts and deal with them using TypeScript run the following:
 
 ```sh
-yarn compile:all
+yarn turbo run compile
 ```
 
 -   Finally generate the types for GraphQL schemes:
 
 ```sh
-yarn gql:generate
+yarn turbo run gql:generate
 ```
 
 #### Reinstallation

@@ -1,14 +1,13 @@
-import { Options } from '@layerzerolabs/lz-v2-utilities';
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type { NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import type { EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
 import { DEPLOY_GAS_LIMIT } from '../../../configs/ethereum/constants';
 import { getConfig, getEthereumAddress } from '../../utils/deployUtils';
 
 export async function deployCarbon(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
     contracts: {
         supplyManagerAddress: string;
         moleculaPoolAddress: string;
@@ -17,24 +16,17 @@ export async function deployCarbon(
     const { config, account } = await getConfig(hre, environment);
 
     // calc agent LZ future address
-    const trxCount = await account.getNonce();
+    const transactionCount = await account.getNonce();
     const agentLZFutureAddress = hre.ethers.getCreateAddress({
         from: account.address,
-        nonce: trxCount,
+        nonce: transactionCount,
     });
-
-    // make options
-    const GAS_LIMIT = 200000;
-    const MSG_VALUE = 0;
-    const options = Options.newOptions().addExecutorLzReceiveOption(GAS_LIMIT, MSG_VALUE);
-    console.log('Options set:', options.toHex());
 
     // deploy agentLZ
     const AgentLZ = await hre.ethers.getContractFactory('AgentLZ');
     const agentLZ = await AgentLZ.deploy(
         account.address,
-        // Correct auth LZ Configurator address is set up latter. Because we need to call `setAgentAccountant`, etc.
-        account.address,
+        config.AGENT_AUTHORIZED_LZ_CONFIGURATOR,
         config.LAYER_ZERO_ENDPOINT,
         contracts.supplyManagerAddress,
         config.LAYER_ZERO_TRON_EID,
@@ -49,19 +41,8 @@ export async function deployCarbon(
         throw new Error(`AgentLZ address is not correct, future address: ${agentLZFutureAddress}`);
     }
 
-    // set agent LZ to supply manager
-    const supplyManager = await hre.ethers.getContractAt(
-        'SupplyManager',
-        contracts.supplyManagerAddress,
-    );
-    console.log('setAgent...');
-    const tx1 = await supplyManager.setAgent(await agentLZ.getAddress(), true);
-    await tx1.wait();
-    console.log('Done setAgent');
-
     console.log('Agent deployed: ', await agentLZ.getAddress());
-    console.log('SupplyManager: ', contracts.supplyManagerAddress);
-    console.log('MoleculaPool: ', contracts.moleculaPoolAddress);
+    console.log('Please setup SupplyManager to work with the deployed AgentLZ separately.');
 
     return {
         moleculaPool: contracts.moleculaPoolAddress,
@@ -71,9 +52,9 @@ export async function deployCarbon(
     };
 }
 
-export async function setAccountant(
+export async function setOAppPeer(
     hre: HardhatRuntimeEnvironment,
-    environment: NetworkType,
+    environment: EnvironmentType,
     contracts: {
         agentLZ: string;
         accountantLZ: string;
@@ -83,7 +64,7 @@ export async function setAccountant(
 
     const accountantLzHexaDecimal = getEthereumAddress(environment, contracts.accountantLZ);
 
-    const agentLZContract = await hre.ethers.getContractAt('AgentLZ', contracts.agentLZ);
+    const agentLZContract = await hre.ethers.getContractAt('IOAppCore', contracts.agentLZ);
 
     const addressInBytes32 = hre.ethers.zeroPadValue(accountantLzHexaDecimal, 32);
 

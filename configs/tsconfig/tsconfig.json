@@ -36,13 +36,7 @@
             "./node_modules/@types",
             "../node_modules/@types",
             "../../node_modules/@types",
-            "../../../node_modules/@types",
-
-            // Include the following to work with "tronweb"
-            "./node_modules/@daochild/tronweb-typescript",
-            "../node_modules/@daochild/tronweb-typescript",
-            "../../node_modules/@daochild/tronweb-typescript",
-            "../../../node_modules/@daochild/tronweb-typescript"
+            "../../../node_modules/@types"
         ]
     },
     "ts-node": {

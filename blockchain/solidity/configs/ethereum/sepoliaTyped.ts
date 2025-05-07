@@ -9,8 +9,14 @@ import type { EthereumNetworkConfig } from './types';
 
 /** Sepolia config. */
 export const sepoliaConfig: EthereumNetworkConfig = {
-    /** layerzero sepolia endpoint. */
+    /**
+     * LayerZero Ethereum configuration parameters.
+     * Endpoint is a primary entrypoint into LayerZero V2 responsible for managing cross-chain communications.
+     * Executor is a contract responsible for executing received cross-chain messages automatically
+     * https://docs.layerzero.network/v2/deployments/deployed-contracts?chains=sepolia
+     */
     LAYER_ZERO_ENDPOINT: '0x6EDCE65403992e310A62460808c4b910D972f10f',
+    LAYER_ZERO_EXECUTOR: '0x718B92b5CB0a5552039B593faF724D182A881eDA',
 
     /** SHASTA EID. */
     LAYER_ZERO_TRON_EID: 40420,
@@ -83,15 +89,6 @@ export const sepoliaConfig: EthereumNetworkConfig = {
 
     /** mUSD token minimum redeem. */
     MUSD_TOKEN_MIN_REDEEM: 500_000_000_000_000_000n,
-
-    /** Authorized redeemer address. */
-    AUTHORIZED_REDEEMER: evmAuthorizedAddresses.AUTHORIZED_REDEEMER[EVMChainIDs.Sepolia],
-
-    /** Authorized agent server address. */
-    AUTHORIZED_AGENT_SERVER: evmAuthorizedAddresses.AUTHORIZED_AGENT_SERVER[EVMChainIDs.Sepolia],
-
-    /** Authorized wmUSDT server address. */
-    AUTHORIZED_WMUSDT_SERVER: evmAuthorizedAddresses.AUTHORIZED_WMUSDT_SERVER[EVMChainIDs.Sepolia],
 
     /** Agent Authorized lz configurator address. */
     AGENT_AUTHORIZED_LZ_CONFIGURATOR:

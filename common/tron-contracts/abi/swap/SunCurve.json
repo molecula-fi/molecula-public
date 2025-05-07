@@ -162,7 +162,7 @@
     {
         "outputs": [{ "type": "uint256" }],
         "constant": true,
-        "inputs": [{ "type": "uint256" }],
+        "inputs": [{ "name": "i", "type": "uint256" }],
         "name": "balances",
         "stateMutability": "view",
         "type": "function"
@@ -203,7 +203,7 @@
     {
         "outputs": [{ "type": "address" }],
         "constant": true,
-        "inputs": [{ "type": "uint256" }],
+        "inputs": [{ "name": "i", "type": "uint256" }],
         "name": "coins",
         "stateMutability": "view",
         "type": "function"

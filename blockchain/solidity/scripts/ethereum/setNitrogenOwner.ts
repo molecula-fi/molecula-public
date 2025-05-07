@@ -2,12 +2,15 @@
 
 import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import type { ContractsNitrogen, NetworkType } from '@molecula-monorepo/blockchain.addresses';
+import type { ContractsNitrogen, EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
-import { getNetworkConfig, readFromFile } from '../utils/deployUtils';
+import { getEnvironmentConfig, readFromFile } from '../utils/deployUtils';
 import { setOwner } from '../utils/setOwner';
 
-export async function setNitrogenOwner(hre: HardhatRuntimeEnvironment, environment: NetworkType) {
+export async function setNitrogenOwner(
+    hre: HardhatRuntimeEnvironment,
+    environment: EnvironmentType,
+) {
     const contractsNitrogen: ContractsNitrogen = await readFromFile(
         `${environment}/contracts_nitrogen.json`,
     );
@@ -24,6 +27,6 @@ export async function setNitrogenOwner(hre: HardhatRuntimeEnvironment, environme
         contracts.push({ name: `RouterAgent#${tokenName}`, addr: agentAddress as string });
     }
 
-    const config = getNetworkConfig(environment);
+    const config = getEnvironmentConfig(environment);
     await setOwner(hre, contracts, config.OWNER);
 }
