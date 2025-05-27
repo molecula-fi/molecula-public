@@ -11,7 +11,7 @@ import {LZMsgCodec} from "../common/layerzero/LZMsgCodec.sol";
 import {OApp, Origin} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
 import {OptionsLZ, Ownable2Step, Ownable} from "../common/layerzero/OptionsLZ.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../common/UsdtOFT.sol";
+import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../solutions/Carbon/common/UsdtOFT.sol";
 import {ZeroValueChecker} from "../common/ZeroValueChecker.sol";
 
 /// @title AccountantLZ - Accountant contract for handling LayerZero-based cross-chain transactions.
@@ -285,14 +285,14 @@ contract MockAccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
                 oftCmd: "" // No special OFT command required.
             });
 
-            // Quote the amount received on the destination chain after OFT processing.
+            // Quote the amount received on the destination chain after the OFT processing.
             // slither-disable-next-line unused-return, solhint-disable-next-line check-send-result
             (, , OFTReceipt memory oftReceipt) = USDT_OFT.quoteOFT(sendParam);
 
             // Quote the gas fee required for sending USDT via UsdtOFT.
             MessagingFee memory usdtFee = USDT_OFT.quoteSend(sendParam, false);
 
-            // Retrieve LayerZero messaging options specific to a deposit request.
+            // Retrieve the LayerZero messaging options specific to a deposit request.
             bytes memory lzOptions = getLzOptions(LZMsgCodec.REQUEST_DEPOSIT, 0);
 
             // Encode the LayerZero payload to include the request ID and the received amount after fees.

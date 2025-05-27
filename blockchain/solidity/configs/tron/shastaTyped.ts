@@ -13,6 +13,9 @@ export const shastaConfig: TronNetworkConfig = {
      */
     LAYER_ZERO_TRON_ENDPOINT: 'TCT5FvMTuUCspdY689LbKbUThCwBVUw4tM',
     LAYER_ZERO_TRON_EXECUTOR: '0xd9F0144AC7cED407a12dE2649b560b0a68a59A3D',
+    LAYER_ZERO_TRON_REQUIERED_DVNS: [
+        '0xC6b1A264D9bB30A8d19575B0Bb3BA525A3a6FC93', // LayerZero Labs DVN address
+    ],
     LAYER_ZERO_ETHEREUM_EID: 40161, // sepolia
     LAYER_ZERO_TRON_EID: 40420, // shasta
     LAYER_ZERO_ARBITRUM_EID: 40231, // arbitrum sepolia

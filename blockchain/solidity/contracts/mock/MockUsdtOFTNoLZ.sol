@@ -11,7 +11,7 @@ import {OAppOptionsType3} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/lib
 import {OFTLimit, OFTReceipt, OFTFeeDetail} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 import {ILayerZeroEndpointV2, MessagingParams} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
 
-import {IOFT, SendParam, MessagingReceipt, MessagingFee} from "../common/interfaces/IUsdtOFT.sol";
+import {IOFT, SendParam, MessagingReceipt, MessagingFee} from "../solutions/Carbon/common/interfaces/IUsdtOFT.sol";
 
 interface IUsdtOFT is IOFT {
     /// ========================== EVENTS =====================================

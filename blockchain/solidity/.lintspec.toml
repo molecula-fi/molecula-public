@@ -1,0 +1,91 @@
+[lintspec]
+paths = []
+exclude = [
+    './contracts/common/external/',
+    './contracts/mock',
+    './contracts/solutions/Carbon/common/UsdtOFT.sol',
+    './contracts/solutions/Carbon/common/interfaces/IUsdtOFT.sol',
+    './contracts/solutions/mrETH/RTSupplyManager.sol',
+    './contracts/solutions/mrETH/external',
+    './contracts/solutions/mrETH/interfaces/IRTSupplyManager.sol',
+    './contracts/solutions/mrETH/libraries/AaveBufferLib.sol',
+    './contracts/solutions/mrETH/libraries/CompoundBufferLib.sol',
+    './contracts/test',
+    './lib',
+    './test/',
+]
+inheritdoc = false
+notice_or_dev = false
+skip_version_detection = false
+
+[output]
+json = false
+compact = true
+sort = false
+
+[constructor]
+notice = "ignored"
+dev = "required"
+param = "required"
+
+[enum]
+notice = "ignored"
+dev = "ignored"
+param = "ignored"
+
+[error]
+notice = "ignored"
+dev = "required"
+param = "required"
+
+[event]
+notice = "ignored"
+dev = "required"
+param = "required"
+
+[function.private]
+notice = "ignored"
+dev = "required"
+param = "required"
+return = "required"
+
+[function.internal]
+notice = "ignored"
+dev = "required"
+param = "required"
+return = "required"
+
+[function.public]
+notice = "ignored"
+dev = "required"
+param = "required"
+return = "required"
+
+[function.external]
+notice = "ignored"
+dev = "required"
+param = "required"
+return = "required"
+
+[modifier]
+notice = "ignored"
+dev = "required"
+param = "required"
+
+[struct]
+notice = "ignored"
+dev = "required"
+param = "required"
+
+[variable.private]
+notice = "ignored"
+dev = "required"
+
+[variable.internal]
+notice = "ignored"
+dev = "required"
+
+[variable.public]
+notice = "ignored"
+dev = "required"
+return = "ignored"

@@ -5,6 +5,9 @@ pragma solidity ^0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/// @dev User's cooldown information.
+/// @param cooldownEnd Timestamp when the cooldown is ended.
+/// @param underlyingAmount Amount of frozen tokens.
 struct UserCooldown {
     uint104 cooldownEnd;
     uint152 underlyingAmount;
@@ -16,14 +19,14 @@ abstract contract IStakedUSDeV2 is IERC20 {
     /// @dev cooldownDuration Cooldown duration.
     uint24 public cooldownDuration;
 
-    /// @notice Amount of the last asset distribution from the controller contract
+    /// @dev Amount of the last asset distribution from the controller contract
     /// into this contract and any unvested remainder at that time.
     uint256 public vestingAmount;
 
     /// @dev cooldowns Mapping of cooldowns.
     mapping(address user => UserCooldown) public cooldowns;
 
-    /// @notice Redeems shares into assets and starts the cooldown to claim the converted asset.
+    /// @dev Redeems shares into assets and starts the cooldown to claim the converted asset.
     /// @param shares Shares to redeem.
     /// @return assets Assets to redeem.
     function cooldownShares(uint256 shares) external virtual returns (uint256 assets);
@@ -36,13 +39,13 @@ abstract contract IStakedUSDeV2 is IERC20 {
     function unstake(address receiver) external virtual;
 
     /**
-     * @notice Returns the amount of USDe tokens that are unvested in the contract.
+     * @dev Returns the amount of USDe tokens that are unvested in the contract.
      * @return value Uninvested tokens.
      */
     function getUnvestedAmount() external view virtual returns (uint256 value);
 
     /**
-     * @notice Returns the amount of USDe tokens that are vested in the contract.
+     * @dev Returns the amount of USDe tokens that are vested in the contract.
      * @return value Total amount.
      */
     function totalAssets() external view virtual returns (uint256 value);

@@ -5,17 +5,21 @@ pragma solidity ^0.8.28;
 import {RebaseERC20} from "../../../common/rebase/RebaseERC20.sol";
 
 interface IwmUSD {
-    /// @dev MUSD Rebase token address.
+    /// @dev Returns mUSD Rebase token address.
+    /// @return mUSD Rebase token address.
     // solhint-disable-next-line func-name-mixedcase
     function MUSD() external returns (RebaseERC20);
 
     /// @dev Authorized yield distributor (e.g. lmUSD token).
+    /// @return Authorized yield distributor.
     function authorizedYieldDistributor() external returns (address);
 
-    /// @dev mUSD wrapped value.
+    /// @dev Returns mUSD wrapped value.
+    /// @return mUSD wrapped value.
     function mUSDWrappedValue() external returns (uint256);
 
-    /// @dev mUSD wrapped shares.
+    /// @dev Returns mUSD wrapped shares.
+    /// @return mUSD wrapped shares.
     function mUSDWrappedShares() external returns (uint256);
 
     /// @dev Throws an error if the Yield Distributor is not authorized.
@@ -59,14 +63,14 @@ interface IwmUSD {
 
     /// @dev Convert wmUSD to mUSD.
     /// @param wmUSDAmount wmUSD amount.
-    /// @param mUSDAmount mUSD amount.
+    /// @return mUSDAmount mUSD amount.
     function convertTomUSD(uint256 wmUSDAmount) external view returns (uint256 mUSDAmount);
 
-    /// @dev Return the current yield in the token value.
+    /// @dev Returns the current yield in the token value.
     /// @return Current yield in the token value.
     function currentYield() external view returns (uint256);
 
-    /// @dev Return the current yield in shares.
+    /// @dev Returns the current yield in shares.
     /// @return Current yield in shares.
     function currentYieldShares() external view returns (uint256);
 

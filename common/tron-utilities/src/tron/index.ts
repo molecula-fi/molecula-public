@@ -1,4 +1,5 @@
 // Export utilities
+export * from './constants';
 export * from './getTRC20Balance';
 export * from './getTRC20BalanceWithTronWeb';
 export * from './verifyTrxAddress';

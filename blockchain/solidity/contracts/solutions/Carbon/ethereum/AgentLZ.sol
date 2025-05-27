@@ -12,7 +12,7 @@ import {OApp, Origin, MessagingFee} from "@layerzerolabs/lz-evm-oapp-v2/contract
 import {OptionsLZ, Ownable2Step, Ownable} from "../../../common/layerzero/OptionsLZ.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {UsdtOFT, SendParam, MessagingFee} from "../../../common/UsdtOFT.sol";
+import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../common/UsdtOFT.sol";
 import {ZeroValueChecker} from "../../../common/ZeroValueChecker.sol";
 
 /// @title AgentLZ - Agent contract for LayerZero cross-chain communication.
@@ -31,7 +31,7 @@ contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
     /// @dev Interface for UsdtOFT token.
     UsdtOFT public immutable USDT_OFT;
 
-    /// @dev Flag indicating whether oracle data should be sent via LayerZero.
+    /// @dev Boolean flag indicating whether oracle data should be sent via LayerZero.
     bool public updateOracleData;
 
     /// @dev Mapping of executed deposit requests.
@@ -72,7 +72,7 @@ contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
     /// @dev Error: Caller is not the authorized Supply Manager.
     error ENotMySupplyManager();
 
-    /// @notice Event emitted when a redeem operation is executed.
+    /// @dev Event emitted when a redeem operation is executed.
     event Redeem();
 
     /// @dev Modifier ensuring that only the Supply Manager can call a function.
@@ -84,7 +84,7 @@ contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
     }
 
     /**
-     * @notice Constructs the AgentLZ contract.
+     * @dev Constructs the AgentLZ contract.
      * @param initialOwner Owner's address.
      * @param authorizedLZConfiguratorAddress Address of the authorized LayerZero configurator.
      * @param endpoint Address of the LayerZero endpoint contract.
@@ -313,44 +313,56 @@ contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
         uint256[] memory values,
         uint256 totalValue
     ) external payable onlySupplyManager {
-        // Transfer USDT tokens from the MoleculaPool to the AgentLZ contract.
-        // This ensures the contract has enough funds for the cross-chain transfer.
+        // Track the initial USDT balance to ensure accurate transfer calculations.
+        uint256 balanceBefore = USDT.balanceOf(address(this));
+
+        // Use `safeTransferFrom` to securely move the specified `totalValue`
+        // of USDT from `fromAddress` to the current contract address.
         // slither-disable-next-line arbitrary-send-erc20
         USDT.safeTransferFrom(fromAddress, address(this), totalValue);
 
+        // Recalculate the actual amount received by subtracting the previous balance from the new balance.
+        // This accounts for transfer fees or tokens with custom transfer logic.
+        uint256 totalValueToSend = USDT.balanceOf(address(this)) - balanceBefore;
+
         // Approve the total USDT amount for spending by the UsdtOFT contract.
-        USDT.forceApprove(address(USDT_OFT), totalValue);
+        USDT.forceApprove(address(USDT_OFT), totalValueToSend);
 
+        // Get the recipient on the destination chain.
         bytes32 accountant = _getPeerOrRevert(DST_EID);
-        uint16 bpsDenominator = USDT_OFT.BPS_DENOMINATOR();
-        uint16 bpsFee = USDT_OFT.feeBps();
-
-        // Deduct the commission from each value.
-        uint256 length = values.length;
-        for (uint256 i = 0; i < length; ++i) {
-            values[i] = (values[i] * (bpsDenominator - bpsFee)) / bpsDenominator;
-        }
 
         // Prepare structured parameters for the cross-chain USDT transfer via the UsdtOFT contract.
         SendParam memory sendParam = SendParam({
             dstEid: DST_EID, // Destination LayerZero Endpoint ID. TRON in this case.
             to: accountant, // Recipient on the destination chain. Value converted to bytes32.
-            amountLD: totalValue, // Total USDT amount being sent.
-            minAmountLD: (totalValue - ((totalValue * bpsFee) / bpsDenominator)), // Minimum acceptable amount after fees.
+            amountLD: totalValueToSend, // Total USDT amount being sent.
+            minAmountLD: (totalValueToSend -
+                ((totalValueToSend * USDT_OFT.feeBps()) / USDT_OFT.BPS_DENOMINATOR())), // Minimum acceptable amount after fees.
             extraOptions: "", // No extra options provided.
             composeMsg: "", // No additional message composition needed.
             oftCmd: "" // No special OFT command required.
         });
 
+        // Quote the amount received on the destination chain after the OFT processing.
+        // slither-disable-next-line unused-return, solhint-disable-next-line check-send-result
+        (, , OFTReceipt memory oftReceipt) = USDT_OFT.quoteOFT(sendParam);
+
         // Quote the fee required for sending USDT across chains using UsdtOFT.
         MessagingFee memory usdtFee = USDT_OFT.quoteSend(sendParam, false);
 
-        // Retrieve LayerZero messaging options based on the number of requests being processed.
-        bytes memory lzOptions = getLzOptions(LZMsgCodec.CONFIRM_REDEEM, requestIds.length);
+        // Scale each redemption value proportionally to the actual amount received after the OFT fees.
+        // This ensures the sum of individual redemptions matches the total received amount.
+        uint256 length = values.length;
+        for (uint256 i = 0; i < length; ++i) {
+            values[i] = (values[i] * oftReceipt.amountReceivedLD) / totalValue;
+        }
 
         // Encode the payload that will be sent via LayerZero.
         // This payload contains details of the redemption request.
         bytes memory payload = LZMsgCodec.lzEncodeConfirmRedeemMessage(requestIds, values);
+
+        // Retrieve the LayerZero messaging options based on the number of requests being processed.
+        bytes memory lzOptions = getLzOptions(LZMsgCodec.CONFIRM_REDEEM, requestIds.length);
 
         // Quote the fee required for the LayerZero message transmission.
         MessagingFee memory sendFee = _quote(DST_EID, payload, lzOptions, false);

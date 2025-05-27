@@ -45,27 +45,6 @@ export type TronEventCallback<FilterName, Result> = (
 ) => void | Promise<void>;
 
 /**
- * Options for downloading events from tronWeb
- */
-export type TronEventsLoadParams = {
-    /**
-     * Total count for loading
-     */
-    size?: number;
-
-    /**
-     * Timestamp starting from which to download
-     */
-    sinceTimestamp?: number | undefined;
-
-    /**
-     * Sorting direction, ascending timestamp or descending timestamp
-     * https://github.com/tronprotocol/tron-grid/issues/6
-     */
-    sort: 'block_timestamp' | '-block_timestamp';
-};
-
-/**
  * Local loader options
  */
 export type TronEventsLoadOptions = {

@@ -39,7 +39,6 @@
         "eslint:fix": "eslint --fix scripts *.js --resolve-plugins-relative-to .",
         "prettier:fix": "prettier --write scripts *.js",
         "fix:code": "yarn run eslint:fix && yarn run prettier:fix && yarn turbo run eslint:fix && yarn turbo run prettier:fix",
-        "natspec:check": "natspec-smells",
         "cache:clean": "yarn cache clean && rm -rf /usr/local/share/.cache/yarn/v6",
         "ton-exchanger-evm-manual:build": "docker build --tag ton-exchanger-evm-manual:$npm_package_version -f backend/ton-exchanger-evm-manual/.Dockerfile .",
         "tron-exchanger-evm-retail:build": "docker build --tag tron-exchanger-evm-retail:$npm_package_version -f backend/tron-exchanger-evm-retail/.Dockerfile .",
@@ -84,6 +83,8 @@
         "website:deploy:prod": "yarn terraform:prod:state && dotenvx run --env-file=./configs/frontend-environments/shared/.env.production --env-file=./configs/frontend-environments/shared/.env --env-file=./configs/frontend-environments/website/.env.production --env-file=./configs/frontend-environments/website/.env --quiet -- yarn website:deploy",
         "website:dev:prepare": "yarn terraform:staging:state && dotenvx run --env-file=./configs/frontend-environments/shared/.env --env-file=./configs/frontend-environments/website/.env --quiet -- yarn prepare-web-deploy",
         "website:dev": "yarn website:dev:prepare && yarn workspace @molecula-monorepo/frontend.website dev",
+        "website:build": "yarn website:dev:prepare && yarn workspace @molecula-monorepo/frontend.website build",
+        "website:preview": "yarn workspace @molecula-monorepo/frontend.website preview",
         "retail:dev:prepare": "yarn terraform:staging:state && dotenvx run --env-file=./configs/frontend-environments/shared/.env --env-file=./configs/frontend-environments/retail/.env --quiet -- yarn prepare-web-deploy",
         "retail:dev": "yarn retail:dev:prepare && yarn workspace @molecula-monorepo/frontend.retail dev",
         "retail:deploy": "yarn prepare-web-deploy && yarn workspace @molecula-monorepo/frontend.retail deploy",
@@ -115,7 +116,8 @@
         "deploy:website:prod": "./set_website_deploy.sh prod"
     },
     "devDependencies": {
-        "@defi-wonderland/natspec-smells": "^1.1.6",
+        "@commitlint/cli": "^19.8.1",
+        "@commitlint/config-conventional": "^19.8.1",
         "@types/circular-dependency-plugin": "^5.0.5",
         "circular-dependency-plugin": "^5.2.2",
         "concurrently": "^9.0.1",
@@ -126,7 +128,7 @@
         "prettier-plugin-solidity": "^1.4.1",
         "solhint": "^5.0.5",
         "ts-node": "^10.9.2",
-        "turbo": "^2.5.1",
+        "turbo": "^2.5.2",
         "typescript": "^5.4.5",
         "yarn-deduplicate": "^6.0.0"
     },

@@ -24,8 +24,10 @@ turbo run compile gql:generate --affected || { echo "❌ pre-commit code generat
 
 # Run slither first and do it separately because slither cleans compiled artifacts
 echo "🔍 Running pre-commit slither check..."
-if slither --version "$1"; then
+if command -v slither >/dev/null 2>&1; then
   turbo run slither --affected || { echo "❌ pre-commit slither failed"; exit 1; }
+else
+  echo "ℹ️ Slither not found, skipping Solidity static analysis"
 fi
 
 # Run the required checks
@@ -34,13 +36,11 @@ if [ "$FULL_CHECK" == true ]; then
 	turbo run tsc \
     eslint:check \
     prettier:check \
-    solhint:check \
     cycles:check \
-    test --filter=@molecula-monorepo/blockchain.ethena --filter=@molecula-monorepo/solidity \
+    solhint:check --filter=@molecula-monorepo/solidity \
+    lintspec:check --filter=@molecula-monorepo/solidity \
+    test --filter=@molecula-monorepo/solidity --filter=@molecula-monorepo/blockchain.ethena \
     unitTests || { echo "❌ pre-commit --full code quality checks failed"; exit 1; }
-
-    # Temporary disable
-    # natspec:check
 else
 	turbo run tsc \
     eslint:check \

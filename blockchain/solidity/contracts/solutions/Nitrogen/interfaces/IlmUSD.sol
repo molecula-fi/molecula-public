@@ -32,25 +32,37 @@ interface IlmUSD {
         uint256 mUSDLockedShares;
     }
 
-    /// @dev mUSD token address.
+    /// @dev Returns mUSD token address.
+    /// @return mUSD token address.
     // solhint-disable-next-line func-name-mixedcase
     function MUSD() external returns (RebaseERC20);
 
-    /// @dev wmUSD token address.
+    /// @dev Returns wmUSD token address.
+    /// @return wmUSD token address.
     // solhint-disable-next-line func-name-mixedcase
     function WMUSD_TOKEN() external returns (WMUSD);
 
     /// @dev Mapping `tokenId` to the lock information.
     /// See also the `LockInfo` structure.
+    /// @param tokenId `tokenId` whose information is to be returned.
+    /// @return shares Locked shares.
+    /// @return period Lock period.
+    /// @return createdAt Lock creation timestamp.
     function lockInfos(
         uint256 tokenId
     ) external returns (uint256 shares, uint128 period, uint128 createdAt);
 
-    /// @dev mUSD locked shares in the contract.
+    /// @dev Returns mUSD locked shares in the contract.
+    /// @return mUSD locked shares in the contract.
     function mUSDLockedShares() external returns (uint256);
 
     /// @dev Mapping period to the period information.
     /// See also PeriodInfo structure.
+    /// @param period Lock period.
+    /// @return exists Boolean flag indicating whether the lock period exists.
+    /// @return isAllowed Boolean indicating whether the lock period is allowed.
+    /// @return multiplier Multiplier for the lock period.
+    /// @return summUSDLockedShares Total amount of mUSD locked shares for the period.
     function periodInfos(
         uint128 period
     )
@@ -113,16 +125,18 @@ interface IlmUSD {
     function getPeriods() external view returns (uint128[] memory);
 
     /// @dev Event emitted when the period is added.
+    /// @param period Lock period.
+    /// @param multiplier Multiplier for the lock period.
     event PeriodAdded(uint128 period, uint128 multiplier);
 
     /// @dev Event emitted when the period is allowed or disallowed.
+    /// @param period Lock period.
+    /// @param isAllowed Boolean indicating whether the lock period is allowed.
     event SetAllowPeriod(uint128 period, bool isAllowed);
 
     /// @dev Event emitted when the period is deleted.
+    /// @param period Lock period.
     event PeriodDeleted(uint128 period);
-
-    /// @dev Event emitted when the period multiplier is changed.
-    event MultiplierChanged(uint128 period, uint128 multiplier);
 
     /// @dev Event emitted when user has locked their mUSD tokens.
     /// @param sender Owner of lock.
@@ -171,7 +185,7 @@ interface IlmUSD {
     error ETokenIsStillLocked();
 
     /// @dev Error: `msg.sender` is not authorized for some function.
-    error EBadSender();
+    error ENotAuthorized();
 
     /// @dev The value has been already set.
     error EAlreadySet();

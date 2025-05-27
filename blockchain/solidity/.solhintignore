@@ -1,5 +1,13 @@
-./contracts/common/UsdtOFT.sol
-./contracts/common/interfaces/IUsdtOFT.sol
+# This file is used to ignore specific files or directories from being checked by solhint
+
+# UsdtOft OApp contracts
+./contracts/solutions/Carbon/common/UsdtOFT.sol
+./contracts/solutions/Carbon/common/interfaces/IUsdtOFT.sol
+
+# mrETH external contracts contracts
+./contracts/solutions/mrETH/external
+
+# Hardhat and Forge service directories, npm packages included in node_modules
 ./lib
 ./test
 ./node_modules

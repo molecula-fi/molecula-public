@@ -36,8 +36,13 @@ echo "Installing slither..."
 # https://github.com/crytic/slither
 python3 -m pip install slither-analyzer || pipx install slither-analyzer
 
+echo "Installing lintspec..."
+# https://github.com/beeb/lintspec
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+. "$HOME/.cargo/env"  # Make `cargo` available
+cargo install lintspec
 
-#echo "Revealing secrets..."
+echo "Revealing secrets..."
 if [ -x "$(command -v osascript)" ]
 then
  osascript -e "display notification \"Waiting for secret files revealing\" with title \"Molecula-monorepo\""

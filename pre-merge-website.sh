@@ -51,9 +51,6 @@ turbo run tsc \
   cycles:check \
   unitTests || { echo "❌ Code quality checks failed"; exit 1; }
 
-  # Temporary disable
-  # natspec:check
-
   # Temporary disable the following until the issues with "429 Too Many Requests" is resolved:
   # test --filter=@molecula-monorepo/blockchain.ethena --filter=@molecula-monorepo/solidity
 

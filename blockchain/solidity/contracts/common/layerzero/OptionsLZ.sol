@@ -8,7 +8,10 @@ import {OptionsBuilder} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/
 contract OptionsLZ is Ownable2Step {
     using OptionsBuilder for bytes;
 
+    /// @dev Base bit flag.
     uint16 private constant _BASE = 0x100;
+
+    /// @dev Unit bit flag.
     uint16 private constant _UNIT = 0x200;
 
     /// @dev Authorized LayerZero configurator.

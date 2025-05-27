@@ -1,15 +1,10 @@
-import type { Contract as TronContract } from 'tronweb';
+import type { GetEventResultOptions, Contract as TronContract } from 'tronweb';
 
 import { BlockKeeper } from '@molecula-monorepo/common.evm-utilities/src/helpers';
 
 import { Log } from '@molecula-monorepo/common.utilities';
 
-import type {
-    TronEventsLoadParams,
-    TronEventCallback,
-    TronEventsLoadOptions,
-    InternalTronEvent,
-} from '../types';
+import type { TronEventCallback, TronEventsLoadOptions, InternalTronEvent } from '../types';
 
 import { MAX_PART_SIZE, tronEventsLoad } from './tronEventsLoader';
 
@@ -74,8 +69,8 @@ export class TronSubscriber {
         if (!lastBlockTimestamp) {
             // load last event to save the last timestamp
             const events = await this.loadLastEvents<FilterName, Result>({
-                size: 1,
-                sort: '-block_timestamp',
+                limit: 1,
+                orderBy: 'block_timestamp,desc',
             });
 
             events.map(event =>
@@ -106,7 +101,7 @@ export class TronSubscriber {
      * @returns loaded events array.
      */
     public async loadLastEvents<FilterName, Result>(
-        params: TronEventsLoadParams,
+        params: GetEventResultOptions,
         options?: TronEventsLoadOptions,
     ): Promise<InternalTronEvent<FilterName, Result>[]> {
         return tronEventsLoad<FilterName, Result>(
@@ -129,9 +124,9 @@ export class TronSubscriber {
         const sinceTimestamp = this.blockKeeper.findNewestBlock();
 
         const events = await this.loadLastEvents<FilterName, Result>({
-            sort: 'block_timestamp',
-            size: MAX_PART_SIZE,
-            sinceTimestamp: sinceTimestamp ? sinceTimestamp + 1 : this.startTimestamp,
+            orderBy: 'block_timestamp,desc',
+            limit: MAX_PART_SIZE,
+            minBlockTimestamp: sinceTimestamp ? sinceTimestamp + 1 : this.startTimestamp,
         });
 
         events.forEach(event => {

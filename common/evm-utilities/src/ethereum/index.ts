@@ -12,6 +12,7 @@ export * from './decodeParams';
 export * from './ethereumSubscriber';
 export * from './normalizeAddress';
 export * from './areEvmAddressesEqual';
+export * from './findBlockByTimestamp';
 
 // Export types
 export * from './types';

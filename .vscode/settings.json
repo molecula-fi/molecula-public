@@ -50,6 +50,7 @@
         "./backend/rebalance-service",
         "./backend/rpc-proxy",
         "./backend-nest/atoms-service",
+        "./backend-nest/subgraphs-service",
         "./backend-nest/packages/app",
         "./backend-nest/packages/common",
         "./backend-nest/packages/database",

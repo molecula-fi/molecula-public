@@ -32,7 +32,7 @@ root = "."
 #   Or it can be a full match like "src/counters/Counter.sol", which will exclude only the file with the exact path.
 # - If not specified, no contract files will be excluded.
 # Examples:
-exclude = ["contracts/test/", "contracts/mock/", "contracts/common/UsdtOFT.sol", "/interfaces/"]
+exclude = ["contracts/test/", "contracts/mock/", "contracts/solutions/Carbon/common/UsdtOFT.sol", "/interfaces/"]
 
 # For advanced use cases, leverage the following
 

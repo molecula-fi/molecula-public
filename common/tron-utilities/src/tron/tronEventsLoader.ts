@@ -1,15 +1,10 @@
 /* eslint-disable no-await-in-loop */
 
-import type { Contract as TronContract, EventResponse } from 'tronweb';
+import type { Contract as TronContract, EventResponse, GetEventResultOptions } from 'tronweb';
 
 import type { Log } from '@molecula-monorepo/common.utilities';
 
-import type {
-    TronBaseEvent,
-    TronEventsLoadOptions,
-    TronEventsLoadParams,
-    InternalTronEvent,
-} from '../types';
+import type { TronBaseEvent, TronEventsLoadOptions, InternalTronEvent } from '../types';
 
 /**
  * Subscriber info
@@ -36,7 +31,7 @@ type Subscriber = {
  */
 async function loadPartEvents<FilterName, Result>(
     subscriber: Subscriber,
-    params: TronEventsLoadParams,
+    params: GetEventResultOptions,
 ): Promise<InternalTronEvent<FilterName, Result>[]> {
     try {
         if (!subscriber.contract.address) {
@@ -48,7 +43,7 @@ async function loadPartEvents<FilterName, Result>(
                 subscriber.contract.address,
                 {
                     eventName: subscriber.method,
-                    // https://github.com/tronprotocol/tronweb/blob/3a81bf15f790f35f03b5f9d9b7154afb653ef5f3/src/lib/event.js#L38
+                    // https://tronweb.network/docu/docs/API%20List/event/getEventsByContractAddress
                     ...params,
                 },
             );
@@ -73,38 +68,41 @@ async function loadPartEvents<FilterName, Result>(
 /**
  * Information about how many recent events have the same timestamp
  */
-type EventsInOneBlock = {
+type EventsBlockInfo = {
     /**
-     * Number of latest events in one block with one timestamp
+     * Timestamp of first event
      */
-    count: number;
+    minTimestamp: number | undefined;
 
     /**
      * Timestamp of last event
      */
-    sinceTimestamp: number;
+    maxTimestamp: number | undefined;
 };
 
 /**
  * Count recent events that have the same timestamp
  * @param events - Tron events list
  */
-function countEventsInOneBlock(events: TronBaseEvent[]): EventsInOneBlock {
-    let lastEvent: TronBaseEvent | undefined;
+function countEventsInOneBlock(events: TronBaseEvent[]): EventsBlockInfo {
+    const blockInfo: EventsBlockInfo = {
+        minTimestamp: undefined,
+        maxTimestamp: undefined,
+    };
 
     for (let i = events.length - 1; i >= 0; i -= 1) {
         const event = events[i]!;
 
-        if (lastEvent && event.timestamp !== lastEvent.timestamp) {
-            return { count: events.length - i - 1, sinceTimestamp: lastEvent.timestamp };
+        if (blockInfo.minTimestamp === undefined || event.timestamp < blockInfo.minTimestamp) {
+            blockInfo.minTimestamp = event.timestamp;
         }
 
-        lastEvent = event;
+        if (blockInfo.maxTimestamp === undefined || event.timestamp > blockInfo.maxTimestamp) {
+            blockInfo.maxTimestamp = event.timestamp;
+        }
     }
-    return {
-        count: events.length,
-        sinceTimestamp: lastEvent?.timestamp ?? 0,
-    };
+
+    return blockInfo;
 }
 
 // What is the maximum that the tron server can give
@@ -121,10 +119,12 @@ export const MAX_PART_SIZE = 199;
  */
 export async function tronEventsLoad<FilterName, Result>(
     subscriber: Subscriber,
-    params: TronEventsLoadParams,
+    params: GetEventResultOptions,
     options?: TronEventsLoadOptions,
 ) {
-    const { size: totalSize, sinceTimestamp, sort } = params;
+    const { limit: totalSize, maxBlockTimestamp, minBlockTimestamp, orderBy: order } = params;
+
+    const orderBy: 'block_timestamp,desc' | 'block_timestamp,asc' = order ?? 'block_timestamp,desc';
 
     const { partSize } = options || {};
 
@@ -136,21 +136,20 @@ export async function tronEventsLoad<FilterName, Result>(
         );
     }
 
-    if ((!totalSize || totalSize > partSizeSafe) && sort === '-block_timestamp') {
-        throw new Error(
-            `Invalid parameter; You cannot load more than ${partSizeSafe} items in back sort`,
-        );
-    }
-
     let events: InternalTronEvent<FilterName, Result>[] = [];
 
     let complete: boolean = false;
 
-    // Information about how many recent events have the same timestamp
-    let prevEventsInOneBlock: EventsInOneBlock | null = null;
+    // Information about how many recent events
+    let prevEventsBlockInfo: EventsBlockInfo | null = null;
 
     // Loaded transaction to avoid event duplication
     const loadedTransactions: Record<string, boolean> = {};
+
+    // HACK for small partSize loading
+    // Some events could have same timestamp and small part load returns only doubled events
+    // So we need to increase loadSize temporary to get all events
+    let doublesCompensator: number = 0;
 
     do {
         // How many events need to be loaded now
@@ -158,22 +157,40 @@ export async function tronEventsLoad<FilterName, Result>(
             ? Math.min(totalSize - events.length, partSizeSafe)
             : partSizeSafe;
 
-        // How much should be downloaded,
-        // taking into account duplicates from the previous download
-        const loadSizeWithoutDoubles = loadSize + (prevEventsInOneBlock?.count || 0);
-
         // The final quantity, taking into account that the maximum you can load is 200
-        const totalSizeFinal = Math.min(loadSizeWithoutDoubles, MAX_DOWNLOAD_COUNT);
+        const totalSizeFinal = Math.min(loadSize, MAX_DOWNLOAD_COUNT);
+
+        const range: { minBlockTimestamp?: number; maxBlockTimestamp?: number } = {};
+
+        if (orderBy === 'block_timestamp,desc') {
+            const max = prevEventsBlockInfo?.minTimestamp ?? maxBlockTimestamp;
+
+            // For descending order, we need to update the maximum timestamp
+            if (max) {
+                range.maxBlockTimestamp = max;
+            }
+        }
+
+        if (orderBy === 'block_timestamp,asc') {
+            const min = prevEventsBlockInfo?.maxTimestamp ?? minBlockTimestamp;
+
+            // For ascending order, we need to update the minimum timestamp
+            if (min) {
+                range.minBlockTimestamp = min;
+            }
+        }
+
+        const iterationLoadSize = totalSizeFinal + doublesCompensator;
 
         // Loading events from the Tron network
         const loadedEvents = await loadPartEvents<FilterName, Result>(subscriber, {
             ...params,
-            size: totalSizeFinal,
-            sinceTimestamp: prevEventsInOneBlock?.sinceTimestamp || sinceTimestamp,
+            limit: iterationLoadSize,
+            ...range,
         });
 
         // Count how many recent events have the same timestamp and what was the last timestamp
-        const nextEventsInOneBlock = countEventsInOneBlock(loadedEvents);
+        const nextEventsBlockInfo = countEventsInOneBlock(loadedEvents);
 
         // Loaded events, excluding duplicates from the previous iteration
         const loadedWithoutDoubles = loadedEvents.filter(event => {
@@ -182,19 +199,22 @@ export async function tronEventsLoad<FilterName, Result>(
             return !has;
         });
 
-        if (!loadedWithoutDoubles.length && loadedEvents.length === totalSizeFinal) {
-            throw new Error('Too many duplicate events');
+        if (!loadedWithoutDoubles.length && loadedEvents.length === iterationLoadSize) {
+            // Too many doubles
+            doublesCompensator += 1;
+        } else {
+            doublesCompensator = 0;
         }
 
         events = events.concat(loadedWithoutDoubles);
 
         // We complete the download if we downloaded as much as required
         // or in the current iteration less was downloaded than we requested
-        if (events.length === totalSize || loadedEvents.length < totalSizeFinal) {
+        if (events.length === totalSize || loadedEvents.length < iterationLoadSize) {
             complete = true;
         }
 
-        prevEventsInOneBlock = nextEventsInOneBlock;
+        prevEventsBlockInfo = nextEventsBlockInfo;
     } while (!complete);
 
     return events;

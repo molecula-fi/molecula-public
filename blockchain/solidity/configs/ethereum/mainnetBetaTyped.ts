@@ -17,6 +17,10 @@ export const ethMainnetBetaConfig: EthereumNetworkConfig = {
      */
     LAYER_ZERO_ENDPOINT: '0x1a44076050125825900e736c501f859c50fE728c',
     LAYER_ZERO_EXECUTOR: '0x173272739Bd7Aa6e4e214714048a9fE699453059',
+    LAYER_ZERO_ETHEREUM_REQUIERED_DVNS: [
+        '0x3b0531eB02Ab4aD72e7a531180beeF9493a00dD2', // USDT0 DVN address
+        '0x589dEDbD617e0CBcB916A9223F4d1300c294236b', // LayerZero Labs DVN address
+    ],
 
     /** LayerZero Tron EID. */
     LAYER_ZERO_TRON_EID: 30420,
@@ -48,6 +52,15 @@ export const ethMainnetBetaConfig: EthereumNetworkConfig = {
 
     /** Staked USDe (sUSDe) token address on Ethereum Mainnet. */
     SUSDE_ADDRESS: evmStaticTokenAddresses.sUSDe[EVMChainIDs.Mainnet],
+
+    /** Wrapped ETH (WETH) token address on Ethereum Mainnet. */
+    WETH_ADDRESS: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+
+    /** AAVE Token for WETH (AToken) token address on Ethereum Mainnet. */
+    AWETH_ADDRESS: '0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8',
+
+    /** Compound Token for WETH (cWETHv3) token address on Ethereum Mainnet. */
+    CWETH_V3: '0xA17581A9E3356d9A858b789D68B4d866e593aE94',
 
     /**  DAI token address on Ethereum Mainnet. */
     DAI_ADDRESS: evmStaticTokenAddresses.DAI[EVMChainIDs.Mainnet],
@@ -98,6 +111,11 @@ export const ethMainnetBetaConfig: EthereumNetworkConfig = {
     AGENT_AUTHORIZED_LZ_CONFIGURATOR:
         evmAuthorizedAddresses.AGENT_AUTHORIZED_LZ_CONFIGURATOR[EVMChainIDs.Mainnet].beta,
 
+    /** AAVE v3 Pool Address. */
+    AAVE_POOL: '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2',
+
+    /** EigenPodManager contract address. */
+    EIGEN_POD_MANAGER: '0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338',
     WMUSD_TOKEN_NAME: 'Wrapped mUSD beta',
     WMUSD_TOKEN_SYMBOL: 'wmUSDb',
 

@@ -35,7 +35,7 @@ enum TokenType {
 /**
  * @dev Token information.
  * @param tokenType Token type.
- * @param isBlocked Flag indicating whether the token is blocked.
+ * @param isBlocked Boolean flag indicating whether the token is blocked.
  * @param n Normalization to 18 decimals: equal to the `18 - poolToken.decimals` value.
  * @param arrayIndex Index in `TokenParams[] pool`.
  * @param valueToRedeem Value to redeem in the token amount.
@@ -56,10 +56,10 @@ contract MoleculaPoolTreasury is Ownable, IMoleculaPool, ZeroValueChecker {
     /// @dev Supply Manager's address.
     address public immutable SUPPLY_MANAGER;
 
-    /// @dev Flag indicating whether the `redeem` function is paused.
+    /// @dev Boolean flag indicating whether the `redeem` function is paused.
     bool public isRedeemPaused;
 
-    /// @dev Flag indicating whether the `execute` function is paused.
+    /// @dev Boolean flag indicating whether the `execute` function is paused.
     bool public isExecutePaused;
 
     /// @dev Pool Keeper's address.

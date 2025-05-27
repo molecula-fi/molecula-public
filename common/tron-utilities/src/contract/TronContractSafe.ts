@@ -242,7 +242,10 @@ export class TronContractSafe<Contract extends AllTronContracts> {
 
         const subscriber = new TronSubscriber(this.contract, eventName);
 
-        return subscriber.loadLastEvents({ sort: 'block_timestamp', sinceTimestamp });
+        return subscriber.loadLastEvents({
+            orderBy: 'block_timestamp,desc',
+            ...(sinceTimestamp ? { minBlockTimestamp: sinceTimestamp } : {}),
+        });
     };
 
     /**
@@ -280,7 +283,7 @@ export class TronContractSafe<Contract extends AllTronContracts> {
 
             const parameter = await this.encodeParams(parameters);
 
-            const energy = await this.estimateEnergyRequest({
+            const energy = await this.calculateEnergy({
                 owner_address: fromAddress,
                 contract_address: this.address,
                 function_selector: functionSelector,
@@ -413,8 +416,30 @@ export class TronContractSafe<Contract extends AllTronContracts> {
         return parameters;
     }
 
+    private calculateEnergy = async (body: {
+        owner_address: string;
+        contract_address: string;
+        function_selector: string;
+        parameter: string;
+        visible: boolean;
+        call_value?: number | undefined;
+    }): Promise<number> => {
+        try {
+            const energy = await this.estimateEnergyRequest(body);
+
+            return Number(energy);
+        } catch (error) {
+            log.debug('Estimate energy request failed with error', error);
+
+            // Try trigger constant contract method
+            return this.triggerConstantContract(body);
+        }
+    };
+
     /**
      * An utility to get estimate energy
+     * NOTE: Method has more accuracy than triggerConstantContract
+     * NOTE: Doesn't work in TronGrid mainnet nodes
      */
     private estimateEnergyRequest = async (body: {
         owner_address: string;
@@ -447,6 +472,54 @@ export class TronContractSafe<Contract extends AllTronContracts> {
         }
 
         throw new SafeCallError(`Estimate energy error`, {
+            apiResponse: data.result,
+        });
+    };
+
+    /**
+     * An utility to get estimate energy
+     */
+    private triggerConstantContract = async (body: {
+        owner_address: string;
+        contract_address: string;
+        function_selector: string;
+        parameter: string;
+        visible: boolean;
+        call_value?: number | undefined;
+    }) => {
+        const options = {
+            method: 'POST',
+            headers: { accept: 'application/json', 'content-type': 'application/json' },
+            body: JSON.stringify(body),
+        };
+
+        const result = await fetch(`${this.apiUrl}/wallet/triggerconstantcontract`, options);
+        const data = (await result.json()) as
+            | {
+                  result: {
+                      result: true;
+                      message?: string;
+                  };
+                  energy_used: number;
+              }
+            | {
+                  result: {
+                      code: string;
+                      message: string;
+                  };
+              };
+
+        if ('energy_used' in data) {
+            if (data.result.message) {
+                throw new SafeCallError(`Trigger constant contract error`, {
+                    apiResponse: data.result,
+                });
+            }
+
+            return data.energy_used;
+        }
+
+        throw new SafeCallError(`Trigger constant contract error`, {
             apiResponse: data.result,
         });
     };

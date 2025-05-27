@@ -9,7 +9,7 @@ import {
     setCoreOwner,
     setNitrogenOwner,
 } from '../scripts/ethereum';
-import { setupRouter } from '../scripts/ethereum/setRouter';
+import { setAgentLZGasLimits } from '../scripts/ethereum/setAgentLZGasLimits';
 
 import { setupOAppDVN } from '../scripts/ethereum/setupOAppDVN';
 import { setupUsdtOftDVN } from '../scripts/ethereum/setupUsdtOFTDVN';
@@ -49,29 +49,8 @@ ethereumSetupScope
     });
 
 ethereumSetupScope
-    .task('setupRouter', 'Add AgentRouter in Router')
-    .addParam('environment')
-    .addParam('minDepositValue')
-    .addParam('minRedeemShares')
-    .addParam('tokenName')
-    .setAction(async (taskArgs, hre) => {
-        console.log('Environment:', taskArgs.environment);
-        console.log('Network:', hre.network.name);
-
-        const environment = getEnvironment(hre, taskArgs.environment);
-        await setupRouter(
-            hre,
-            environment,
-            taskArgs.minDepositValue,
-            taskArgs.minRedeemShares,
-            taskArgs.tokenName,
-        );
-        console.log('Adding RouterAgent completed successfully.');
-    });
-
-ethereumSetupScope
     .task('setNitrogenOwner', 'Nitrogen set owner')
-    .addParam('environment', 'Set owner environment') // Required parameter for specifying the set script environment
+    .addParam('environment', 'Deployment environment') // Required parameter for specifying the set script environment
     .setAction(async (taskArgs, hre) => {
         console.log('Environment:', taskArgs.environment); // Log the selected migration environment
         console.log('Network:', hre.network.name); // Log the Hardhat network being used
@@ -93,7 +72,7 @@ ethereumSetupScope
 
 ethereumSetupScope
     .task('setCoreOwner', 'Core set owner')
-    .addParam('environment', 'Set owner environment') // Required parameter for specifying the set script environment
+    .addParam('environment', 'Deployment environment') // Required parameter for specifying the set script environment
     .setAction(async (taskArgs, hre) => {
         console.log('Environment:', taskArgs.environment); // Log the selected migration environment
         console.log('Network:', hre.network.name); // Log the Hardhat network being used
@@ -115,7 +94,7 @@ ethereumSetupScope
 
 ethereumSetupScope
     .task('setCarbonAccountantLZ', 'Carbon set accountantLZ')
-    .addParam('environment', 'Set accountantLZ environment') // Required parameter for specifying the set script environment
+    .addParam('environment', 'Deployment environment') // Required parameter for specifying the set script environment
     .setAction(async (taskArgs, hre) => {
         console.log('Environment:', taskArgs.environment); // Log the selected migration environment
         console.log('Network:', hre.network.name); // Log the Hardhat network being used
@@ -142,7 +121,7 @@ ethereumSetupScope
 
 ethereumSetupScope
     .task('setCarbonOwner', 'Carbon set owner')
-    .addParam('environment', 'Set owner environment') // Required parameter for specifying the set script environment
+    .addParam('environment', 'Deployment environment') // Required parameter for specifying the set script environment
     .setAction(async (taskArgs, hre) => {
         console.log('Environment:', taskArgs.environment); // Log the selected migration environment
         console.log('Network:', hre.network.name); // Log the Hardhat network being used
@@ -161,9 +140,10 @@ ethereumSetupScope
                 process.exit(1); // Exit with an error code to indicate failure
             });
     });
+
 ethereumSetupScope
     .task('setupCarbonDVN', 'Carbon OApp DVN config setup')
-    .addParam('environment', 'Set owner environment') // Required parameter for specifying the set script environment
+    .addParam('environment', 'Deployment environment') // Required parameter for specifying the set script environment
     .setAction(async (taskArgs, hre) => {
         console.log('Environment:', taskArgs.environment); // Log the selected migration environment
         console.log('Network:', hre.network.name); // Log the Hardhat network being used
@@ -185,7 +165,7 @@ ethereumSetupScope
 
 ethereumSetupScope
     .task('setupUsdtOftDVN', 'UsdtOFT OApp DVN config setup')
-    .addParam('environment', 'Set owner environment') // Required parameter for specifying the set script environment
+    .addParam('environment', 'Deployment environment') // Required parameter for specifying the set script environment
     .setAction(async (taskArgs, hre) => {
         console.log('Environment:', taskArgs.environment); // Log the selected migration environment
         console.log('Network:', hre.network.name); // Log the Hardhat network being used
@@ -197,6 +177,28 @@ ethereumSetupScope
         await setupUsdtOftDVN(hre, environment)
             .then(() => {
                 console.log('UsdtOFT DVN setup completed completed successfully.');
+            })
+            .catch(error => {
+                console.error('Set failed:', error.message);
+                console.error(error.stack); // Log full error stack trace for debugging
+                process.exit(1); // Exit with an error code to indicate failure
+            });
+    });
+
+ethereumSetupScope
+    .task('setupCarbonGasLimits', 'Setup AgentLZ Gas Limits for LZ cross-chain messaging')
+    .addParam('environment', 'Deployment environment') // Required parameter for specifying the set script environment
+    .setAction(async (taskArgs, hre) => {
+        console.log('Environment:', taskArgs.environment); // Log the selected migration environment
+        console.log('Network:', hre.network.name); // Log the Hardhat network being used
+
+        // Retrieve environment details using the helper function
+        const environment = getEnvironment(hre, taskArgs.environment);
+
+        // Execute the migration function with the retrieved parameters
+        await setAgentLZGasLimits(hre, environment)
+            .then(() => {
+                console.log('AgentLZ gasLimit setup completed completed successfully.');
             })
             .catch(error => {
                 console.error('Set failed:', error.message);

@@ -12,11 +12,12 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IlmUSD} from "./interfaces/IlmUSD.sol";
 import {RebaseERC20} from "../../common/rebase/RebaseERC20.sol";
 import {WMUSD} from "./wmUSD.sol";
+import {IdGenerator} from "../../common/IdGenerator.sol";
 
 /// @notice LMUSD allows users to lock their mUSD holdings for a fixed duration.
 // The duration works with an unlock period to unlock enhanced yield rates immediately.
 // The increased yield is funded by redistributing the yield forfeited by wmUSD holders.
-contract LMUSD is IlmUSD, ERC721Enumerable, Ownable2Step {
+contract LMUSD is IlmUSD, ERC721Enumerable, Ownable2Step, IdGenerator {
     using SafeCast for uint256;
     using SafeERC20 for RebaseERC20;
 
@@ -38,9 +39,6 @@ contract LMUSD is IlmUSD, ERC721Enumerable, Ownable2Step {
     /// @inheritdoc IlmUSD
     mapping(uint128 period => PeriodInfo) public periodInfos;
 
-    /// @dev Sequence number used to calculate the token ID.
-    uint256 private _seqno;
-
     /**
      * @dev Check whether the period exists.
      * @param period Lock period.
@@ -54,6 +52,8 @@ contract LMUSD is IlmUSD, ERC721Enumerable, Ownable2Step {
 
     /**
      * @dev Constructor for initializing the contract.
+     * @param name Token name.
+     * @param symbol Token symbol.
      * @param owner Smart contract owner address.
      * @param mUSDAddress mUSD rebase token address.
      * @param wmUSDAddress wmUSD token address.
@@ -106,7 +106,7 @@ contract LMUSD is IlmUSD, ERC721Enumerable, Ownable2Step {
         periodInfo.mUSDLockedShares += shares;
 
         // Generate the token ID.
-        uint256 tokenId = _generateTokenId();
+        uint256 tokenId = _generateId();
 
         // Mint `tokenID` for the sender.
         _mint(sender, tokenId);
@@ -160,7 +160,7 @@ contract LMUSD is IlmUSD, ERC721Enumerable, Ownable2Step {
 
         // Check whether the sender is the `tokenId`'s owner.
         if (_msgSender() != tokenOwner) {
-            revert EBadSender();
+            revert ENotAuthorized();
         }
 
         // Get the `tokenId`'s shares.
@@ -251,18 +251,6 @@ contract LMUSD is IlmUSD, ERC721Enumerable, Ownable2Step {
         });
 
         _periods.push(period);
-    }
-
-    /**
-     * @dev Generate a token ID.
-     * @return id Token ID.
-     */
-    function _generateTokenId() internal returns (uint256 id) {
-        unchecked {
-            ++_seqno;
-        }
-        bytes32 hash = keccak256(abi.encodePacked(address(this), block.chainid, _seqno));
-        return uint256(hash);
     }
 
     /// @inheritdoc IlmUSD

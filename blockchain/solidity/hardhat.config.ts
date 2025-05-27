@@ -48,7 +48,7 @@ const config: HardhatUserConfig = {
             },
         ],
         overrides: {
-            'contracts/common/UsdtOFT.sol': {
+            'contracts/solutions/Carbon/common/UsdtOFT.sol': {
                 version: '0.8.22',
                 settings: {
                     evmVersion: 'shanghai',

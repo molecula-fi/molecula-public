@@ -29,10 +29,10 @@ contract AccountantAgent is Ownable, IAccountant, IAgent, ZeroValueChecker {
     /// @dev Account address that can pause the `requestDeposit` and `requestRedeem` functions.
     address public guardian;
 
-    /// @dev Flag indicating whether the `requestDeposit` function is paused.
+    /// @dev Boolean flag indicating whether the `requestDeposit` function is paused.
     bool public isRequestDepositPaused;
 
-    /// @dev Flag indicating whether the `requestRedeem` function is paused.
+    /// @dev Boolean flag indicating whether the `requestRedeem` function is paused.
     bool public isRequestRedeemPaused;
 
     /// @dev Error: `msg.sender` is not authorized for some function.

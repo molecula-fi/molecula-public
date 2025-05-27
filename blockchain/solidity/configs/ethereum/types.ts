@@ -1,10 +1,14 @@
 import type { PoolData } from '@molecula-monorepo/blockchain.addresses';
 import type { EVMAddress } from '@molecula-monorepo/common.evm-utilities';
 
+/**
+ * Configuration parameters for a Ethereum-based network environment.
+ */
 export type EthereumNetworkConfig = {
     // LAYER ZERO
     LAYER_ZERO_ENDPOINT: EVMAddress;
     LAYER_ZERO_EXECUTOR: EVMAddress;
+    LAYER_ZERO_ETHEREUM_REQUIERED_DVNS: EVMAddress[];
     LAYER_ZERO_TRON_EID: number;
     LAYER_ZERO_ETHEREUM_EID: number;
     LAYER_ZERO_ARBITRUM_EID: number;
@@ -19,6 +23,9 @@ export type EthereumNetworkConfig = {
     USDC_ADDRESS: EVMAddress;
     USDE_ADDRESS: EVMAddress;
     SUSDE_ADDRESS: EVMAddress;
+    WETH_ADDRESS: EVMAddress;
+    AWETH_ADDRESS: EVMAddress;
+    CWETH_V3: EVMAddress;
 
     // Deploy params
     INITIAL_DAI_SUPPLY: bigint;
@@ -43,6 +50,8 @@ export type EthereumNetworkConfig = {
 
     AGENT_AUTHORIZED_LZ_CONFIGURATOR: EVMAddress;
 
+    AAVE_POOL: EVMAddress;
+    EIGEN_POD_MANAGER: EVMAddress;
     WMUSD_TOKEN_NAME: string;
     WMUSD_TOKEN_SYMBOL: string;
 

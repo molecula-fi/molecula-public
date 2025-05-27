@@ -1,10 +1,14 @@
 import type { TronAddress, EVMAddress } from '@molecula-monorepo/blockchain.addresses';
 
+/**
+ * Configuration parameters for a Tron-based network environment.
+ */
 export type TronNetworkConfig = {
     RPC_URL: string;
     // Layer zero
     LAYER_ZERO_TRON_ENDPOINT: TronAddress;
     LAYER_ZERO_TRON_EXECUTOR: EVMAddress;
+    LAYER_ZERO_TRON_REQUIERED_DVNS: EVMAddress[];
     LAYER_ZERO_ETHEREUM_EID: number;
     LAYER_ZERO_TRON_EID: number;
     LAYER_ZERO_ARBITRUM_EID: number;

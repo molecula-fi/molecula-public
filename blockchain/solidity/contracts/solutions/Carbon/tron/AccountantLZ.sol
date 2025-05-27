@@ -11,7 +11,7 @@ import {LZMsgCodec} from "../../../common/layerzero/LZMsgCodec.sol";
 import {OApp, Origin} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
 import {OptionsLZ, Ownable2Step, Ownable} from "../../../common/layerzero/OptionsLZ.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../../../common/UsdtOFT.sol";
+import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../common/UsdtOFT.sol";
 import {ZeroValueChecker} from "../../../common/ZeroValueChecker.sol";
 
 /// @title AccountantLZ - Accountant contract for handling LayerZero-based cross-chain transactions.
@@ -58,7 +58,7 @@ contract AccountantLZ is OApp, OptionsLZ, ZeroValueChecker, IAccountant {
     error EInsufficientBalance();
 
     /**
-     * @notice Initializes the contract and sets up the required addresses.
+     * @dev Initializes the contract and sets up the required addresses.
      * @param initialOwner Address of the contract owner.
      * @param authorizedLZConfiguratorAddress Address of the LayerZero configurator.
      * @param endpoint Address of the LayerZero endpoint contract.
@@ -265,34 +265,43 @@ contract AccountantLZ is OApp, OptionsLZ, ZeroValueChecker, IAccountant {
         uint256 value
     ) external payable onlyUnderlyingToken {
         if (value > 0) {
-            // Transfer USDT from the user to this contract, acting as the Accountant.
+            // Track the initial USDT balance to ensure accurate transfer calculations.
+            uint256 balanceBefore = USDT.balanceOf(address(this));
+
+            // Use `safeTransferFrom` to securely move the specified `value`
+            // of USDT from `user` to the current contract address.
             // slither-disable-next-line arbitrary-send-erc20
             USDT.safeTransferFrom(user, address(this), value);
+
+            // Recalculate the actual amount received by subtracting the previous balance from the new balance.
+            // This accounts for transfer fees or tokens with custom transfer logic.
+            value = USDT.balanceOf(address(this)) - balanceBefore;
 
             // Approve the transferred USDT for spending by the UsdtOFT contract.
             USDT.forceApprove(address(USDT_OFT), value);
 
+            // Get the recipient on the destination chain.
             bytes32 agent = _getPeerOrRevert(DST_EID);
 
             // Prepare structured parameters for sending USDT cross-chain via UsdtOFT.
             SendParam memory sendParam = SendParam({
                 dstEid: DST_EID, // Ethereum endpoint ID: LayerZero destination chain.
                 to: agent, // Recipient on Ethereum, converted to bytes32.
-                amountLD: value, // Amount to transfer
+                amountLD: value, // Amount of USDT being sent.
                 minAmountLD: (value - ((value * USDT_OFT.feeBps()) / USDT_OFT.BPS_DENOMINATOR())), // Minimum acceptable amount after fees.
                 extraOptions: "", // No extra options provided.
                 composeMsg: "", // No additional message composition needed.
                 oftCmd: "" // No special OFT command required.
             });
 
-            // Quote the amount received on the destination chain after OFT processing.
+            // Quote the amount received on the destination chain after the OFT processing.
             // slither-disable-next-line unused-return, solhint-disable-next-line check-send-result
             (, , OFTReceipt memory oftReceipt) = USDT_OFT.quoteOFT(sendParam);
 
             // Quote the gas fee required for sending USDT via UsdtOFT.
             MessagingFee memory usdtFee = USDT_OFT.quoteSend(sendParam, false);
 
-            // Retrieve LayerZero messaging options specific to a deposit request.
+            // Retrieve the LayerZero messaging options specific to a deposit request.
             bytes memory lzOptions = getLzOptions(LZMsgCodec.REQUEST_DEPOSIT, 0);
 
             // Encode the LayerZero payload to include the request ID and the received amount after fees.

@@ -7,21 +7,14 @@
         "compile": {
             "dependsOn": ["transitNode"]
         },
+        "docs:generate": {},
         "eslint:check": {},
         "eslint:fix": {},
         "//#eslint:fix": {},
         "gql:generate": {
             "cache": false
         },
-        "//#natspec:check": {
-            "inputs": [
-                "./blockchain/solidity/contracts/**",
-                "!./blockchain/solidity/contracts/mock/**",
-                "!./blockchain/solidity/contracts/test/**",
-                "!./blockchain/solidity/contracts/common/UsdtOFT.sol",
-                "!./blockchain/solidity/contracts/common/interfaces/IUsdtOFT.sol"
-            ]
-        },
+        "lintspec:check": {},
         "prettier:check": {},
         "prettier:fix": {},
         "//#prettier:fix": {},
@@ -80,6 +73,8 @@
         "AMLBOT_ACCESS_ID",
         "AMLBOT_ACCESS_KEY",
         "AMLBOT_PATH",
+        "AMLBOT_RISK_SCORE_THRESHOLD",
+        "AMLBOT_HIGH_SIGNAL_THRESHOLD",
         "POOL_SERVICE_AUTHORIZED_REDEEMER",
         "NITROGEN_CONFIRMER_KEY",
         "CARBON_ORACLE_AUTHORIZED_UPDATER",
@@ -92,6 +87,7 @@
         "INFO_SERVICE_DB_PASS",
         "POOL_SERVICE_DB_PASS",
         "ATOMS_SERVICE_DB_PASS",
+        "SUBGRAPHS_SERVICE_DB_PASS",
         "ENV_NAME",
         "NETWORK",
         "ALCHEMY_API_KEY",
@@ -121,7 +117,9 @@
         "MAVA_WIDGET_TOKEN",
         "API_TESTS_AUTH_TOKEN",
         "API_TESTS_TARGET",
-        "usdtContractAccount"
+        "usdtContractAccount",
+        "npm_package_version",
+        "CI_COMMIT_TAG"
     ],
     "globalDependencies": [".env"]
 }

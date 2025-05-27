@@ -18,7 +18,7 @@ export async function deployNitrogenV2Common(token: string) {
     const poolOwner = signers.at(0)!;
     const rebaseTokenOwner = signers.at(1)!;
     const user0 = await generateRandomWallet();
-    const user1 = signers.at(3)!;
+    const user1 = await generateRandomWallet();
     const caller = signers.at(4)!;
     const malicious = signers.at(5)!;
     const controller = signers.at(6)!;
@@ -278,7 +278,7 @@ export async function initNitrogenAndRequestDeposit() {
     };
 }
 
-export async function deployNitrogenV11WithRouter() {
+export async function deployNitrogenV11WithTokenVault() {
     const nitrogen = await deployNitrogenV2Common(ethMainnetBetaConfig.USDT_ADDRESS);
     const signers = await ethers.getSigners();
     const user2 = signers.at(10)!;
@@ -287,40 +287,49 @@ export async function deployNitrogenV11WithRouter() {
     const USDC = await ethers.getContractAt('IERC20Metadata', ethMainnetBetaConfig.USDC_ADDRESS);
     const DAI = await ethers.getContractAt('IERC20Metadata', ethMainnetBetaConfig.DAI_ADDRESS);
 
-    // deploy router
-    const Router = await ethers.getContractFactory('Router');
-    const router = await Router.connect(nitrogen.poolOwner).deploy(
+    // deploy RebaseTokenOwner
+    const RebaseTokenOwner = await ethers.getContractFactory('RebaseTokenOwner');
+    const rebaseTokenOwner = await RebaseTokenOwner.connect(nitrogen.poolOwner).deploy(
         nitrogen.poolOwner,
         nitrogen.rebaseToken,
         nitrogen.guardian,
     );
 
-    // deploy router agent
-    const Agent = await ethers.getContractFactory('RouterAgent');
-    const routerAgent = await Agent.connect(nitrogen.poolOwner).deploy(
+    // deploy TokenVault
+    const TokenVault = await ethers.getContractFactory('NitrogenTokenVault');
+    const tokenUSDCVault = await TokenVault.connect(nitrogen.poolOwner).deploy(
         nitrogen.poolOwner,
-        router,
+        // Share. Note: it's not er20 token, but it should be! See  https://eips.ethereum.org/EIPS/eip-7575
+        nitrogen.rebaseToken,
         nitrogen.supplyManager,
+        rebaseTokenOwner,
+        nitrogen.guardian,
     );
 
-    // set USDC in agent
-    await routerAgent.setErc20Token(USDC);
+    // init tokenUSDCVault
+    await tokenUSDCVault.init(
+        USDC, // asset
+        10n ** 6n, // minDepositValue
+        10n ** 18n, // minRedeemShares
+    );
 
-    // Add routerAgent to supplyManager
-    await nitrogen.supplyManager.connect(nitrogen.poolOwner).setAgent(routerAgent, true);
+    // Add tokenUSDCVault to supplyManager
+    await nitrogen.supplyManager.connect(nitrogen.poolOwner).setAgent(tokenUSDCVault, true);
 
-    // Add routerAgent to router
-    const codeHash = keccak256((await routerAgent.getDeployedCode())!);
-    await router.setAgentCodeHashInWhiteList(codeHash, true);
-    await router.addAgent(routerAgent.getAddress(), false, false, 10n ** 6n, 10n ** 18n);
+    // Add tokenUSDCVault to RebaseTokenOwner
+    const codeHash = keccak256((await tokenUSDCVault.getDeployedCode())!);
+    await rebaseTokenOwner.setCodeHash(codeHash, true);
+    await rebaseTokenOwner.addTokenVault(tokenUSDCVault.getAddress());
 
-    // Set router as owner of rebaseToken
-    await nitrogen.rebaseToken.connect(nitrogen.rebaseTokenOwner).transferOwnership(router);
+    // Set rebaseTokenOwner as owner of rebaseToken
+    await nitrogen.rebaseToken
+        .connect(nitrogen.rebaseTokenOwner)
+        .transferOwnership(rebaseTokenOwner);
 
     return {
         ...nitrogen,
-        routerAgent,
-        router,
+        tokenUSDCVault,
+        rebaseTokenOwner,
         USDC,
         DAI,
         user2,

@@ -1,7 +1,11 @@
 import type { HardhatRuntimeEnvironment } from 'hardhat/types';
 import type { TronWeb, Contract as TronContract } from 'tronweb';
 
-import { CONFIG_TYPE_EXECUTOR, CONFIG_TYPE_ULN, perChainConfig } from './lzSetupUtils';
+import {
+    CONFIG_TYPE_EXECUTOR,
+    CONFIG_TYPE_ULN,
+    layerZeroDVNConfigs,
+} from '../../configs/layerzero/omniConfig';
 
 export const REQUEST_DEPOSIT = '0x01';
 export const CONFIRM_DEPOSIT = '0x02';
@@ -48,7 +52,7 @@ export async function setReceiveConfig(
     oappAddress: string,
     receiveLibAddress: string,
 ) {
-    const config = perChainConfig[remoteEid];
+    const config = layerZeroDVNConfigs[remoteEid];
     if (!config) {
         throw new Error(`No config found for remoteEid ${remoteEid}`);
     }
@@ -59,7 +63,7 @@ export async function setReceiveConfig(
     // @ts-ignore
     const encodedUlnConfig = tronWeb.utils.abi.encodeParams(
         [configTypeUlnStruct],
-        [config.ulnConfig],
+        [config.receiveLibrary.ulnConfig],
     );
     console.log('encodedUlnConfig', encodedUlnConfig);
     // Define the SetConfigParam
@@ -88,7 +92,7 @@ export async function setSendConfig(
     oappAddress: string,
     sendLibAddress: string,
 ) {
-    const config = perChainConfig[remoteEid];
+    const config = layerZeroDVNConfigs[remoteEid];
     if (!config) {
         throw new Error(`No config found for remoteEid ${remoteEid}`);
     }
@@ -99,7 +103,7 @@ export async function setSendConfig(
     // @ts-ignore
     const encodedUlnConfig = tronWeb.utils.abi.encodeParams(
         [configTypeUlnStruct],
-        [config.ulnConfig],
+        [config.sendLibrary.ulnConfig],
     );
 
     // Encode ExecutorConfig using defaultAbiCoder

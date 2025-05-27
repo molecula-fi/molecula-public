@@ -1,0 +1,108 @@
+// SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.28;
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+import {IERC7575Share} from "../common/external/interfaces/IERC7575.sol";
+import {IVaultContainer} from "./interfaces/IVaultContainer.sol";
+
+/// @title Vault Container.
+/// @notice Abstract contract for managing token Vaults and their assets.
+/// @dev Implements the Vault management functionality with allowlisting and validation.
+abstract contract VaultContainer is IVaultContainer, IERC7575Share, Ownable {
+    // ============ State Variables ============
+
+    /// @inheritdoc IERC7575Share
+    mapping(address asset => address) public vault;
+
+    /// @inheritdoc IVaultContainer
+    mapping(address tokenVault => bool isValid) public isTokenVaultAllowed;
+
+    /// @inheritdoc IVaultContainer
+    mapping(bytes32 codeHash => bool isValid) public codeHashWhiteList;
+
+    /// @dev Ensures the caller is an allowed token Vault.
+    modifier onlyTokenVault() {
+        if (!isTokenVaultAllowed[msg.sender]) {
+            revert TokenVaultNotAllowed();
+        }
+        _;
+    }
+
+    // ============ View Functions ============
+
+    /// @inheritdoc IVaultContainer
+    function validateTokenVault(address addr) external view virtual override {
+        if (!isTokenVaultAllowed[addr]) {
+            revert TokenVaultNotAllowed();
+        }
+    }
+
+    // ============ Internal Functions ============
+
+    /// @dev Gets the underlying asset address for a token Vault.
+    /// @param tokenVault Token Vault's address.
+    /// @return asset Underlying asset's address.
+    function _getAsset(address tokenVault) internal view virtual returns (address asset);
+
+    /// @dev Hook called when a token Vault is added.
+    /// @param tokenVault Address of the Token Vault being added.
+    function _onAddTokenVault(address tokenVault) internal virtual;
+
+    /// @dev Hook called when a token Vault is removed.
+    /// @param tokenVault Address of the token Vault being removed.
+    function _onRemoveTokenVault(address tokenVault) internal virtual;
+
+    // ============ Admin Functions ============
+
+    /// @inheritdoc IVaultContainer
+    function addTokenVault(address tokenVault) external virtual override onlyOwner {
+        // Validate the token Vault code hash.
+        if (!codeHashWhiteList[tokenVault.codehash]) {
+            revert CodeHashNotInWhiteList();
+        }
+
+        // Get and validate the underlying asset.
+        address asset = _getAsset(tokenVault);
+        if (asset == address(0)) {
+            revert ETokenVaultNotInit();
+        }
+
+        // Check the existing Vault.
+        if (vault[asset] != address(0)) {
+            revert EHasTokenVaultForAsset();
+        }
+
+        // Register the token Vault.
+        isTokenVaultAllowed[tokenVault] = true;
+        _onAddTokenVault(tokenVault);
+    }
+
+    /// @inheritdoc IVaultContainer
+    function removeTokenVault(address tokenVault) external virtual override onlyOwner {
+        // Validate whether the token Vault exists.
+        if (!isTokenVaultAllowed[tokenVault]) {
+            revert ENoTokenVault();
+        }
+
+        // Clean up the Vault mappings.
+        address asset = _getAsset(tokenVault);
+        delete vault[asset];
+        delete isTokenVaultAllowed[tokenVault];
+
+        // Notify about removal.
+        _onRemoveTokenVault(tokenVault);
+    }
+
+    /// @inheritdoc IVaultContainer
+    function setCodeHash(bytes32 codeHash, bool isValid) external virtual override onlyOwner {
+        // Prevent redundant updates.
+        if (codeHashWhiteList[codeHash] == isValid) {
+            revert EAlreadySetStatus();
+        }
+
+        // Update the allowlist status.
+        codeHashWhiteList[codeHash] = isValid;
+    }
+}

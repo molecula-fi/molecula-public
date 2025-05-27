@@ -9,7 +9,6 @@ import {
     deployMoleculaPoolTreasury,
     deployNitrogen,
 } from '../scripts/ethereum';
-import { deployRouter, deployRouterAgent } from '../scripts/ethereum/deploy/deployRouter';
 import { deploywmUSDlmUSD } from '../scripts/ethereum/deploy/deploywmUSDlmUSD';
 import {
     getEnvironment,
@@ -120,24 +119,6 @@ ethereumMajorScope
         } catch (error) {
             handleError(error);
         }
-    });
-
-ethereumMajorScope
-    .task('deployRouter', 'Deploys Router')
-    .addParam('environment', 'Deployment environment')
-    .setAction(async (taskArgs, hre) => {
-        console.log('Environment:', taskArgs.environment);
-        console.log('Network:', hre.network.name);
-
-        const environment = getEnvironment(hre, taskArgs.environment);
-        const contractsNitrogen: ContractsNitrogen = await readFromFile(
-            `${environment}/contracts_nitrogen.json`,
-        );
-
-        contractsNitrogen.eth.router = await deployRouter(hre, environment, contractsNitrogen);
-
-        writeToFile(`${environment}/contracts_nitrogen.json`, contractsNitrogen);
-        console.log('Deployment and file write completed successfully.');
     });
 
 ethereumMajorScope

@@ -17,6 +17,9 @@ export const sepoliaConfig: EthereumNetworkConfig = {
      */
     LAYER_ZERO_ENDPOINT: '0x6EDCE65403992e310A62460808c4b910D972f10f',
     LAYER_ZERO_EXECUTOR: '0x718B92b5CB0a5552039B593faF724D182A881eDA',
+    LAYER_ZERO_ETHEREUM_REQUIERED_DVNS: [
+        '0x8eebf8b423b73bfca51a1db4b7354aa0bfca9193', // LayerZero Labs DVN address
+    ],
 
     /** SHASTA EID. */
     LAYER_ZERO_TRON_EID: 40420,
@@ -47,6 +50,15 @@ export const sepoliaConfig: EthereumNetworkConfig = {
 
     /** Staked USDe (sUSDe) token address on Ethereum Sepolia. */
     SUSDE_ADDRESS: evmStaticTokenAddresses.sUSDe[EVMChainIDs.Sepolia],
+
+    /** Wrapped ETH (WETH) token address on Ethereum Sepolia. */
+    WETH_ADDRESS: '0xC558DBdd856501FCd9aaF1E62eae57A9F0629a3c',
+
+    /** AAVE Token for WETH (AToken) token address on Ethereum Sepolia. */
+    AWETH_ADDRESS: '0x88541670E55cC00bEEFD87eB59EDd1b7C511AC9a',
+
+    /** Compound Token for WETH (cWETHv3) token address on Ethereum Sepolia. */
+    CWETH_V3: '0x2943ac1216979aD8dB76D9147F64E61adc126e96',
 
     /**  DAI token address on Ethereum Sepolia. */
     DAI_ADDRESS: evmStaticTokenAddresses.DAI[EVMChainIDs.Sepolia],
@@ -94,6 +106,11 @@ export const sepoliaConfig: EthereumNetworkConfig = {
     AGENT_AUTHORIZED_LZ_CONFIGURATOR:
         evmAuthorizedAddresses.AGENT_AUTHORIZED_LZ_CONFIGURATOR[EVMChainIDs.Sepolia],
 
+    /** AAVE v3 Pool Address. */
+    AAVE_POOL: '0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951',
+
+    /** EigenPodManager contract address. */
+    EIGEN_POD_MANAGER: '0x2E3D6c0744b10eb0A4e6F679F71554a39Ec47a5D',
     WMUSD_TOKEN_NAME: 'Wrapped mUSD test',
     WMUSD_TOKEN_SYMBOL: 'wmUSDt',
 

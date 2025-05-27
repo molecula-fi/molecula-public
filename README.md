@@ -42,6 +42,7 @@ git clone git@github.com:molecula-io/molecula-public.git --recurse-submodules
 ```sh
 yarn install
 python3 -m pip install slither-analyzer
+cargo install lintspec
 ```
 
 -   To read the sensitive data you will need to run the following command:

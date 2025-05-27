@@ -13,6 +13,14 @@
             "path": "backend",
         },
         {
+            "name": "⚙️ Backend-Nest",
+            "path": "backend-nest",
+        },
+        {
+            "name": "⚙️ Backend-Nest-Packages",
+            "path": "backend-nest/packages",
+        },
+        {
             "name": "✨ molecula.io",
             "path": "frontend/website",
         },

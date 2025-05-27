@@ -13,7 +13,7 @@
     },
     "main": "src/index.ts",
     "dependencies": {
-        "@ethereumjs/util": "^9.0.0",
+        "@ethereumjs/util": "^9.1.0",
         "@molecula-monorepo/common.utilities": "*",
         "ethers": "^6.13.5",
         "siwe": "^2.3.2"

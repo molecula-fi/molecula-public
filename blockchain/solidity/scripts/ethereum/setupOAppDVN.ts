@@ -1,5 +1,3 @@
-// "setup:dvn:production": "dotenv  -e .env.production hardhat run scripts/ethereum/setupSepoliaOAppDVN.ts --network sepolia",
-// "setup:dvn:test": "                                 hardhat run scripts/ethereum/setupSepoliaOAppDVN.ts --network sepolia",
 import type { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 import type { ContractsCarbon, EnvironmentType } from '@molecula-monorepo/blockchain.addresses';

@@ -19,6 +19,7 @@ fs_permissions = [
 remappings = [
     "@openzeppelin/=node_modules/@openzeppelin/", 
     "@layerzerolabs/=node_modules/@layerzerolabs/",
+    "@aave/=node_modules/@aave/",
     "solidity-bytes-utils/=node_modules/solidity-bytes-utils/"
 ]
 

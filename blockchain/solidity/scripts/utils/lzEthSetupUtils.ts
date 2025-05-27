@@ -2,23 +2,55 @@ import type { AddressLike } from 'ethers';
 import type { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { TronWeb } from 'tronweb';
 
+import {
+    CONFIG_TYPE_EXECUTOR,
+    CONFIG_TYPE_ULN,
+    layerZeroDVNConfigs,
+} from '../../configs/layerzero/omniConfig';
 import type { ILayerZeroEndpointV2 } from '../../typechain-types/@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2';
 
-import { CONFIG_TYPE_EXECUTOR, CONFIG_TYPE_ULN, perChainConfig } from './lzSetupUtils';
-
+/**
+ * Sets the peer OAPP contract for cross-chain messaging on a source OAPP core contract.
+ *
+ * This function:
+ * 1. Loads the IOAppCore contract at the given source address.
+ * 2. Converts the peer’s Tron address into a 32-byte value (as required by the contract).
+ * 3. Estimates gas for the `setPeer` call and applies a 20% buffer.
+ * 4. Sends the transaction and waits for one confirmation.
+ *
+ * @param hre - The Hardhat runtime environment, for ethers and utilities.
+ * @param sourceOAppAddress - The on-chain address of your local IOAppCore contract.
+ * @param remoteEid - The LayerZero endpoint identifier (EID) of the remote chain.
+ * @param peerOAppAddress - The address of the peer OAPP contract on the remote chain (Tron format).
+ *
+ * @throws If gas estimation or the transaction itself reverts.
+ */
 export async function setPeer(
     hre: HardhatRuntimeEnvironment,
     sourceOAppAddress: AddressLike,
     remoteEid: number,
     peerOAppAddress: AddressLike,
 ) {
+    // 1) Attach to the IOAppCore contract at the source address
     const sourceContract = await hre.ethers.getContractAt('IOAppCore', sourceOAppAddress as string);
+    // 2) Convert the peer’s Tron address to a 32-byte hex value:
+    //    - TronWeb.address.toHex() returns "41" + 20-byte hex; replace leading "41" with "0x"
+    //    - zeroPadValue pads/truncates to exactly 32 bytes for Solidity
     const addressInBytes32 = hre.ethers.zeroPadValue(
         TronWeb.address.toHex(peerOAppAddress as string).replace(/^(41)/, '0x') as string,
         32,
     );
-    const response = await sourceContract.setPeer(remoteEid, addressInBytes32);
-    await response.wait();
+    // 3) Estimate gas for setPeer(remoteEid, addressInBytes32) (throws if it would revert)
+    const rawEstimate = await sourceContract.setPeer.estimateGas(remoteEid, addressInBytes32);
+    //    Add a 20% buffer to the estimate to avoid out-of-gas
+    const gasLimit = (rawEstimate * 120n) / 100n;
+
+    // 4) Send the transaction with our buffered gas limit
+    const tx = await sourceContract.setPeer(remoteEid, addressInBytes32, { gasLimit });
+    console.log('Transaction sent:', tx.hash);
+
+    // 5) Wait for one block confirmation (will throw if reverted)
+    await tx.wait();
     console.log(`\tSet peer for the contract ${peerOAppAddress}.`);
 }
 
@@ -53,7 +85,24 @@ export async function setEnforcedOptions(
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+/**
+ * Sets the “receiveUln302” configuration on a LayerZero endpoint by encoding and submitting
+ * ULN (Ultra Light Node) parameters for a given remote chain.
+ *
+ * This function:
+ * 1. Retrieves the pre-configured receiveLib ULN settings for the target chain (remoteEid).
+ * 2. Encodes receiveUln302 config into the LayerZero‐expected tuple formats.
+ * 3. Estimates gas for the `setConfig` call (and buffers it by +20%).
+ * 4. Submits the transaction and waits for one confirmation.
+ *
+ * @param hre - The Hardhat runtime environment.
+ * @param lzEndpoint - The `ILayerZeroEndpointV2` contract instance to call `setConfig` on.
+ * @param remoteEid - The LayerZero Endpoint Identifier of the remote chain to configure.
+ * @param oappAddress - The address of the “OAPP” on the local chain.
+ * @param sendLibAddress - The address of the receiveUln302 library contract.
+ *
+ * @throws If there is no matching config for `remoteEid`, or if the transaction reverts.
+ */
 export async function setReceiveConfig(
     hre: HardhatRuntimeEnvironment,
     lzEndpoint: ILayerZeroEndpointV2,
@@ -61,34 +110,44 @@ export async function setReceiveConfig(
     oappAddress: string,
     receiveLibAddress: string,
 ) {
-    // Create ABI coder
+    // 1) Prepare the ABI coder for tuple encoding
     const abiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
-    const config = perChainConfig[remoteEid];
+    // 2) Fetch pre-defined configs for this remoteEid
+    const config = layerZeroDVNConfigs[remoteEid];
     if (!config) {
         throw new Error(`No config found for remoteEid ${remoteEid}`);
     }
 
-    // Encode UlnConfig using defaultAbiCoder
+    // 3) Define the tuple types for ULN and Executor
     const configTypeUlnStruct =
         'tuple(uint64 confirmations, uint8 requiredDVNCount, uint8 optionalDVNCount, uint8 optionalDVNThreshold, address[] requiredDVNs, address[] optionalDVNs)';
-    const encodedUlnConfig = abiCoder.encode([configTypeUlnStruct], [config.ulnConfig]);
 
-    // Define the SetConfigParam struct
+    // 4) ABI-encode the ULN and Executor configs
+    const encodedUlnConfig = abiCoder.encode(
+        [configTypeUlnStruct],
+        [config.receiveLibrary.ulnConfig],
+    );
+
+    // 5) Build the SetConfigParam structs for LayerZero’s `setConfig` call
     const setConfigParamUln = {
         eid: remoteEid,
-        configType: 2, // RECEIVE_CONFIG_TYPE
+        configType: CONFIG_TYPE_ULN,
         config: encodedUlnConfig,
     };
 
-    // Send the transaction
+    // 6) Send the transaction
     try {
-        const tx = await lzEndpoint.setConfig(
-            oappAddress,
-            receiveLibAddress,
-            [setConfigParamUln], // This should be an array of SetConfigParam structs
-        );
-
+        // Estimate gas (this will throw if the call would revert) and add a small buffer (e.g. +20%).
+        const rawEstimate = await lzEndpoint.setConfig.estimateGas(oappAddress, receiveLibAddress, [
+            setConfigParamUln,
+        ]);
+        const gasLimit = (rawEstimate * 120n) / 100n;
+        // Send the transaction with the estimated gas limit
+        const tx = await lzEndpoint.setConfig(oappAddress, receiveLibAddress, [setConfigParamUln], {
+            gasLimit,
+        });
         console.log('Transaction sent:', tx.hash);
+        // Wait for confirmation
         await tx.wait();
         console.log('Transaction confirmed!');
     } catch (error) {
@@ -96,7 +155,24 @@ export async function setReceiveConfig(
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+/**
+ * Sets the “sendUln302” configuration on a LayerZero endpoint by encoding and submitting
+ * both ULN (Ultra Light Node) and Executor parameters for a given remote chain.
+ *
+ * This function:
+ * 1. Retrieves the pre-configured ULN & Executor settings for the target chain (remoteEid).
+ * 2. Encodes both configs into the LayerZero‐expected tuple formats.
+ * 3. Estimates gas for the `setConfig` call (and buffers it by +20%).
+ * 4. Submits the transaction and waits for one confirmation.
+ *
+ * @param hre - The Hardhat runtime environment.
+ * @param lzEndpoint - The `ILayerZeroEndpointV2` contract instance to call `setConfig` on.
+ * @param remoteEid - The LayerZero Endpoint Identifier of the remote chain to configure.
+ * @param oappAddress - The address of the “OAPP” on the local chain.
+ * @param sendLibAddress - The address of the sendUln302 library contract.
+ *
+ * @throws If there is no matching config for `remoteEid`, or if the transaction reverts.
+ */
 export async function setSendConfig(
     hre: HardhatRuntimeEnvironment,
     lzEndpoint: ILayerZeroEndpointV2,
@@ -104,27 +180,27 @@ export async function setSendConfig(
     oappAddress: string,
     sendLibAddress: string,
 ) {
-    // Create ABI coder
+    // 1) Prepare the ABI coder for tuple encoding
     const abiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
-
-    const config = perChainConfig[remoteEid];
+    // 2) Fetch pre-defined configs for this remoteEid
+    const config = layerZeroDVNConfigs[remoteEid];
     if (!config) {
         throw new Error(`No config found for remoteEid ${remoteEid}`);
     }
 
-    // Encode UlnConfig using defaultAbiCoder
+    // 3) Define the tuple types for ULN and Executor
     const configTypeUlnStruct =
         'tuple(uint64 confirmations, uint8 requiredDVNCount, uint8 optionalDVNCount, uint8 optionalDVNThreshold, address[] requiredDVNs, address[] optionalDVNs)';
-    const encodedUlnConfig = abiCoder.encode([configTypeUlnStruct], [config.ulnConfig]);
-
-    // Encode ExecutorConfig using defaultAbiCoder
     const configTypeExecutorStruct = 'tuple(uint32 maxMessageSize, address executorAddress)';
+
+    // 4) ABI-encode the ULN and Executor configs
+    const encodedUlnConfig = abiCoder.encode([configTypeUlnStruct], [config.sendLibrary.ulnConfig]);
     const encodedExecutorConfig = abiCoder.encode(
         [configTypeExecutorStruct],
         [config.executorConfig],
     );
 
-    // Define the SetConfigParam structs
+    // 5) Build the SetConfigParam structs for LayerZero’s `setConfig` call
     const setConfigParamUln = {
         eid: remoteEid,
         configType: CONFIG_TYPE_ULN, // ULN_CONFIG_TYPE
@@ -137,15 +213,25 @@ export async function setSendConfig(
         config: encodedExecutorConfig,
     };
 
-    // Send the transaction
+    // 6) Send the transaction
     try {
+        // Estimate gas (this will throw if the call would revert) and add a small buffer (e.g. +20%).
+        const rawEstimate = await lzEndpoint.setConfig.estimateGas(oappAddress, sendLibAddress, [
+            setConfigParamUln,
+            setConfigParamExecutor,
+        ]);
+        const gasLimit = (rawEstimate * 120n) / 100n;
+        // Send the transaction with the estimated gas limit
         const tx = await lzEndpoint.setConfig(
             oappAddress,
             sendLibAddress,
             [setConfigParamUln, setConfigParamExecutor], // Array of SetConfigParam structs
+            {
+                gasLimit,
+            },
         );
-
         console.log('Transaction sent:', tx.hash);
+        // Wait for confirmation
         await tx.wait();
         console.log('Transaction confirmed!');
     } catch (error) {

@@ -4,7 +4,8 @@ pragma solidity ^0.8.23; // Make files compatible between the solutions.
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./rebase/RebaseERC20.sol";
+import {RebaseERC20} from "./rebase/RebaseERC20.sol";
+import {IdGenerator} from "./IdGenerator.sol";
 
 enum LockState {
     NotExist,
@@ -12,20 +13,21 @@ enum LockState {
     NotActive
 }
 
+/// @dev Lock information.
+/// @param user  User address.
+/// @param shares Locked shares.
+/// @param state Lock status.
 struct LockInfo {
     address user;
     uint256 shares;
     LockState state;
 }
 
-contract MUSDLock {
+contract MUSDLock is IdGenerator {
     using SafeERC20 for RebaseERC20;
 
     /// @dev Address of the mUSD token.
     RebaseERC20 private immutable _MUSD;
-
-    /// @dev Nonce that is used for generating the lock ID.
-    uint256 private _nonce;
 
     /// @dev Mapping that associates a unique `lockId` with its corresponding `LockInfo` details.
     mapping(bytes32 lockId => LockInfo) public locks;
@@ -59,6 +61,7 @@ contract MUSDLock {
     /// @dev An error to throw when having the wrong sender.
     error EWrongSender();
 
+    /// @dev Constructor for initializing the contract.
     /// @param mUSD_ Address of the rebase tokens (mUSD).
     constructor(RebaseERC20 mUSD_) {
         _MUSD = mUSD_;
@@ -71,14 +74,6 @@ contract MUSDLock {
      */
     function getLockIds(address user) external view returns (bytes32[] memory) {
         return lockIds[user];
-    }
-
-    /**
-     * @dev Generate a lock ID.
-     * @return id Lock ID.
-     */
-    function _generateLockId() internal returns (bytes32 id) {
-        return keccak256(abi.encodePacked(block.prevrandao, _nonce++));
     }
 
     /**
@@ -95,7 +90,7 @@ contract MUSDLock {
             revert ETooSmallValue();
         }
 
-        lockId = _generateLockId();
+        lockId = bytes32(_generateId());
 
         locks[lockId] = LockInfo({user: msg.sender, shares: shares, state: LockState.Active});
         lockIds[msg.sender].push(lockId);
