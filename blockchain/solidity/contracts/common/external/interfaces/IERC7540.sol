@@ -15,7 +15,7 @@ interface IERC7540Operator {
     /// @param controller Controller's address.
     /// @param operator Operator's address
     /// @param approved Approval status.
-    event OperatorSet(address indexed controller, address indexed operator, bool approved);
+    event OperatorSet(address indexed controller, address indexed operator, bool indexed approved);
 
     // ============ Core Functions ============
 
@@ -132,7 +132,7 @@ interface IERC7540Redeem {
 
     // ============ Core Functions ============
 
-    /// @dev Transfers the sender's shares to the Vault and requests an asynchronous redemption.
+    /// @dev Requests an asynchronous redemption.
     /// @param shares Amount of shares to be redeemed.
     /// @param controller Request's controller.
     /// @param owner Source of the shares.

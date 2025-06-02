@@ -11,3 +11,27 @@
 ./lib
 ./test
 ./node_modules
+
+# Test contracts and mock
+./contracts/test/UsdtTron.sol
+./contracts/test/UsdtEthereum.sol
+./contracts/mock
+./contracts/test
+
+# Ignore verified contracts
+./contracts/common/interfaces/IAgent.sol
+./contracts/common/interfaces/IRebaseERC20.sol
+./contracts/common/interfaces/IRebaseTokenEvents.sol
+./contracts/common/interfaces/ISupplyManager.sol
+./contracts/common/rebase/
+./contracts/core/MoleculaPool.sol
+./contracts/core/MoleculaPoolTreasury.sol
+./contracts/core/SupplyManager.sol
+./contracts/core/extensions/mUSDe.sol
+./contracts/solutions/Carbon/tron/TronOracle.sol
+./contracts/solutions/Nitrogen/AccountantAgent.sol
+./contracts/solutions/Nitrogen/AgentAccountant.sol
+./contracts/solutions/Nitrogen/interfaces/IRebaseTokenOwner.sol
+./contracts/common/interfaces/IERC20Basic.sol
+./contracts/common/interfaces/IMoleculaPool.sol
+./contracts/common/ZeroValueChecker.sol

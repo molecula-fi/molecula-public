@@ -6,22 +6,6 @@ pragma solidity ^0.8.23;
 /// @notice Interface for managing token vaults and their validation.
 /// @dev Defines core functions for Vault container operations.
 interface IVaultContainer {
-    // ============ View Functions ============
-
-    /// @dev Checks whether a token Vault is allowed.
-    /// @param tokenVault Address of the token Vault to check.
-    /// @return Boolean flag indicating whether the token Vault is allowed.
-    function isTokenVaultAllowed(address tokenVault) external view returns (bool);
-
-    /// @dev Checks whether a code hash is in the allowlist.
-    /// @param codeHash Hash of the code to check.
-    /// @return Boolean flag indicating whether the code hash is allowlisted.
-    function codeHashWhiteList(bytes32 codeHash) external view returns (bool);
-
-    /// @dev Validates a token Vault address.
-    /// @param addr Address of the token Vault to validate.
-    function validateTokenVault(address addr) external view;
-
     // ============ Errors ============
 
     /// @dev Thrown when the token Vault is not initialized.
@@ -56,4 +40,20 @@ interface IVaultContainer {
     /// @param codeHash Hash of the code to update.
     /// @param isValid Boolean flag indicating whether the code hash must be considered valid.
     function setCodeHash(bytes32 codeHash, bool isValid) external;
+
+    // ============ View Functions ============
+
+    /// @dev Checks whether a token Vault is allowed.
+    /// @param tokenVault Address of the token Vault to check.
+    /// @return Boolean flag indicating whether the token Vault is allowed.
+    function isTokenVaultAllowed(address tokenVault) external view returns (bool);
+
+    /// @dev Checks whether a code hash is in the allowlist.
+    /// @param codeHash Hash of the code to check.
+    /// @return Boolean flag indicating whether the code hash is allowlisted.
+    function codeHashWhiteList(bytes32 codeHash) external view returns (bool);
+
+    /// @dev Validates a token Vault address.
+    /// @param addr Address of the token Vault to validate.
+    function validateTokenVault(address addr) external view;
 }

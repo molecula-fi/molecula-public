@@ -1,0 +1,43 @@
+// SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.23;
+
+/// @title ValueValidator
+/// @notice Contract for validating common value-based conditions.
+/// @dev Provides modifiers to check for zero values, zero addresses, and msg.value conditions.
+contract ValueValidator {
+    /// @dev Thrown when a value is zero but must be non-zero.
+    error EZeroValue();
+
+    /// @dev Thrown when an address is zero but must be non-zero.
+    error EZeroAddress();
+
+    /// @dev Thrown when msg.value is not zero but must be zero.
+    error EMsgValueIsNotZero();
+
+    /// @dev Modifier that checks if a value is not zero.
+    /// @param value The value to check.
+    modifier notZero(uint256 value) {
+        if (value == 0) {
+            revert EZeroValue();
+        }
+        _;
+    }
+
+    /// @dev Modifier that checks if an address is not zero.
+    /// @param addr The address to check.
+    modifier notZeroAddress(address addr) {
+        if (addr == address(0)) {
+            revert EZeroAddress();
+        }
+        _;
+    }
+
+    /// @dev Modifier that ensures msg.value is zero.
+    modifier zeroMsgValue() {
+        if (msg.value != 0) {
+            revert EMsgValueIsNotZero();
+        }
+        _;
+    }
+}

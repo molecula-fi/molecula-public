@@ -3,9 +3,8 @@
 pragma solidity ^0.8.23; // Make files compatible between the solutions.
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import {RebaseERC20} from "./rebase/RebaseERC20.sol";
 import {IdGenerator} from "./IdGenerator.sol";
+import {RebaseERC20} from "./rebase/RebaseERC20.sol";
 
 enum LockState {
     NotExist,
@@ -68,21 +67,12 @@ contract MUSDLock is IdGenerator {
     }
 
     /**
-     * @dev Returns an array of the locked user's shares.
-     * @param user User address.
-     * @return lockIds Array of the locked user's shares.
-     */
-    function getLockIds(address user) external view returns (bytes32[] memory) {
-        return lockIds[user];
-    }
-
-    /**
      * @dev Locks the user's mUSD.
      * @param value Amount of the mUSD tokens.
      * @return lockId Lock ID.
      * @param payload Custom payload.
      */
-    function lock(uint256 value, bytes memory payload) external returns (bytes32 lockId) {
+    function lock(uint256 value, bytes calldata payload) external returns (bytes32 lockId) {
         _MUSD.safeTransferFrom(msg.sender, address(this), value);
 
         uint256 shares = _MUSD.convertToShares(value);
@@ -103,7 +93,7 @@ contract MUSDLock is IdGenerator {
      * @param lockId Lock ID.
      * @param payload Custom payload.
      */
-    function unlock(bytes32 lockId, bytes memory payload) external {
+    function unlock(bytes32 lockId, bytes calldata payload) external {
         LockInfo storage userLock = locks[lockId];
 
         if (userLock.state == LockState.NotExist) {
@@ -123,5 +113,14 @@ contract MUSDLock is IdGenerator {
         _MUSD.safeTransfer(msg.sender, asset);
 
         emit Unlock(lockId, payload);
+    }
+
+    /**
+     * @dev Returns an array of the locked user's shares.
+     * @param user User address.
+     * @return lockIds Array of the locked user's shares.
+     */
+    function getLockIds(address user) external view returns (bytes32[] memory) {
+        return lockIds[user];
     }
 }

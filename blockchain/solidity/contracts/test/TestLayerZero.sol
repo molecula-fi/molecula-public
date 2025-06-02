@@ -18,7 +18,7 @@ contract TestLayerZero is OApp {
      */
     function send(
         uint32 _dstEid,
-        string memory _message,
+        string calldata _message,
         bytes calldata _options
     ) external payable {
         // Encodes the message before invoking `_lzSend`.

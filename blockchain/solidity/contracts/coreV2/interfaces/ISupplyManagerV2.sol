@@ -3,28 +3,35 @@
 pragma solidity ^0.8.23;
 
 /// @title ISupplyManagerV2.
-/// @notice Interface for managing Pool data and operations.
+/// @notice Interface for managing Pool data and Requests.
 /// @dev Defines core functions for supply management and yield distribution.
 interface ISupplyManagerV2 {
     // ============ Enums ============
 
     /// @dev Operation status.
-    enum OperationStatus {
+    /// @param None No redemption request exists.
+    /// @param Pending The redemption request is waiting to be fulfilled.
+    /// @param Claimable The redemption request has been fulfilled and can be claimed.
+    enum RequestState {
         None,
         Pending,
-        Confirmed
+        Claimable
     }
 
     // ============ Structs ============
 
     /// @dev Information about a redeem operation.
     /// @param tokenVault `TokenVault` address associated with the operation.
-    /// @param value Redemption operation-associated value.
-    /// @param status Operation status.
-    struct RedeemOperationInfo {
+    /// @param state Current state of the operation (None, Pending, Claimable).
+    /// @param controller Address of the controller associated with the request.
+    /// @param assets Amount of assets to be redeemed.
+    /// @param shares Amount of shares to be burned.
+    struct RedeemRequestInfo {
         address tokenVault;
-        uint256 value;
-        OperationStatus status;
+        RequestState state;
+        address controller;
+        uint256 assets;
+        uint256 shares;
     }
 
     /// @dev Information about a party's yield distribution.
@@ -40,9 +47,14 @@ interface ISupplyManagerV2 {
     /// @dev Emitted when processing deposits.
     /// @param requestId Deposit operation's ID.
     /// @param tokenVault `TokenVault` address.
-    /// @param value Deposited amount.
+    /// @param assets Deposited amount.
     /// @param shares Shares amount to mint.
-    event Deposit(uint256 requestId, address tokenVault, uint256 value, uint256 shares);
+    event Deposit(
+        uint256 indexed requestId,
+        address indexed tokenVault,
+        uint256 indexed assets,
+        uint256 shares
+    );
 
     /// @dev Emitted when a user processes a redemption.
     /// @param requestId Redemption operation's ID.
@@ -51,18 +63,20 @@ interface ISupplyManagerV2 {
     /// @param shares Redeemed shares.
     event RedeemRequest(
         uint256 indexed requestId,
-        address tokenVault,
-        uint256 shares,
+        address indexed tokenVault,
+        uint256 indexed shares,
         uint256 value
     );
 
-    /// @dev Emitted when redemption requests become claimable.
-    /// @param requestIds Array of the request IDs.
-    /// @param values Array of the corresponding values.
-    event FulfillRedeemRequests(uint256[] requestIds, uint256[] values);
+    /// @dev Emitted when redemption requests have been fulfilled and become claimable. This event indicates
+    ///      that the requested redemptions are ready to be claimed by their respective owners.
+    /// @param requestIds Array of request IDs that have been fulfilled
+    /// @param sumAssets Total sum of assets that were processed for all fulfilled requests
+    event FulfillRedeemRequests(uint256[] requestIds, uint256 sumAssets);
 
-    /// @dev Emitted when distributing yield.
-    event DistributeYield();
+    /// @dev Emitted when yield is distributed to parties in the Pool.
+    /// @param distributedShares The total amount of shares that were distributed as yield.
+    event YieldDistributed(uint256 indexed distributedShares);
 
     // ============ Errors ============
 
@@ -78,17 +92,17 @@ interface ISupplyManagerV2 {
     /// @dev Thrown when the caller is not an authorized `tokenVault`.
     error ENotMyAgent();
 
-    /// @dev Thrown when the Pool total supply equals zero.
-    error EZeroTotalSupply();
-
     /// @dev Thrown when the caller is not authorized.
     error ENotAuthorized();
 
     /// @dev Thrown when the wrong `TokenVault` is used.
     error EWrongTokenVault();
 
-    /// @dev Thrown when the operation status is incorrect.
-    error EBadOperationStatus();
+    /// @dev Thrown when there are no pending redemption requests to process.
+    error ENoPendingRequests();
+
+    /// @dev Thrown when the Request is unknown (in None status).
+    error EUnknownRequest();
 
     /// @dev Thrown when the sum of portions is not equal to `1`.
     error EWrongPortion();
@@ -110,36 +124,82 @@ interface ISupplyManagerV2 {
     /// @dev Processes a deposit into the Pool.
     /// @param token Deposited token ERC20 address.
     /// @param requestId Deposit operation's ID.
-    /// @param value Deposit value.
+    /// @param assets Deposit assets.
     /// @return shares Amount to mint.
     function deposit(
         address token,
         uint256 requestId,
-        uint256 value
+        uint256 assets
     ) external returns (uint256 shares);
 
-    /// @dev Requests a redemption operation.
-    /// @param token Token ERC20 address.
-    /// @param requestId Redeem operation's ID.
-    /// @param shares Shares to redeem.
-    /// @return value Value to redeem.
+    /// @dev Requests a redemption operation from the Pool. Creates a new redemption request
+    ///      that will be processed in the future.
+    /// @param token The ERC20 token address for which redemption is requested
+    /// @param controller The address of the controller managing this redemption request
+    /// @param requestId Unique identifier for the redemption request
+    /// @param shares Amount of shares to be redeemed from the Pool
+    /// @return assets The estimated amount of assets to be received after redemption
     function requestRedeem(
         address token,
+        address controller,
         uint256 requestId,
         uint256 shares
-    ) external returns (uint256 value);
+    ) external returns (uint256 assets);
 
     /// @dev Redeems the funds.
-    /// @param fromAddress Address to redeem from.
+    /// @param assetOwner Address to redeem from.
     /// @param requestIds Redeem operations' IDs.
-    /// @return token Token ERC20 address.
-    /// @return redeemedValue Redeemed value.
+    /// @return asset Token ERC20 address.
+    /// @return redeemedAssets Redeemed assets.
     function fulfillRedeemRequests(
-        address fromAddress,
-        uint256[] memory requestIds
-    ) external returns (address token, uint256 redeemedValue);
+        address assetOwner,
+        uint256[] calldata requestIds
+    ) external returns (address asset, uint256 redeemedAssets);
+
+    // ============ Admin Functions ============
+
+    /// @dev Called when a token vault is added.
+    /// @param tokenVault Address of the added token vault.
+    function onAddTokenVault(address tokenVault) external;
+
+    /// @dev Called when a token vault is removed.
+    /// @param tokenVault Address of the removed token vault.
+    function onRemoveTokenVault(address tokenVault) external;
+
+    /**
+     * @dev Distributes yield.
+     * @param parties List of parties.
+     * @param newApyFormatter New APY formatter.
+     */
+    function distributeYield(Party[] calldata parties, uint16 newApyFormatter) external;
+
+    /**
+     * @dev Setter for the Yield Distributor address.
+     * @param newYieldDistributor New Yield Distributor address.
+     */
+    function setYieldDistributor(address newYieldDistributor) external;
 
     // ============ View Functions ============
+
+    /// @dev Returns information about a specific redeem request.
+    /// @param requestID ID of the redeem request to query.
+    /// @return tokenVault Address of the token vault associated with the request.
+    /// @return status Current state of the request (None, Pending, or Claimable).
+    /// @return controller Address of the controller associated with the request.
+    /// @return assets Amount of assets to be redeemed.
+    /// @return shares Amount of shares to be burned.
+    function redeemRequests(
+        uint256 requestID
+    )
+        external
+        view
+        returns (
+            address tokenVault,
+            RequestState status,
+            address controller,
+            uint256 assets,
+            uint256 shares
+        );
 
     /// @dev Returns the Molecula Pool address.
     /// @return pool Molecula Pool address.
@@ -152,14 +212,4 @@ interface ISupplyManagerV2 {
     /// @dev Returns shares supply.
     /// @return res Shares supply.
     function totalSharesSupply() external view returns (uint256 res);
-
-    // ============ Admin Functions ============
-
-    /// @dev Called when a token vault is added.
-    /// @param tokenVault Address of the added token vault.
-    function onAddTokenVault(address tokenVault) external;
-
-    /// @dev Called when a token vault is removed.
-    /// @param tokenVault Address of the removed token vault.
-    function onRemoveTokenVault(address tokenVault) external;
 }

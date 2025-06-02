@@ -4,8 +4,15 @@
         "compiler-version": ["error", "^0.8.23"],
         "func-visibility": ["error", { "ignoreConstructors": true }],
         "private-vars-leading-underscore": "error",
-        "no-global-import": "off",
         "one-contract-per-file": "off",
-        "gas-struct-packing": "warn"
+        "gas-struct-packing": "error",
+        "gas-calldata-parameters": "error",
+        "gas-increment-by-one": "error",
+        "gas-length-in-loops": "error",
+        "duplicated-imports": "error",
+        "imports-order": "error",
+        "gas-indexed-events": "error",
+        "comprehensive-interface": "off",
+        "ordering": "off"
     }
 }

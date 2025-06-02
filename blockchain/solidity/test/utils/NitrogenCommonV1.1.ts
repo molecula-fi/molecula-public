@@ -3,9 +3,12 @@ import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signer
 import { days } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time/duration';
 import { expect } from 'chai';
 import { keccak256 } from 'ethers';
+import { type HDNodeWallet } from 'ethers/lib.commonjs/wallet/hdwallet';
 import { ethers } from 'hardhat';
 
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
+
+import type { IERC20, MoleculaPoolTreasury } from '../../typechain-types';
 
 import { generateRandomWallet } from './Common';
 import { findRequestRedeemEvent } from './event';
@@ -160,6 +163,7 @@ export async function deployNitrogenV2Common(token: string) {
         user2,
         poolKeeper,
         lmusd,
+        DAI,
     };
 }
 
@@ -285,7 +289,7 @@ export async function deployNitrogenV11WithTokenVault() {
     const operator = signers.at(11)!;
 
     const USDC = await ethers.getContractAt('IERC20Metadata', ethMainnetBetaConfig.USDC_ADDRESS);
-    const DAI = await ethers.getContractAt('IERC20Metadata', ethMainnetBetaConfig.DAI_ADDRESS);
+    const SUSDE = await ethers.getContractAt('IERC4626', ethMainnetBetaConfig.SUSDE_ADDRESS);
 
     // deploy RebaseTokenOwner
     const RebaseTokenOwner = await ethers.getContractFactory('RebaseTokenOwner');
@@ -299,7 +303,15 @@ export async function deployNitrogenV11WithTokenVault() {
     const TokenVault = await ethers.getContractFactory('NitrogenTokenVault');
     const tokenUSDCVault = await TokenVault.connect(nitrogen.poolOwner).deploy(
         nitrogen.poolOwner,
-        // Share. Note: it's not er20 token, but it should be! See  https://eips.ethereum.org/EIPS/eip-7575
+        // Share. Note: it's not er20 token, but it should be! See https://eips.ethereum.org/EIPS/eip-7575
+        nitrogen.rebaseToken,
+        nitrogen.supplyManager,
+        rebaseTokenOwner,
+        nitrogen.guardian,
+    );
+    const tokenSUSDEVault = await TokenVault.connect(nitrogen.poolOwner).deploy(
+        nitrogen.poolOwner,
+        // Share. Note: it's not er20 token, but it should be! See https://eips.ethereum.org/EIPS/eip-7575
         nitrogen.rebaseToken,
         nitrogen.supplyManager,
         rebaseTokenOwner,
@@ -312,14 +324,21 @@ export async function deployNitrogenV11WithTokenVault() {
         10n ** 6n, // minDepositValue
         10n ** 18n, // minRedeemShares
     );
+    await tokenSUSDEVault.init(
+        SUSDE, // asset
+        10n ** 6n, // minDepositValue
+        10n ** 18n, // minRedeemShares
+    );
 
     // Add tokenUSDCVault to supplyManager
     await nitrogen.supplyManager.connect(nitrogen.poolOwner).setAgent(tokenUSDCVault, true);
+    await nitrogen.supplyManager.connect(nitrogen.poolOwner).setAgent(tokenSUSDEVault, true);
 
     // Add tokenUSDCVault to RebaseTokenOwner
     const codeHash = keccak256((await tokenUSDCVault.getDeployedCode())!);
     await rebaseTokenOwner.setCodeHash(codeHash, true);
     await rebaseTokenOwner.addTokenVault(tokenUSDCVault.getAddress());
+    await rebaseTokenOwner.addTokenVault(tokenSUSDEVault.getAddress());
 
     // Set rebaseTokenOwner as owner of rebaseToken
     await nitrogen.rebaseToken
@@ -329,10 +348,27 @@ export async function deployNitrogenV11WithTokenVault() {
     return {
         ...nitrogen,
         tokenUSDCVault,
+        tokenSUSDEVault,
         rebaseTokenOwner,
         USDC,
-        DAI,
+        SUSDE,
         user2,
         operator,
     };
+}
+
+export async function getRidOf(
+    moleculaPool: MoleculaPoolTreasury,
+    poolOwner: HardhatEthersSigner,
+    USDC: IERC20,
+    receiver: string,
+    poolKeeper: HDNodeWallet,
+) {
+    // get rid of USDC from moleculaPool
+    await moleculaPool.connect(poolOwner).addInWhiteList(USDC);
+    const encodedTransfer = USDC.interface.encodeFunctionData('transfer', [
+        receiver,
+        await USDC.balanceOf(moleculaPool),
+    ]);
+    await moleculaPool.connect(poolKeeper).execute(USDC, encodedTransfer);
 }

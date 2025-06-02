@@ -17,25 +17,25 @@ interface IMoleculaPoolV2 {
     /// @param requestId Deposit operation's ID.
     /// @param token Deposit token.
     /// @param from Sender's address.
-    /// @param value Deposit amount.
-    /// @return formattedValue Formatted deposit amount.
+    /// @param assets Deposit amount.
+    /// @return moleculaTokenAmount Formatted deposit amount.
     function deposit(
         uint256 requestId,
         address token,
         address from,
-        uint256 value
-    ) external returns (uint256 formattedValue);
+        uint256 assets
+    ) external returns (uint256 moleculaTokenAmount);
 
     /// @dev Executes a Redemption operation request.
     /// @param requestId Redemption operation's ID.
     /// @param token Redemption ERC20 token.
-    /// @param value Redemption value.
-    /// @return formattedValue Formatted redeem operation value.
+    /// @param moleculaTokenAmount Formatted redeem operation value.
+    /// @return assets Redemption assets.
     function requestRedeem(
         uint256 requestId,
         address token,
-        uint256 value
-    ) external returns (uint256 formattedValue);
+        uint256 moleculaTokenAmount
+    ) external returns (uint256 assets);
 
     // ============ View Functions ============
 

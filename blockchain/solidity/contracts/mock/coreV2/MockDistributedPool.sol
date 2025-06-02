@@ -2,17 +2,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import {IERC7575} from "../common/external/interfaces/IERC7575.sol";
-import {IMoleculaPoolV2} from "../coreV2/interfaces/IMoleculaPoolV2.sol";
-import {ISupplyManagerV2} from "../coreV2/interfaces/ISupplyManagerV2.sol";
-import {ZeroValueChecker} from "../common/ZeroValueChecker.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IERC7575} from "./../../common/external/interfaces/IERC7575.sol";
+import {ZeroValueChecker} from "./../../common/ZeroValueChecker.sol";
+import {IMoleculaPoolV2} from "./../../coreV2/interfaces/IMoleculaPoolV2.sol";
+import {ISupplyManagerV2} from "./../../coreV2/interfaces/ISupplyManagerV2.sol";
 
 /**
  * @dev Token parameters.
@@ -132,16 +131,16 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
 
     /// @dev Emitted when the `isExecutePaused` flag is changed.
     /// @param newValue New value.
-    event IsExecutePausedChanged(bool newValue);
+    event IsExecutePausedChanged(bool indexed newValue);
 
     /// @dev Emitted when the `isRedeemPaused` flag is changed.
     /// @param newValue New value.
-    event IsRedeemPausedChanged(bool newValue);
+    event IsRedeemPausedChanged(bool indexed newValue);
 
     /// @dev Emitted when `token` is blocked or unblocked.
     /// @param token Token address.
     /// @param isBlocked New token status.
-    event TokenBlockedChanged(address indexed token, bool isBlocked);
+    event TokenBlockedChanged(address indexed token, bool indexed isBlocked);
 
     /// @dev Throws an error if called with the wrong sender.
     /// @param expectedSender Expected sender.
@@ -183,13 +182,15 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
         checkNotZero(supplyManagerAddress)
         checkNotZero(guardianAddress)
     {
-        for (uint256 i = 0; i < tokens.length; ++i) {
+        uint256 length = tokens.length;
+        for (uint256 i = 0; i < length; ++i) {
             _addToken(tokens[i]);
         }
         poolKeeper = poolKeeperAddress;
         SUPPLY_MANAGER = supplyManagerAddress;
 
-        for (uint256 i = 0; i < whiteList.length; ++i) {
+        length = whiteList.length;
+        for (uint256 i = 0; i < length; ++i) {
             _addInWhiteList(whiteList[i]);
         }
         guardian = guardianAddress;
@@ -253,7 +254,13 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
             address token = tokenParam.token;
 
             uint256 balance = IERC20(token).balanceOf(address(this));
-            supply += _tokenAmountTomUSD(balance, token, tokenParam.n, tokenParam.isERC4626);
+            uint256 curSupply = _tokenAmountTomUSD(
+                balance,
+                token,
+                tokenParam.n,
+                tokenParam.isERC4626
+            );
+            supply += curSupply;
 
             uint256 redeemValue = poolMap[token].valueToRedeem;
             totalRedeem += _tokenAmountTomUSD(
@@ -392,21 +399,21 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
         address token,
         address from,
         uint256 value
-    ) external only(SUPPLY_MANAGER) returns (uint256 formattedValue) {
+    ) external only(SUPPLY_MANAGER) returns (uint256 moleculaTokenAmount) {
         requestId;
         if (poolMap[token].tokenType == TokenType.None) {
             revert ETokenNotExist();
         }
         if (poolMap[token].tokenType == TokenType.ERC20) {
-            formattedValue = _normalize(poolMap[token].n, value);
+            moleculaTokenAmount = _normalize(poolMap[token].n, value);
         } else {
             uint256 assets = IERC4626(token).convertToAssets(value);
-            formattedValue = _normalize(poolMap[token].n, assets);
+            moleculaTokenAmount = _normalize(poolMap[token].n, assets);
         }
         // Transfer assets to the token holder.
         // slither-disable-next-line arbitrary-send-erc20
         IERC20(token).safeTransferFrom(from, address(this), value);
-        return formattedValue;
+        return moleculaTokenAmount;
     }
 
     function requestRedeem(
@@ -437,7 +444,7 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
      * @dev Redeem tokens.
      * @param requestIds Request IDs.
      */
-    function fulfillRedeemRequests(uint256[] memory requestIds) external payable {
+    function fulfillRedeemRequests(uint256[] calldata requestIds) external payable {
         if (isRedeemPaused) {
             revert ERedeemPaused();
         }
@@ -516,7 +523,7 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
      */
     function execute(
         address target,
-        bytes memory data
+        bytes calldata data
     ) external payable only(poolKeeper) returns (bytes memory result) {
         if (isExecutePaused) {
             revert EExecutePaused();
@@ -529,7 +536,7 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
         bytes4 selector;
         // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
         assembly {
-            selector := mload(add(data, 32)) // skip: 32 bytes data.length
+            selector := mload(data.offset)
         }
 
         // Allow approval calls for any ERC-20 token, but only to whitelisted spender contracts.
@@ -543,7 +550,7 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
             address spender;
             // slither-disable-next-line assembly, solhint-disable-next-line no-inline-assembly
             assembly {
-                spender := mload(add(data, 36)) // skip: 32 bytes data.length + 4 bytes selector
+                spender := mload(add(data.offset, 4)) // skip: 4 bytes selector
             }
 
             // Ensure spender is whitelisted.
@@ -562,17 +569,6 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
 
         // Execute the function call.
         return target.functionCallWithValue(data, msg.value);
-    }
-
-    /// @dev Transfer all balance of `fromAddress` to this contract.
-    /// @param token Token.
-    /// @param fromAddress Address that funds are taken from
-    function _transferAllBalance(IERC20 token, address fromAddress) internal {
-        uint256 balance = token.balanceOf(fromAddress);
-        if (balance > 0) {
-            // slither-disable-next-line arbitrary-send-erc20
-            token.safeTransferFrom(fromAddress, address(this), balance);
-        }
     }
 
     /// @dev Change the guardian address.

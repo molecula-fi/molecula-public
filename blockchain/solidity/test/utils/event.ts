@@ -9,6 +9,7 @@ import {
     ISupplyManager__factory,
     IRebaseTokenEvents__factory,
     IAgent__factory,
+    ISupplyManagerV2__factory,
 } from '../../typechain-types';
 
 export async function findRequestRedeemEvent(tx: ContractTransactionResponse) {
@@ -18,6 +19,26 @@ export async function findRequestRedeemEvent(tx: ContractTransactionResponse) {
         try {
             const { data, topics } = logs;
             const event = iSupplyManager.decodeEventLog('RedeemRequest', data, topics);
+            return {
+                operationId: event[0] as bigint,
+                agentAddress: event[1] as AddressLike,
+                redeemShares: event[2] as bigint,
+                redeemValue: event[3] as bigint,
+            };
+        } catch (error) {
+            // do nothing
+        }
+    }
+    throw new Error('No RequestRedeemEvent event');
+}
+
+export async function findRequestRedeemEventV2(tx: ContractTransactionResponse) {
+    const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
+    const iSupplyManagerV2 = ISupplyManagerV2__factory.createInterface();
+    for (const logs of receipt!.logs) {
+        try {
+            const { data, topics } = logs;
+            const event = iSupplyManagerV2.decodeEventLog('RedeemRequest', data, topics);
             return {
                 operationId: event[0] as bigint,
                 agentAddress: event[1] as AddressLike,

@@ -3,21 +3,20 @@
 
 pragma solidity 0.8.28;
 
-import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
+import {IERC6372} from "@openzeppelin/contracts/interfaces/IERC6372.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC6372} from "@openzeppelin/contracts/interfaces/IERC6372.sol";
-import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
-import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
-import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
+import {RebaseERC20} from "./../../common/rebase/RebaseERC20.sol";
+import {ZeroValueChecker} from "./../../common/ZeroValueChecker.sol";
 import {IwmUSD} from "./interfaces/IwmUSD.sol";
-import {RebaseERC20} from "../../common/rebase/RebaseERC20.sol";
-import {ZeroValueChecker} from "../../common/ZeroValueChecker.sol";
 
 /// @notice WMUSD is a wrapped, non-rebasing version of mUSD.
 /// The token is designed for seamless integration into DeFi protocols, CEXes, etc.
@@ -56,7 +55,12 @@ contract WMUSD is IwmUSD, ERC20, ERC20Permit, ERC20Votes, ERC165, Ownable2Step, 
         address owner,
         RebaseERC20 mUSD,
         address authorizedYieldDistributorAddress
-    ) ERC20(name, symbol) ERC20Permit(name) Ownable(owner) {
+    )
+        ERC20(name, symbol)
+        ERC20Permit(name)
+        Ownable(owner)
+        checkNotZero(authorizedYieldDistributorAddress)
+    {
         MUSD = mUSD;
         authorizedYieldDistributor = authorizedYieldDistributorAddress;
     }

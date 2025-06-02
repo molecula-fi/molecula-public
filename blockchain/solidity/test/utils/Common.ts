@@ -27,7 +27,7 @@ export async function getEthena() {
     // Get USDe
     const usde = USDe__factory.connect(ethMainnetBetaConfig.USDE_ADDRESS, signer);
     const usdeMinter = await ethers.getImpersonatedSigner(await usde.minter());
-    await grantETH(usdeMinter.address, ethers.parseEther('2'));
+    await grantETH(usdeMinter.address);
 
     // Get sUSDe
     const susde = StakedUSDe__factory.connect(ethMainnetBetaConfig.SUSDE_ADDRESS, signer);
@@ -43,7 +43,7 @@ export async function grantStakedUSDE(
 ) {
     const balance0 = await susde.balanceOf(user);
 
-    await grantETH(usdeMinter, ethers.parseEther('2'));
+    await grantETH(usdeMinter);
 
     // Accrual of a large number of USDe tokens for `usdeMinter`
     const usdeAmount = 2n * (await susde.convertToAssets(susdeAmount));
@@ -79,10 +79,15 @@ export async function grantUSDe(
 
 // Check that numbers are equal to`precision` fractional digits.
 // `abs(b - a) / 10**decimals < 1 / 10**precision`
-export function expectEqual(a: bigint, b: bigint, decimals: bigint, precision: bigint) {
+export function expectEqualBigInt(
+    a: bigint,
+    b: bigint,
+    decimals: bigint = 18n,
+    precision: bigint = 17n,
+) {
     expect(decimals).to.be.greaterThanOrEqual(precision);
     if (a > b) {
-        expectEqual(b, a, decimals, precision);
+        expectEqualBigInt(b, a, decimals, precision);
         return;
     }
     expect(a).to.be.greaterThanOrEqual(0n);
@@ -95,6 +100,10 @@ export function expectEqual(a: bigint, b: bigint, decimals: bigint, precision: b
             `a: ${ethers.formatUnits(a, decimals)}, b: ${ethers.formatUnits(b, decimals)}, |b-a|: ${ethers.formatUnits(b - a, decimals)}  decimal: ${decimals}, precision: ${precision}`,
         );
     }
+}
+
+export function expectEqual(a: bigint, b: bigint, decimals: number = 18, precision: number = 17) {
+    expectEqualBigInt(a, b, BigInt(decimals), BigInt(precision));
 }
 
 export async function mintmUSDe(

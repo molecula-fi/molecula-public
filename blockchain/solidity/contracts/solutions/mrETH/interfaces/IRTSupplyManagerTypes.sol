@@ -10,8 +10,7 @@ interface IRTSupplyManagerTypes {
     enum OperationStatus {
         None, // operation doesn't exist
         Pending, // operation is pending confirmation
-        Confirmed, // operation confirmed
-        Reverted // operation reverted
+        Confirmed // operation confirmed
     }
 
     /**

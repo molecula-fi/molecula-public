@@ -7,6 +7,7 @@ npx patch-package
 yarn workspace @molecula-monorepo/common.evm-contracts types:generate
 yarn workspace @molecula-monorepo/common.tron-contracts types:generate
 
+
 # Notify the user about the need to decrypt secrets
 if [ -x "$(command -v osascript)" ]
 then

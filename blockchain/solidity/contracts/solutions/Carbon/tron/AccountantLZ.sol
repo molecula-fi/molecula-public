@@ -2,17 +2,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.23;
 
-import {IAccountant} from "../../../common/interfaces/IAccountant.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IRebaseToken} from "../../../common/interfaces/IRebaseToken.sol";
-import {ISetterOracle} from "../../../common/interfaces/ISetterOracle.sol";
-
-import {LZMsgCodec} from "../../../common/layerzero/LZMsgCodec.sol";
 import {OApp, Origin} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
-import {OptionsLZ, Ownable2Step, Ownable} from "../../../common/layerzero/OptionsLZ.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../common/UsdtOFT.sol";
-import {ZeroValueChecker} from "../../../common/ZeroValueChecker.sol";
+import {IAccountant} from "./../../../common/interfaces/IAccountant.sol";
+import {IRebaseToken} from "./../../../common/interfaces/IRebaseToken.sol";
+import {ISetterOracle} from "./../../../common/interfaces/ISetterOracle.sol";
+import {LZMsgCodec} from "./../../../common/layerzero/LZMsgCodec.sol";
+import {OptionsLZ, Ownable2Step, Ownable} from "./../../../common/layerzero/OptionsLZ.sol";
+import {ZeroValueChecker} from "./../../../common/ZeroValueChecker.sol";
+import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "./../common/UsdtOFT.sol";
 
 /// @title AccountantLZ - Accountant contract for handling LayerZero-based cross-chain transactions.
 /// @notice This contract facilitates cross-chain USDT transactions using LayerZero and UsdtOFT.
@@ -87,23 +86,19 @@ contract AccountantLZ is OApp, OptionsLZ, ZeroValueChecker, IAccountant {
      * The function gets called when the data is received from the protocol.
      * It overrides the equivalent function in the parent contract.
      * Protocol messages are defined as packets, comprised of the following parameters.
-     * @param _origin Struct containing information about where the packet came from.
-     * @param _guid Global unique identifier for tracking the packet.
+     * param _origin Struct containing information about where the packet came from.
+     * param _guid Global unique identifier for tracking the packet.
+     * param _executor Executor address as specified by the OApp.
+     * param _options Any extra data or options to trigger on receipt.
      * @param payload Encoded message.
-     * @param _executor Executor address as specified by the OApp.
-     * @param _options Any extra data or options to trigger on receipt.
      */
     function _lzReceive(
-        Origin calldata _origin,
-        bytes32 _guid,
+        Origin calldata /*_origin*/,
+        bytes32 /*_guid*/,
         bytes calldata payload,
-        address _executor, // Executor address as specified by the OApp.
-        bytes calldata _options // Any extra data or options to trigger on receipt.
+        address /*_executor*/, // Executor address as specified by the OApp.
+        bytes calldata /*_options*/ // Any extra data or options to trigger on receipt.
     ) internal override {
-        _origin;
-        _guid;
-        _executor;
-        _options;
         // Decode the payload to get the message. Get the message type.
         uint8 msgType = uint8(payload[0]);
         // Confirm the deposit message.
@@ -167,7 +162,8 @@ contract AccountantLZ is OApp, OptionsLZ, ZeroValueChecker, IAccountant {
      * @param shares Shares to distribute.
      */
     function _distributeYield(address[] memory users, uint256[] memory shares) internal {
-        for (uint256 i = 0; i < users.length; i++) {
+        uint256 length = users.length;
+        for (uint256 i = 0; i < length; ++i) {
             IRebaseToken(underlyingToken).distribute(users[i], shares[i]);
         }
     }

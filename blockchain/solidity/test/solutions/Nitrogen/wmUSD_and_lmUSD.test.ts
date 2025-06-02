@@ -6,7 +6,7 @@ import { ethers } from 'hardhat';
 
 import { ethMainnetBetaConfig } from '../../../configs/ethereum/mainnetBetaTyped';
 import { expectEqual } from '../../utils/Common';
-import { deployNitrogenV11WithUSDT } from '../../utils/NitrogenCommonV1.1';
+import { deployNitrogenV11WithUSDT, getRidOf } from '../../utils/NitrogenCommonV1.1';
 import { findTransferEvent } from '../../utils/event';
 import { grantERC20 } from '../../utils/grant';
 
@@ -45,7 +45,7 @@ describe('Test wmUSD and lmUSD', () => {
             await rebaseToken.connect(user0).approve(wmusd.getAddress(), ethers.MaxUint256);
             await wmusd.connect(user0).wrap(mUSDUserBalance);
             // Should be equal with some precision
-            expectEqual(await rebaseToken.balanceOf(wmusd), mUSDUserBalance, 18n, 16n);
+            expectEqual(await rebaseToken.balanceOf(wmusd), mUSDUserBalance, 18, 16);
             // Note: user can't transfer all balance due to rounding error
             expect(await rebaseToken.balanceOf(user0)).to.be.greaterThan(0);
             expect(await wmusd.balanceOf(user0)).to.be.equal(mUSDUserBalance);
@@ -68,11 +68,11 @@ describe('Test wmUSD and lmUSD', () => {
                 .connect(authorizedYieldDistributor)
                 .distributeYield(lmUSDHolder.address, currentYieldShares / 3n);
             expect(await wmusd.currentYieldShares()).to.be.equal((2n * currentYieldShares) / 3n);
-            expectEqual(await rebaseToken.sharesOf(lmUSDHolder), currentYieldShares / 3n, 18n, 17n);
+            expectEqual(await rebaseToken.sharesOf(lmUSDHolder), currentYieldShares / 3n);
 
             // Unwrap: convert wmUSD -> mUSD
             await wmusd.connect(user0).unwrap(mUSDUserBalance);
-            expectEqual(await rebaseToken.balanceOf(user0), mUSDUserBalance, 18n, 17n);
+            expectEqual(await rebaseToken.balanceOf(user0), mUSDUserBalance);
             expect(await wmusd.balanceOf(user0)).to.be.equal(0);
         });
 
@@ -95,14 +95,14 @@ describe('Test wmUSD and lmUSD', () => {
             await rebaseToken.connect(user0).approve(wmusd.getAddress(), ethers.MaxUint256);
             await wmusd.connect(user0).wrap(mUSDUserBalance);
             // Should be equal with some precision
-            expectEqual(await rebaseToken.balanceOf(wmusd), mUSDUserBalance, 18n, 16n);
+            expectEqual(await rebaseToken.balanceOf(wmusd), mUSDUserBalance, 18, 16);
             // Note: user can't transfer all balance due to rounding error
-            expectEqual(await rebaseToken.balanceOf(user0), 0n, 18n, 16n);
+            expectEqual(await rebaseToken.balanceOf(user0), 0n, 18, 16);
             expect(await wmusd.balanceOf(user0)).to.be.equal(mUSDUserBalance);
 
             // Unwrap: convert wmUSD -> mUSD
             await wmusd.connect(user0).unwrap(mUSDUserBalance);
-            expectEqual(await rebaseToken.balanceOf(user0), mUSDUserBalance, 18n, 17n);
+            expectEqual(await rebaseToken.balanceOf(user0), mUSDUserBalance);
             expect(await wmusd.balanceOf(user0)).to.be.equal(0);
         });
 
@@ -134,18 +134,13 @@ describe('Test wmUSD and lmUSD', () => {
             await rebaseToken.connect(user0).approve(wmusd.getAddress(), ethers.MaxUint256);
             await wmusd.connect(user0).wrap(mUSDUserBalance);
             // Should be equal with some precision
-            expectEqual(await rebaseToken.balanceOf(wmusd), mUSDUserBalance, 18n, 16n);
+            expectEqual(await rebaseToken.balanceOf(wmusd), mUSDUserBalance, 18, 16);
             // Note: user can't transfer all balance due to rounding error
-            expectEqual(await rebaseToken.balanceOf(user0), 0n, 18n, 16n);
+            expectEqual(await rebaseToken.balanceOf(user0), 0n, 18, 16);
             expect(await wmusd.balanceOf(user0)).to.be.equal(mUSDUserBalance);
 
             // get rid of USDT from moleculaPool
-            await moleculaPool.connect(poolOwner).addInWhiteList(USDT.getAddress());
-            const encodedTransfer = USDT.interface.encodeFunctionData('transfer', [
-                randAccount.address,
-                (await USDT.balanceOf(moleculaPool.getAddress())) / 2n,
-            ]);
-            await moleculaPool.connect(poolKeeper).execute(USDT.getAddress(), encodedTransfer);
+            await getRidOf(moleculaPool, poolOwner, USDT, randAccount.address, poolKeeper);
 
             for (const value of [mUSDUserBalance / 3n, mUSDUserBalance - mUSDUserBalance / 3n]) {
                 // Unwrap: convert wmUSD -> mUSD
@@ -156,7 +151,7 @@ describe('Test wmUSD and lmUSD', () => {
             expect(await wmusd.balanceOf(user0)).to.be.equal(0);
 
             expect(await wmusd.mUSDWrappedValue()).to.be.equal(0);
-            expectEqual(await wmusd.mUSDWrappedShares(), 0n, 18n, 17n);
+            expectEqual(await wmusd.mUSDWrappedShares(), 0n);
         });
 
         it('Test conner cases', async () => {
@@ -339,13 +334,8 @@ describe('Test wmUSD and lmUSD', () => {
             expect(await lmusd['balanceOf(address)'](user0)).to.be.equal(1);
             await lmusd.connect(user0).unlock(tokenId);
             expect(await wmusd.currentYield()).to.be.equal(0);
-            expectEqual(
-                await rebaseToken.sharesOf(user0),
-                dedicatedShares + lockedShares,
-                18n,
-                16n,
-            );
-            expectEqual(await rebaseToken.balanceOf(user0), balanceLMUSD, 18n, 16n);
+            expectEqual(await rebaseToken.sharesOf(user0), dedicatedShares + lockedShares, 18, 16);
+            expectEqual(await rebaseToken.balanceOf(user0), balanceLMUSD, 18, 16);
         });
 
         it('Test add/disallow/delete period', async () => {

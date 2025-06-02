@@ -2,19 +2,17 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import {RTSupplyManagerStorage, IEigenPodManager} from "./RTSupplyManagerStorage.sol";
-
-import {IBufferInteractor} from "./interfaces/IBufferInteractor.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IOracle} from "./../../common/interfaces/IOracle.sol";
+import {IRebaseToken} from "./../../common/interfaces/IRebaseToken.sol";
+import {ZeroValueChecker} from "./../../common/ZeroValueChecker.sol";
 import {IWETH} from "./external/interfaces/IWETH.sol";
+import {IBufferInteractor} from "./interfaces/IBufferInteractor.sol";
 import {IRTSupplyManager} from "./interfaces/IRTSupplyManager.sol";
-import {ZeroValueChecker} from "../../common/ZeroValueChecker.sol";
-import {IOracle} from "../../common/interfaces/IOracle.sol";
-import {IRebaseToken} from "../../common/interfaces/IRebaseToken.sol";
+import {RTSupplyManagerStorage, IEigenPodManager} from "./RTSupplyManagerStorage.sol";
 
 /// @title Deposit Manager.
 /// @notice Manages the deposits and pool data.
@@ -65,8 +63,8 @@ contract RTSupplyManager is
         address weth_,
         address eigenPodManager_,
         uint256 initialSupply_,
-        uint256 apyFormatter_,
-        uint256 bufferPercent_
+        uint128 apyFormatter_,
+        uint128 bufferPercent_
     )
         checkNotZero(initialOwner_)
         checkNotZero(authorizedYieldDistributorAddress_)
@@ -86,6 +84,8 @@ contract RTSupplyManager is
         WETH = weth_;
 
         EIGEN_POD_MANAGER = IEigenPodManager(eigenPodManager_);
+        // slither-disable-next-line unused-return
+        EIGEN_POD_MANAGER.createPod();
 
         // Set initial total deposited supply.
         totalDepositedSupply = initialSupply_;
@@ -108,9 +108,9 @@ contract RTSupplyManager is
      * @param poolData_ Array of PoolData structs.
      */
     function initialize(
-        address[] memory pools_,
-        PoolData[] memory poolData_,
-        bool[] memory auth_
+        address[] calldata pools_,
+        PoolData[] calldata poolData_,
+        bool[] calldata auth_
     ) external onlyOwner {
         if (initialized) {
             revert EInitialized();
@@ -187,7 +187,7 @@ contract RTSupplyManager is
         }
 
         // Calculate the actual buffered supply.
-        uint256 actualBufferedSupply = _totalBufferedSupply(); // TODO: implement it.
+        uint256 actualBufferedSupply = _totalBufferedSupply();
 
         // Revert if the value is greater than the actual buffered supply.
         if (value > actualBufferedSupply) {
@@ -212,7 +212,7 @@ contract RTSupplyManager is
         IWETH(WETH).withdraw(value);
 
         // stake ETH in EigenPod contract
-        // EIGEN_POD_MANAGER.stake{value: value}(pubkey, signature, depositDataRoot);
+        EIGEN_POD_MANAGER.stake{value: value}(pubkey, signature, depositDataRoot);
 
         // Emit the deposit event.
         emit Deposit(value, pubkey, signature, depositDataRoot);
@@ -241,8 +241,8 @@ contract RTSupplyManager is
      * @param newApyFormatter New APY formatter.
      */
     function distributeYield(
-        Party[] memory beneficiaryInfo,
-        uint256 newApyFormatter
+        Party[] calldata beneficiaryInfo,
+        uint128 newApyFormatter
     ) external only(authorizedYieldDistributor) {
         // Validate the input.
         _checkPercentage(newApyFormatter);
@@ -256,8 +256,9 @@ contract RTSupplyManager is
         uint256 currentYield = (realYield * apyFormatter) / PERCENTAGE_FACTOR;
         uint256 extraYield = realYield - currentYield;
         // Find the amount of shares to mint.
-        uint256 newTotalSupply = totalDepositedSupply + currentYield;
-        uint256 sharesToMint = (extraYield * totalSharesSupply) / newTotalSupply;
+        uint256 sharesToMint = (extraYield * totalSharesSupply) /
+            // newTotalSupply
+            (totalDepositedSupply + currentYield);
 
         // Find the amount of shares to distribute by adding the locked yield shares' amount.
         uint256 sharesToDistribute = sharesToMint + lockedYieldShares;
@@ -270,7 +271,7 @@ contract RTSupplyManager is
         address[] memory users = new address[](length);
         uint256[] memory shares = new uint256[](length);
         // Calculate shares' value for every user.
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             Party memory p = beneficiaryInfo[i];
             users[i] = p.party;
             // slither-disable-next-line divide-before-multiply
@@ -309,7 +310,7 @@ contract RTSupplyManager is
     function _depositIntoPools(uint256 value) internal {
         uint256 length = poolsArray.length;
 
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             PoolData memory _poolData = poolData[poolsArray[i]];
 
             if (_poolData.poolPortion > 0) {
@@ -335,7 +336,7 @@ contract RTSupplyManager is
         // Once calculated, withdraw the required amount from each pool.
         // TODO: implement it.
 
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             PoolData memory _poolData = poolData[poolsArray[i]];
 
             if (_poolData.poolPortion > 0) {
@@ -375,7 +376,7 @@ contract RTSupplyManager is
     /// @return res Total ETH supply.
     function _totalBufferedSupply() internal view returns (uint256 res) {
         uint256 length = poolsArray.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             address pool = poolsArray[i];
             PoolData memory _poolData = poolData[pool];
 
@@ -409,6 +410,14 @@ contract RTSupplyManager is
      */
     function getTotalSharesSupply() external view returns (uint256 shares) {
         return totalSharesSupply;
+    }
+
+    /**
+     * @dev Getter for the Withdrawal Credentials variable.
+     * @return withdrawalCredentials bytes.
+     */
+    function getWithdrawalCredentials() external view returns (bytes memory) {
+        return abi.encodePacked(bytes1(0x01), bytes11(0), EIGEN_POD_MANAGER.getPod(address(this)));
     }
 
     /**
@@ -514,7 +523,7 @@ contract RTSupplyManager is
         // slither-disable-next-line uninitialized-local
         uint256 percentagesSum;
 
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             balanceEthToRebalance += _setPool(pools[i], newPoolsData[i], auth[i]);
 
             percentagesSum += newPoolsData[i].poolPortion;
@@ -555,7 +564,7 @@ contract RTSupplyManager is
         uint256[] memory expectedPoolsBalances = new uint256[](length);
         uint256[] memory actualPoolsBalances = new uint256[](length);
 
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             address pool = poolsArray[i];
 
             // rewrite new poolData
@@ -579,7 +588,7 @@ contract RTSupplyManager is
         }
 
         // deposit into pools after withdrawing all extra balances
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             if (expectedPoolsBalances[i] > actualPoolsBalances[i]) {
                 _executeDeposit(poolsArray[i], expectedPoolsBalances[i] - actualPoolsBalances[i]);
             }
@@ -590,7 +599,7 @@ contract RTSupplyManager is
      * @dev Setter for the bufferPercentage.
      * @param newBufferPercentage Number of new bufferPercentage.
      */
-    function setBufferPercentage(uint256 newBufferPercentage) external onlyOwner {
+    function setBufferPercentage(uint128 newBufferPercentage) external onlyOwner {
         _checkPercentage(newBufferPercentage);
         bufferPercentage = newBufferPercentage;
     }

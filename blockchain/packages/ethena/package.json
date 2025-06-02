@@ -23,7 +23,7 @@
         "@molecula-monorepo/solidity": "*",
         "@openzeppelin/contracts": "^4.9.5",
         "dotenv": "^16.4.7",
-        "hardhat": "^2.23.0",
+        "hardhat": "^2.24.1",
         "hardhat-gas-reporter": "^2.2.2",
         "node-fetch": "^2.6.7"
     },

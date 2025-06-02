@@ -40,17 +40,17 @@ contract RTSupplyManagerStorage is IRTSupplyManagerTypes {
 
     /// @dev APY formatter parameter, where
     /// (apyFormatter / PERCENTAGE_FACTOR) * 100% is the percentage of revenue retained by all mUSD holder.
-    uint256 public apyFormatter;
+    uint128 public apyFormatter;
 
     /// @dev Buffer percentage parameter, where
     /// (TVL ETH * bufferPercentage / PERCENTAGE_FACTOR) * is the amount of ETH token staked in pools.
-    uint256 public bufferPercentage;
+    uint128 public bufferPercentage;
 
     /// @dev Constant for percentage decimals using for `apy` and `poolPortion`.
-    uint256 public constant PERCENTAGE_FACTOR = 10_000;
+    uint128 public constant PERCENTAGE_FACTOR = 10_000;
 
     /// @dev Constant for percentage decimals using for yield distribution.
-    uint256 public constant FULL_PORTION = 1e18;
+    uint128 public constant FULL_PORTION = 1e18;
 
     /// @dev Initialization indicator.
     bool public initialized;

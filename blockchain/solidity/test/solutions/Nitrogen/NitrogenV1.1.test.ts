@@ -6,7 +6,14 @@ import { ethers } from 'hardhat';
 import { ethMainnetBetaConfig } from '../../../configs/ethereum/mainnetBetaTyped';
 
 import { INITIAL_SUPPLY } from '../../utils/Carbon';
-import { expectEqual, getEthena, grantStakedUSDE, grantUSDe, mintmUSDe } from '../../utils/Common';
+import {
+    expectEqual,
+    expectEqualBigInt,
+    getEthena,
+    grantStakedUSDE,
+    grantUSDe,
+    mintmUSDe,
+} from '../../utils/Common';
 import { deployNitrogen } from '../../utils/NitrogenCommon';
 
 import {
@@ -14,6 +21,7 @@ import {
     deployMoleculaPoolV11WithParams,
     deployNitrogenV11WithStakedUSDe,
     deployNitrogenV11WithUSDT,
+    getRidOf,
     initNitrogenAndRequestDeposit,
     initNitrogenForPause,
 } from '../../utils/NitrogenCommonV1.1';
@@ -208,8 +216,16 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         async function depositAndRequestRedeem() {
-            const { moleculaPool, rebaseToken, agent, user0, malicious, USDT } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+            const {
+                moleculaPool,
+                rebaseToken,
+                agent,
+                user0,
+                malicious,
+                USDT,
+                poolOwner,
+                poolKeeper,
+            } = await loadFixture(deployNitrogenV11WithUSDT);
             // deposit 100 USDT
             const depositValue = 100n * 10n ** 6n - 1n;
             // Grant user wallet with 100 USDT
@@ -235,6 +251,8 @@ describe('Test Nitrogen solution v1.1', () => {
                 rebaseToken,
                 depositValue,
                 user0,
+                poolOwner,
+                poolKeeper,
             };
         }
 
@@ -252,18 +270,11 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test remove with valueToRedeem', async () => {
-            const { moleculaPool, malicious, USDT } = await loadFixture(depositAndRequestRedeem);
+            const { moleculaPool, malicious, USDT, poolOwner, poolKeeper } =
+                await loadFixture(depositAndRequestRedeem);
 
             // Send all USDT to random address and try to remove USDT token.
-            await moleculaPool.addInWhiteList(USDT);
-            const keeperSigner = await ethers.getImpersonatedSigner(
-                await moleculaPool.poolKeeper(),
-            );
-            const encodedTransfer = USDT.interface.encodeFunctionData('transfer', [
-                malicious.address,
-                await USDT.balanceOf(moleculaPool.getAddress()),
-            ]);
-            await moleculaPool.connect(keeperSigner).execute(USDT.getAddress(), encodedTransfer);
+            await getRidOf(moleculaPool, poolOwner, USDT, malicious.address, poolKeeper);
             await expect(moleculaPool.removeToken(USDT)).to.be.rejectedWith(
                 'ENotZeroValueToRedeemOfRemovedToken()',
             );
@@ -628,7 +639,7 @@ describe('Test Nitrogen solution v1.1', () => {
             // `valueToRedeem` must be 0, but we have some rounding error
             expect((await moleculaPool.poolMap(susde)).valueToRedeem).to.be.equal(0);
             await rebaseToken.connect(malicious).confirmRedeem(operationId);
-            expectEqual(
+            expectEqualBigInt(
                 await susde.balanceOf(user1.getAddress()),
                 susdeUserDeposit,
                 await susde.decimals(),
@@ -829,7 +840,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
             expect((await moleculaPoolV11.poolMap(USDT)).valueToRedeem).to.be.equal(0n);
 
-            expectEqual(await moleculaPoolV11.totalSupply(), totalSupply, 18n, 6n);
+            expectEqual(await moleculaPoolV11.totalSupply(), totalSupply, 18, 6);
 
             const agents = await supplyManager.getAgents();
 

@@ -127,16 +127,16 @@ interface IlmUSD {
     /// @dev Event emitted when the period is added.
     /// @param period Lock period.
     /// @param multiplier Multiplier for the lock period.
-    event PeriodAdded(uint128 period, uint128 multiplier);
+    event PeriodAdded(uint128 indexed period, uint128 indexed multiplier);
 
     /// @dev Event emitted when the period is allowed or disallowed.
     /// @param period Lock period.
     /// @param isAllowed Boolean indicating whether the lock period is allowed.
-    event SetAllowPeriod(uint128 period, bool isAllowed);
+    event SetAllowPeriod(uint128 indexed period, bool indexed isAllowed);
 
     /// @dev Event emitted when the period is deleted.
     /// @param period Lock period.
-    event PeriodDeleted(uint128 period);
+    event PeriodDeleted(uint128 indexed period);
 
     /// @dev Event emitted when user has locked their mUSD tokens.
     /// @param sender Owner of lock.
@@ -145,10 +145,10 @@ interface IlmUSD {
     /// @param period Lock period.
     /// @param createdAt Lock creation timestamp.
     event Locked(
-        address sender,
-        uint256 tokenId,
+        address indexed sender,
+        uint256 indexed tokenId,
         uint256 shares,
-        uint128 period,
+        uint128 indexed period,
         uint128 createdAt
     );
 
@@ -159,10 +159,10 @@ interface IlmUSD {
     /// @param period Lock period.
     /// @param createdAt Lock creation timestamp.
     event Unlocked(
-        address sender,
-        uint256 tokenId,
+        address indexed sender,
+        uint256 indexed tokenId,
         uint256 shares,
-        uint128 period,
+        uint128 indexed period,
         uint128 createdAt
     );
 

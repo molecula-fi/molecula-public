@@ -10,8 +10,8 @@ import {MessagingReceipt} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAp
 import {SendParam, OFTReceipt} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
 // Import mocks for USDT_OFT and USDT contracts.
-import {MockUsdtOFT} from "../../contracts/mock/MockUsdtOFT.sol";
-import {MockUSDT} from "../../contracts/mock/MockUsdt.sol";
+import {MockUsdtOFT} from "../../contracts/mock/USDT/MockUsdtOFT.sol";
+import {MockUSDT} from "../../contracts/mock/USDT/MockUsdt.sol";
 
 // Import the test helper that contains basic setup functions for Foundry tests.
 import {TestHelperOz5} from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";

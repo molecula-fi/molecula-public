@@ -13,6 +13,7 @@ export * from './ethereumSubscriber';
 export * from './normalizeAddress';
 export * from './areEvmAddressesEqual';
 export * from './findBlockByTimestamp';
+export * from './getMethodType';
 
 // Export types
 export * from './types';

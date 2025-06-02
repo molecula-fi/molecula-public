@@ -5,6 +5,45 @@ pragma solidity ^0.8.28;
 import {RebaseERC20} from "../../../common/rebase/RebaseERC20.sol";
 
 interface IwmUSD {
+    /// @dev Event emitted when the user wrapped their mUSD tokens.
+    /// @param sender User address.
+    /// @param value mUSD amount that user wrapped and one got the same amount of wmUSD amount.
+    event Wrapped(address indexed sender, uint256 indexed value);
+
+    /// @dev Event emitted when the user has unwrapped their mUSD tokens.
+    /// @param sender User address.
+    /// @param wmUSDAmount wmUSD amount to burn.
+    /// @param mUSDAmount mUSD amount that user gets.
+    event Unwrapped(
+        address indexed sender,
+        uint256 indexed wmUSDAmount,
+        uint256 indexed mUSDAmount
+    );
+
+    /// @dev Event emitted when yield is distributed for user.
+    /// @param user User address.
+    /// @param shares Shares for the user.
+    /// @param mUSDAmount mUSD amount.
+    event YieldDistributed(
+        address indexed user,
+        uint256 indexed shares,
+        uint256 indexed mUSDAmount
+    );
+
+    /// @dev Event emitted when authorized yield distributor is changed.
+    /// @param oldAuthorizedYieldDistributor Previous authorized yield distributor.
+    /// @param newAuthorizedYieldDistributor New authorized yield distributor.
+    event AuthorizedYieldDistributorChanged(
+        address indexed oldAuthorizedYieldDistributor,
+        address indexed newAuthorizedYieldDistributor
+    );
+
+    /// @dev Throws an error if the Yield Distributor is not authorized.
+    error ENotAuthorizedYieldDistributor();
+
+    /// @dev Throws an error if shares for distributions are greater than the yield shares.
+    error ETooManyShares();
+
     /// @dev Returns mUSD Rebase token address.
     /// @return mUSD Rebase token address.
     // solhint-disable-next-line func-name-mixedcase
@@ -21,37 +60,6 @@ interface IwmUSD {
     /// @dev Returns mUSD wrapped shares.
     /// @return mUSD wrapped shares.
     function mUSDWrappedShares() external returns (uint256);
-
-    /// @dev Throws an error if the Yield Distributor is not authorized.
-    error ENotAuthorizedYieldDistributor();
-
-    /// @dev Throws an error if shares for distributions are greater than the yield shares.
-    error ETooManyShares();
-
-    /// @dev Event emitted when the user wrapped their mUSD tokens.
-    /// @param sender User address.
-    /// @param value mUSD amount that user wrapped and one got the same amount of wmUSD amount.
-    event Wrapped(address sender, uint256 value);
-
-    /// @dev Event emitted when the user has unwrapped their mUSD tokens.
-    /// @param sender User address.
-    /// @param wmUSDAmount wmUSD amount to burn.
-    /// @param mUSDAmount mUSD amount that user gets.
-    event Unwrapped(address sender, uint256 wmUSDAmount, uint256 mUSDAmount);
-
-    /// @dev Event emitted when yield is distributed for user.
-    /// @param user User address.
-    /// @param shares Shares for the user.
-    /// @param mUSDAmount mUSD amount.
-    event YieldDistributed(address user, uint256 shares, uint256 mUSDAmount);
-
-    /// @dev Event emitted when authorized yield distributor is changed.
-    /// @param oldAuthorizedYieldDistributor Previous authorized yield distributor.
-    /// @param newAuthorizedYieldDistributor New authorized yield distributor.
-    event AuthorizedYieldDistributorChanged(
-        address oldAuthorizedYieldDistributor,
-        address newAuthorizedYieldDistributor
-    );
 
     /// @dev Convert mUSD to wmUSD.
     /// @param value Token amount.

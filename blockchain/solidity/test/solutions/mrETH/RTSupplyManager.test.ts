@@ -1,17 +1,18 @@
 /* eslint-disable camelcase, max-lines */
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { expect } from 'chai';
-import { ethers } from 'hardhat';
 
 import { expectEqual } from '../../utils/Common';
 import { findDistributeYieldEvent } from '../../utils/event';
 import { grantERC20, FAUCET } from '../../utils/grant';
 import { deployMrETh, INITIAL_SUPPLY } from '../../utils/mrETH';
+import { createValidatorKeys } from '../../utils/sign';
 
 describe('Test mrETH RTSupplyManager', () => {
     describe('General solution tests', () => {
         it('Test request deposit and deposit for WETH', async () => {
-            const { rtSupplyManager, mrETH, owner, WETH, aWETH } = await loadFixture(deployMrETh);
+            const { rtSupplyManager, mrETH, owner, WETH, aWETH, withdrawalCredentials } =
+                await loadFixture(deployMrETh);
 
             // value for request deposit 1 WETH
             const val = 1n * 10n ** 18n;
@@ -24,7 +25,7 @@ describe('Test mrETH RTSupplyManager', () => {
 
             let shares = await mrETH.sharesOf(owner);
             expect(shares).to.be.lessThanOrEqual(999999999286000000n);
-            expect(await mrETH.convertToAssets(shares)).to.be.equal(val - 1n);
+            expectEqual(await mrETH.convertToAssets(shares), val);
 
             await mrETH.requestDeposit(val, owner, owner);
 
@@ -35,20 +36,21 @@ describe('Test mrETH RTSupplyManager', () => {
             expect(shares).to.be.lessThanOrEqual(1999999998215001770n);
             expect(await mrETH.convertToAssets(shares)).to.be.lessThan(2n * val + INITIAL_SUPPLY);
 
-            await rtSupplyManager.deposit(
-                val * 2n + INITIAL_SUPPLY,
-                '0x01',
-                '0x01',
-                ethers.zeroPadValue('0x01', 32),
-            );
+            const { pubkey, signature, depositDataRoot } =
+                createValidatorKeys(withdrawalCredentials);
 
-            expect(await aWETH.balanceOf(rtSupplyManager)).to.be.greaterThan(0n);
+            await mrETH.requestDeposit(val * 30n, owner, owner);
+
+            await rtSupplyManager.deposit(val * 32n, pubkey, signature, depositDataRoot);
+
+            expect(await aWETH.balanceOf(rtSupplyManager)).to.be.greaterThan(INITIAL_SUPPLY);
             shares = await mrETH.sharesOf(owner);
-            expect(shares).to.be.lessThanOrEqual(1999999998215001770n);
+            expect(shares).to.be.lessThan(32000000000000000000n);
         });
 
         it('Test request deposit and deposit for ETH', async () => {
-            const { rtSupplyManager, mrETH, owner, WETH, aWETH } = await loadFixture(deployMrETh);
+            const { rtSupplyManager, mrETH, owner, WETH, aWETH, withdrawalCredentials } =
+                await loadFixture(deployMrETh);
 
             // value for request deposit 1 ETH
             const val = 1n * 10n ** 18n;
@@ -67,7 +69,7 @@ describe('Test mrETH RTSupplyManager', () => {
             expect(await aWETH.balanceOf(rtSupplyManager)).to.be.greaterThan(INITIAL_SUPPLY + val);
             shares = await mrETH.sharesOf(owner);
             expect(shares).to.be.lessThanOrEqual(999999998930000001n);
-            expectEqual(await mrETH.convertToAssets(shares), val, 18n, 17n);
+            expectEqual(await mrETH.convertToAssets(shares), val);
 
             await mrETH.requestDeposit(val, owner, owner, { value: val });
 
@@ -78,43 +80,41 @@ describe('Test mrETH RTSupplyManager', () => {
             expect(shares).to.be.lessThanOrEqual(1999999997503001747n);
             expect(await mrETH.convertToAssets(shares)).to.be.lessThan(2n * val + INITIAL_SUPPLY);
 
-            await rtSupplyManager.deposit(
-                val * 2n + INITIAL_SUPPLY,
-                '0x01',
-                '0x01',
-                ethers.zeroPadValue('0x01', 32),
-            );
+            const { pubkey, signature, depositDataRoot } =
+                createValidatorKeys(withdrawalCredentials);
 
-            expect(await aWETH.balanceOf(rtSupplyManager)).to.be.greaterThan(0n);
+            await mrETH.requestDeposit(val * 30n, owner, owner, { value: val * 30n });
+
+            await rtSupplyManager.deposit(val * 32n, pubkey, signature, depositDataRoot);
+
+            expect(await aWETH.balanceOf(rtSupplyManager)).to.be.greaterThan(INITIAL_SUPPLY);
             shares = await mrETH.sharesOf(owner);
-            expect(shares).to.be.lessThanOrEqual(1999999997503001747n);
+            expect(shares).to.be.lessThan(32000000000000000000n);
         });
 
         it('Test pause and unpause', async () => {
-            const { rtSupplyManager, mrETH, owner } = await loadFixture(deployMrETh);
+            const { rtSupplyManager, mrETH, owner, withdrawalCredentials } =
+                await loadFixture(deployMrETh);
 
             // value for request deposit 1 WETH
             const val = 1n * 10n ** 18n;
 
             await expect(rtSupplyManager.requestDeposit(owner, 1, val)).to.be.reverted;
-            await mrETH.requestDeposit(val, owner, owner);
+            await mrETH.requestDeposit(val * 32n, owner, owner);
 
             await rtSupplyManager.pauseDeposit();
 
             await expect(mrETH.requestDeposit(val, owner, owner)).to.be.reverted;
 
-            await expect(
-                rtSupplyManager.deposit(val, '0x01', '0x01', ethers.zeroPadValue('0x01', 32)),
-            ).to.be.reverted;
+            const { pubkey, signature, depositDataRoot } =
+                createValidatorKeys(withdrawalCredentials);
+
+            await expect(rtSupplyManager.deposit(val * 32n, pubkey, signature, depositDataRoot)).to
+                .be.reverted;
 
             await rtSupplyManager.unpauseDeposit();
-            await mrETH.requestDeposit(val, owner, owner);
-            await rtSupplyManager.deposit(
-                val * 2n + INITIAL_SUPPLY,
-                '0x01',
-                '0x01',
-                ethers.zeroPadValue('0x01', 32),
-            );
+
+            await rtSupplyManager.deposit(val * 32n, pubkey, signature, depositDataRoot);
         });
 
         it('Test distribute yield', async () => {
@@ -156,6 +156,7 @@ describe('Test mrETH RTSupplyManager', () => {
                 aavePool,
                 aaveBufferLib,
                 compoundBufferLib,
+                withdrawalCredentials,
             } = await loadFixture(deployMrETh);
 
             // add new pool for buffer
@@ -203,17 +204,16 @@ describe('Test mrETH RTSupplyManager', () => {
             expect(shares).to.be.lessThanOrEqual(1999999997503001747n);
             expect(await mrETH.convertToAssets(shares)).to.be.lessThan(2n * val + INITIAL_SUPPLY);
 
-            await rtSupplyManager.deposit(
-                val * 2n,
-                '0x01',
-                '0x01',
-                ethers.zeroPadValue('0x01', 32),
-            );
+            const { pubkey, signature, depositDataRoot } =
+                createValidatorKeys(withdrawalCredentials);
+            await mrETH.requestDeposit(val * 30n, owner, owner);
 
-            expect(await aWETH.balanceOf(rtSupplyManager)).to.be.greaterThan(0n);
-            expect(await cWETHv3.balanceOf(rtSupplyManager)).to.be.greaterThan(0n);
+            await rtSupplyManager.deposit(val * 32n, pubkey, signature, depositDataRoot);
+
+            expect(await aWETH.balanceOf(rtSupplyManager)).to.be.greaterThan(INITIAL_SUPPLY / 2n);
+            expect(await cWETHv3.balanceOf(rtSupplyManager)).to.be.greaterThan(INITIAL_SUPPLY / 2n);
             shares = await mrETH.sharesOf(owner);
-            expect(shares).to.be.lessThanOrEqual(1999999997503001747n);
+            expect(shares).to.be.lessThan(32000000000000000000n);
         });
 
         it('Test remove pool from buffer', async () => {

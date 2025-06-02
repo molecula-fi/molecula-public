@@ -3,12 +3,12 @@
 pragma solidity ^0.8.28;
 
 import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
-import {FunctionPausable} from "../common/FunctionPausable.sol";
-import {IERC7575} from "../common/external/interfaces/IERC7575.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {IERC7575} from "./../common/external/interfaces/IERC7575.sol";
 import {IIssuer, IIssuerShare7575} from "./interfaces/IIssuer.sol";
+import {IRebaseTokenV2} from "./interfaces/IRebaseTokenV2.sol";
 import {ISupplyManagerV2} from "./interfaces/ISupplyManagerV2.sol";
+import {Permit} from "./Permit.sol";
 import {RebaseERC20V2} from "./RebaseERC20V2.sol";
 import {VaultContainer} from "./VaultContainer.sol";
 
@@ -17,11 +17,12 @@ import {VaultContainer} from "./VaultContainer.sol";
 /// @dev Extends RebaseERC20V2 with additional vault container and ownership features.
 // slither-disable-next-line missing-inheritance
 contract RebaseTokenV2 is
-    RebaseERC20V2,
-    VaultContainer,
+    IIssuerShare7575,
+    IRebaseTokenV2,
     Ownable2Step,
-    FunctionPausable,
-    IIssuerShare7575
+    Permit,
+    RebaseERC20V2,
+    VaultContainer
 {
     // ============ State Variables ============
 
@@ -46,27 +47,24 @@ contract RebaseTokenV2 is
     // ============ Constructor ============
 
     /// @dev Initializes the contract with specified parameters.
-    /// @param initialShares Initial shares amount to mint.
     /// @param oracleAddress Oracle contract's address.
     /// @param initialOwner Smart contract owner's address.
     /// @param tokenName Token name.
     /// @param tokenSymbol Token symbol.
     /// @param tokenDecimals Token decimals.
-    /// @param guardianAddress Guardian's address that can pause the contract.
     /// @param supplyManager_ SupplyManager's address. Might be equal to the zero address.
     constructor(
-        uint256 initialShares,
         address oracleAddress,
         address initialOwner,
         string memory tokenName,
         string memory tokenSymbol,
         uint8 tokenDecimals,
-        address guardianAddress,
         address supplyManager_
     )
-        RebaseERC20V2(initialShares, oracleAddress, tokenName, tokenSymbol, tokenDecimals)
+        RebaseERC20V2(oracleAddress, tokenName, tokenSymbol, tokenDecimals)
         Ownable(initialOwner)
-        FunctionPausable(guardianAddress)
+        EIP712(tokenName, "2.0.0")
+        notZeroAddress(supplyManager_)
     {
         SUPPLY_MANAGER = supplyManager_;
     }
@@ -74,13 +72,19 @@ contract RebaseTokenV2 is
     // ============ Core Functions ============
 
     /// @inheritdoc IIssuer
-    function mint(address user, uint256 shares) external onlySupplyManagerOrTokenVault {
+    function mint(
+        address user,
+        uint256 shares
+    ) external virtual override onlySupplyManagerOrTokenVault {
         // Mint shares for the user.
         _mint(user, shares);
     }
 
     /// @inheritdoc IIssuer
-    function burn(address user, uint256 shares) external onlySupplyManagerOrTokenVault {
+    function burn(
+        address user,
+        uint256 shares
+    ) external virtual override onlySupplyManagerOrTokenVault {
         // Burn the user's shares.
         _burn(user, shares);
     }
@@ -89,19 +93,21 @@ contract RebaseTokenV2 is
 
     /// @dev Sets the Oracle contract's address.
     /// @param oracleAddress Oracle contract's address.
-    function setOracle(address oracleAddress) public onlyOwner checkNotZero(oracleAddress) {
+    function setOracle(
+        address oracleAddress
+    ) external virtual override onlyOwner notZeroAddress(oracleAddress) {
         // Update the Oracle's address.
         oracle = oracleAddress;
     }
 
     /// @inheritdoc Ownable2Step
-    function _transferOwnership(address newOwner) internal override(Ownable, Ownable2Step) {
+    function _transferOwnership(address newOwner) internal virtual override(Ownable, Ownable2Step) {
         // Transfer ownership to the new owner.
         super._transferOwnership(newOwner);
     }
 
     /// @inheritdoc Ownable2Step
-    function transferOwnership(address newOwner) public override(Ownable, Ownable2Step) {
+    function transferOwnership(address newOwner) public virtual override(Ownable, Ownable2Step) {
         // Initiate ownership transfer.
         super.transferOwnership(newOwner);
     }
@@ -109,20 +115,25 @@ contract RebaseTokenV2 is
     // ============ Internal Functions ============
 
     /// @inheritdoc VaultContainer
-    function _getAsset(address tokenVault) internal view override returns (address asset) {
+    function _getAsset(address tokenVault) internal view virtual override returns (address asset) {
         // Get the underlying asset from the token Vault.
         return IERC7575(tokenVault).asset();
     }
 
     /// @inheritdoc VaultContainer
-    function _onAddTokenVault(address tokenVault) internal override {
+    function _onAddTokenVault(address tokenVault) internal virtual override {
         // Notify the Supply Manager about the new token Vault.
         ISupplyManagerV2(oracle).onAddTokenVault(tokenVault);
     }
 
     /// @inheritdoc VaultContainer
-    function _onRemoveTokenVault(address tokenVault) internal override {
+    function _onRemoveTokenVault(address tokenVault) internal virtual override {
         // Notify the Supply Manager about the removal of the new token Vault.
         ISupplyManagerV2(oracle).onRemoveTokenVault(tokenVault);
+    }
+
+    /// @inheritdoc Permit
+    function _onPermit(address owner, address spender, uint256 shares) internal virtual override {
+        _approve(owner, spender, shares);
     }
 }

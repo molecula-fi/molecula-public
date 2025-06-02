@@ -6,9 +6,6 @@ if [ "$(uname | tr '[:upper:]' '[:lower:]' | grep -o 'linux')" ] ; then
   set -e
 fi
 
-# Source the turbo utilities file
-source ./scripts/turbo_utils.sh
-
 NO_GENERATE=false
 IS_WEBSITE=false
 IS_BLOCKCHAIN=false
@@ -44,7 +41,7 @@ fi
     cargo install lintspec
   
     echo "🔍 Running solidity code quality checks..."
-    turbo run lintspec:check --filter=@molecula-monorepo/solidity \
+    yarn turbo run lintspec:check --filter=@molecula-monorepo/solidity \
       docs:generate --filter=@molecula-monorepo/solidity \
       solhint:check --filter=@molecula-monorepo/solidity || { echo "❌ Code quality checks failed"; exit 1; }
       # Temporary disable the following until the issues with "429 Too Many Requests" is resolved:
@@ -53,7 +50,7 @@ fi
     # Run slither first and do it separately because slither cleans compiled artifacts
     if command -v slither >/dev/null 2>&1; then
       echo "🔍 Running slither check..."
-      turbo run slither --affected || { echo "❌ pre-merge slither failed"; exit 1; }
+      yarn turbo run slither --affected || { echo "❌ pre-merge slither failed"; exit 1; }
     else
       echo "ℹ️ Slither not found, skipping Solidity static analysis"
     fi
@@ -67,16 +64,16 @@ fi
 if [[ "${NO_GENERATE}" == false ]]; then
   if [[ "${IS_WEBSITE}" == true ]]; then
     echo "🔍 Running code generation for website..."
-    turbo run gql:generate || { echo "❌ Code generation failed"; exit 1; }
+    yarn turbo run gql:generate || { echo "❌ Code generation failed"; exit 1; }
   else
     echo "🔍 Running code generation..."
-    turbo run compile gql:generate || { echo "❌ Code generation failed"; exit 1; }
+    yarn turbo run compile gql:generate || { echo "❌ Code generation failed"; exit 1; }
   fi
 fi
 
 # Then run the required checks in parallel
 echo "🔍 Running general code quality checks..."
-turbo run tsc \
+yarn turbo run tsc \
   eslint:check \
   prettier:check \
   cycles:check \

@@ -3,14 +3,14 @@
 pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
-import {IERC7575Share} from "../common/external/interfaces/IERC7575.sol";
+import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {IERC7575Share} from "./../common/external/interfaces/IERC7575.sol";
 import {IVaultContainer} from "./interfaces/IVaultContainer.sol";
 
 /// @title Vault Container.
 /// @notice Abstract contract for managing token Vaults and their assets.
 /// @dev Implements the Vault management functionality with allowlisting and validation.
-abstract contract VaultContainer is IVaultContainer, IERC7575Share, Ownable {
+abstract contract VaultContainer is IVaultContainer, IERC7575Share, Ownable, ERC165 {
     // ============ State Variables ============
 
     /// @inheritdoc IERC7575Share
@@ -37,6 +37,12 @@ abstract contract VaultContainer is IVaultContainer, IERC7575Share, Ownable {
         if (!isTokenVaultAllowed[addr]) {
             revert TokenVaultNotAllowed();
         }
+    }
+
+    /// @inheritdoc ERC165
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return
+            type(IERC7575Share).interfaceId == interfaceId || super.supportsInterface(interfaceId);
     }
 
     // ============ Internal Functions ============
@@ -76,6 +82,7 @@ abstract contract VaultContainer is IVaultContainer, IERC7575Share, Ownable {
 
         // Register the token Vault.
         isTokenVaultAllowed[tokenVault] = true;
+        vault[asset] = tokenVault;
         _onAddTokenVault(tokenVault);
     }
 

@@ -83,10 +83,12 @@
         "@layerzerolabs/lz-evm-v1-0.7": "^3.0.87",
         "@layerzerolabs/lz-v2-utilities": "^3.0.75",
         "@layerzerolabs/test-devtools-evm-foundry": "^6.0.3",
+        "@noble/curves": "^1.8.1",
+        "@noble/hashes": "^1.7.1",
         "@openzeppelin/contracts": "^5.2.0",
         "dotenv": "^16.4.7",
         "ethers": "^6.13.5",
-        "hardhat": "^2.23.0",
+        "hardhat": "^2.24.1",
         "hardhat-gas-reporter": "^2.2.2",
         "node-fetch": "^2.6.7",
         "solidity-bytes-utils": "^0.8.3",
@@ -121,7 +123,8 @@
             "@openzeppelin/contracts",
             "@layerzerolabs/**",
             "@aave/**",
-            "solidity-bytes-utils"
+            "solidity-bytes-utils",
+            "@noble/**"
         ]
     }
 }

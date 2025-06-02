@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.23;
 
-import {IAccountant} from "../common/interfaces/IAccountant.sol";
-import {IRebaseTokenErrors} from "../common/interfaces/IRebaseTokenErrors.sol";
-import {IRebaseTokenEvents} from "../common/interfaces/IRebaseTokenEvents.sol";
-import {IRebaseToken} from "../common/interfaces/IRebaseToken.sol";
-import {OperationStatus} from "../common/rebase/structures/OperationStatus.sol";
-import {RebaseERC20Permit} from "../common/rebase/RebaseERC20Permit.sol";
-import {RedeemOperationInfo, DepositOperationInfo} from "../common/rebase/structures/OperationInfo7540.sol";
+import {IAccountant} from "./../../common/interfaces/IAccountant.sol";
+import {IRebaseToken} from "./../../common/interfaces/IRebaseToken.sol";
+import {IRebaseTokenErrors} from "./../../common/interfaces/IRebaseTokenErrors.sol";
+import {IRebaseTokenEvents} from "./../../common/interfaces/IRebaseTokenEvents.sol";
+import {RebaseERC20Permit} from "./../../common/rebase/RebaseERC20Permit.sol";
+import {RedeemOperationInfo, DepositOperationInfo} from "./../../common/rebase/structures/OperationInfo7540.sol";
+import {OperationStatus} from "./../../common/rebase/structures/OperationStatus.sol";
 
 contract MockRebaseTokenCommon is
     IRebaseToken,
@@ -216,11 +216,12 @@ contract MockRebaseTokenCommon is
      * @return totalValue Total value to redeem.
      */
     function redeem(
-        uint256[] memory operationIds,
-        uint256[] memory values
+        uint256[] calldata operationIds,
+        uint256[] calldata values
     ) external onlyAccountant returns (uint256 totalValue) {
         // Iterate through the operation IDs and values.
-        for (uint256 i = 0; i < operationIds.length; i++) {
+        uint256 length = operationIds.length;
+        for (uint256 i = 0; i < length; ++i) {
             // Check if the operation is pending.
             // Do nothing otherwise, since the operation might be already processed.
             if (redeemRequests[operationIds[i]].status == OperationStatus.Pending) {
@@ -288,7 +289,7 @@ contract MockRebaseTokenCommon is
      * @return id Operation ID.
      */
     function _generateOperationId() internal returns (uint256 id) {
-        _lastOperationIndex += 1;
+        ++_lastOperationIndex;
         bytes32 h = keccak256(abi.encodePacked(address(this), block.chainid, _lastOperationIndex));
         return uint256(h);
     }

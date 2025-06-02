@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
+import {IRebaseToken} from "./../../common/interfaces/IRebaseToken.sol";
+import {IRebaseTokenErrors} from "./../../common/interfaces/IRebaseTokenErrors.sol";
+import {IRebaseTokenEvents} from "./../../common/interfaces/IRebaseTokenEvents.sol";
+import {RebaseERC20Permit} from "./../../common/rebase/RebaseERC20Permit.sol";
+import {RedeemOperationInfo, DepositOperationInfo} from "./../../common/rebase/structures/OperationInfo7540.sol";
+import {OperationStatus} from "./../../common/rebase/structures/OperationStatus.sol";
 import {IRTSupplyManager} from "./interfaces/IRTSupplyManager.sol";
-import {IRebaseTokenErrors} from "../../common/interfaces/IRebaseTokenErrors.sol";
-import {IRebaseTokenEvents} from "../../common/interfaces/IRebaseTokenEvents.sol";
-import {IRebaseToken} from "../../common/interfaces/IRebaseToken.sol";
-import {OperationStatus} from "../../common/rebase/structures/OperationStatus.sol";
-import {RebaseERC20Permit} from "../../common/rebase/RebaseERC20Permit.sol";
-import {RedeemOperationInfo, DepositOperationInfo} from "../../common/rebase/structures/OperationInfo7540.sol";
 
 // draft contract version using only for requestDeposit, confirmDeposit and distribute functions
 
@@ -128,14 +128,12 @@ contract MrETH is IRebaseToken, RebaseERC20Permit, IRebaseTokenEvents, IRebaseTo
     /**
      * @dev Returns the amount of assets that was deposited.
      * @param requestId Corresponding ID.
-     * @param controller Corresponding controller.
      * @return assets Amount of assets.
      */
     function pendingDepositRequest(
         uint256 requestId,
-        address controller
+        address /*controller*/
     ) external view returns (uint256 assets) {
-        controller;
         if (depositRequests[requestId].status == OperationStatus.Pending) {
             return depositRequests[requestId].assets;
         }
@@ -144,16 +142,12 @@ contract MrETH is IRebaseToken, RebaseERC20Permit, IRebaseTokenEvents, IRebaseTo
 
     /**
      * @dev Returns the amount of assets that can be claimed.
-     * @param requestId Corresponding ID.
-     * @param controller Corresponding controller.
      * @return assets Amount of assets.
      */
     function claimableDepositRequest(
-        uint256 requestId,
-        address controller
+        uint256 /*requestId*/,
+        address /*controller*/
     ) external pure returns (uint256 assets) {
-        requestId;
-        controller;
         return 0;
     }
 
@@ -232,11 +226,12 @@ contract MrETH is IRebaseToken, RebaseERC20Permit, IRebaseTokenEvents, IRebaseTo
      * @return totalValue Total value to redeem.
      */
     function redeem(
-        uint256[] memory operationIds,
-        uint256[] memory values
+        uint256[] calldata operationIds,
+        uint256[] calldata values
     ) external returns (uint256 totalValue) {
+        uint256 length = operationIds.length;
         // Iterate through the operation IDs and values.
-        for (uint256 i = 0; i < operationIds.length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             // Check if the operation is pending.
             // Do nothing otherwise, since the operation might be already processed.
             if (redeemRequests[operationIds[i]].status == OperationStatus.Pending) {
@@ -257,14 +252,12 @@ contract MrETH is IRebaseToken, RebaseERC20Permit, IRebaseTokenEvents, IRebaseTo
     /**
      * @dev Returns the amount of assets that was redeemed.
      * @param requestId Corresponding ID.
-     * @param controller Corresponding controller.
      * @return shares Amount of assets.
      */
     function pendingRedeemRequest(
         uint256 requestId,
-        address controller
+        address /*controller*/
     ) external view returns (uint256 shares) {
-        controller;
         if (redeemRequests[requestId].status == OperationStatus.Pending) {
             return redeemRequests[requestId].val;
         }
@@ -273,16 +266,12 @@ contract MrETH is IRebaseToken, RebaseERC20Permit, IRebaseTokenEvents, IRebaseTo
 
     /**
      * @dev Returns the amount of assets that can be redeemed.
-     * @param requestId Corresponding ID.
-     * @param controller Corresponding controller.
      * @return shares Amount of assets.
      */
     function claimableRedeemRequest(
-        uint256 requestId,
-        address controller
+        uint256 /*requestId*/,
+        address /*controller*/
     ) external pure returns (uint256 shares) {
-        requestId;
-        controller;
         return 0;
     }
 

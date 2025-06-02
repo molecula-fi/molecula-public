@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { bytesToHex, hexToBytes } from '@noble/curves/abstract/utils';
+import { bls12_381 as bls } from '@noble/curves/bls12-381';
+import { sha256 } from '@noble/hashes/sha2';
 import { type Signer } from 'ethers';
+
+type Hex = `0x${string}`;
 
 interface ERC2612PermitMessage {
     owner: string;
@@ -49,6 +54,8 @@ function splitSignatureToRSV(signature: string): RSV {
 }
 
 export async function signERC2612Permit(
+    name: string,
+    version: string,
     token: string,
     owner: string,
     spender: string,
@@ -66,8 +73,8 @@ export async function signERC2612Permit(
     };
 
     const domain: Domain = {
-        name: 'RebaseERC20Permit',
-        version: '1.0.0',
+        name,
+        version,
         chainId: 31337,
         verifyingContract: token,
     };
@@ -83,4 +90,121 @@ export async function signERC2612Permit(
     const sig = splitSignatureToRSV(rawSignature);
 
     return { ...sig, ...message };
+}
+
+export function fromHexString(hex: string): Uint8Array {
+    const hexString = hex.startsWith('0x') ? hex.slice(2) : hex;
+
+    if (hexString.length % 2 !== 0) {
+        throw new Error(`hex string length ${hexString.length} must be multiple of 2`);
+    }
+    return hexToBytes(hexString);
+}
+
+function toHex(bytes: Uint8Array): Hex {
+    return `0x${bytesToHex(bytes)}` as Hex;
+}
+
+function calculatePubkeyRoot(pubkey: Hex): Uint8Array {
+    const pubkeyBytes = fromHexString(pubkey);
+    const pubkeyPadded = new Uint8Array([...pubkeyBytes, ...new Uint8Array(16)]);
+    return sha256(pubkeyPadded);
+}
+
+function calculateSignatureRoot(signature: Hex): Uint8Array {
+    const signatureBytes = fromHexString(signature);
+    const sigPart1 = signatureBytes.slice(0, 64);
+    const sigPart2 = new Uint8Array([...signatureBytes.slice(64), ...new Uint8Array(32)]);
+    return sha256(new Uint8Array([...sha256(sigPart1), ...sha256(sigPart2)]));
+}
+
+function calculateAmountPadded(amount: number): Uint8Array {
+    const amountBytes = new Uint8Array(8);
+    new DataView(amountBytes.buffer).setBigUint64(0, BigInt(amount), true);
+    return new Uint8Array([...amountBytes, ...new Uint8Array(24)]);
+}
+
+function calculateDepositDataRoot(
+    pubkey: Hex,
+    withdrawalCredentials: Hex,
+    amount: number,
+    signature: Hex,
+): Hex {
+    const pubkeyRoot = calculatePubkeyRoot(pubkey);
+    const signatureRoot = calculateSignatureRoot(signature);
+    const amountPadded = calculateAmountPadded(amount);
+
+    const left = sha256(new Uint8Array([...pubkeyRoot, ...fromHexString(withdrawalCredentials)]));
+    const right = sha256(new Uint8Array([...amountPadded, ...signatureRoot]));
+    return toHex(sha256(new Uint8Array([...left, ...right])));
+}
+
+export function verifyDepositRoot(
+    pubkey: Hex,
+    withdrawalCredentials: Hex,
+    amount: number,
+    signature: Hex,
+    expectedRoot: Hex,
+): boolean {
+    const depositDataRoot = calculateDepositDataRoot(
+        pubkey,
+        withdrawalCredentials,
+        amount,
+        signature,
+    );
+    return depositDataRoot === expectedRoot;
+}
+
+export function createValidatorKeys(withdrawalCredentials: string) {
+    // Generate a random private key
+    const privateKey = bls.utils.randomPrivateKey();
+
+    // Convert withdrawal credentials to bytes
+    const withdrawalBytes = fromHexString(withdrawalCredentials);
+
+    // Create deposit message bytes
+    const messageBytes = new Uint8Array([
+        ...bls.getPublicKey(privateKey),
+        ...withdrawalBytes,
+        ...new Uint8Array(8).fill(0), // 32 ETH in gwei (little endian)
+    ]);
+    new DataView(messageBytes.buffer).setBigUint64(messageBytes.length - 8, BigInt(32e9), true);
+
+    // Sign the message
+    const signature = bls.sign(messageBytes, privateKey);
+
+    // Create deposit data
+    const generated = {
+        pubkey: toHex(bls.getPublicKey(privateKey)),
+        withdrawal_credentials: withdrawalCredentials as Hex,
+        amount: 32000000000,
+        signature: toHex(signature),
+    };
+
+    // Calculate and verify deposit data root
+    const depositDataRoot = calculateDepositDataRoot(
+        generated.pubkey,
+        generated.withdrawal_credentials,
+        generated.amount,
+        generated.signature,
+    );
+
+    // Verify the deposit data
+    const isValid = verifyDepositRoot(
+        generated.pubkey,
+        generated.withdrawal_credentials,
+        generated.amount,
+        generated.signature,
+        depositDataRoot,
+    );
+
+    if (!isValid) {
+        throw new Error('Generated deposit data verification failed');
+    }
+
+    return {
+        privateKey: toHex(privateKey),
+        ...generated,
+        depositDataRoot,
+    };
 }

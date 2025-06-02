@@ -16,7 +16,12 @@ interface IERC7575 {
     /// @param owner Owner's address.
     /// @param assets Amount of assets deposited.
     /// @param shares Amount of shares minted.
-    event Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares);
+    event Deposit(
+        address indexed sender,
+        address indexed owner,
+        uint256 indexed assets,
+        uint256 shares
+    );
 
     /// @dev Emitted when assets are withdrawn from the Vault.
     /// @param sender Sender's address.
@@ -31,6 +36,42 @@ interface IERC7575 {
         uint256 assets,
         uint256 shares
     );
+
+    // ============ Core Functions ============
+
+    /// @dev Deposits assets into the Vault and mints shares.
+    /// @param assets Amount of assets to deposit.
+    /// @param receiver Address to receive the shares.
+    /// @return shares Amount of shares minted.
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
+
+    /// @dev Mints shares by depositing assets.
+    /// @param shares Amount of shares to mint.
+    /// @param receiver Address to receive the shares.
+    /// @return assets Amount of assets required.
+    function mint(uint256 shares, address receiver) external returns (uint256 assets);
+
+    /// @dev Withdraws assets from the Vault and burns shares.
+    /// @param assets Amount of assets to withdraw.
+    /// @param receiver Address to receive the assets.
+    /// @param owner Owner's address.
+    /// @return shares Amount of shares burned.
+    function withdraw(
+        uint256 assets,
+        address receiver,
+        address owner
+    ) external returns (uint256 shares);
+
+    /// @dev Redeems shares for assets.
+    /// @param shares Amount of shares to redeem.
+    /// @param receiver Address to receive the assets.
+    /// @param owner Owner's address.
+    /// @return assets Amount of assets received.
+    function redeem(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) external returns (uint256 assets);
 
     // ============ View Functions ============
 
@@ -95,42 +136,6 @@ interface IERC7575 {
     /// @param shares Amount of shares to redeem.
     /// @return assets Amount of assets to receive.
     function previewRedeem(uint256 shares) external view returns (uint256 assets);
-
-    // ============ Core Functions ============
-
-    /// @dev Deposits assets into the Vault and mints shares.
-    /// @param assets Amount of assets to deposit.
-    /// @param receiver Address to receive the shares.
-    /// @return shares Amount of shares minted.
-    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
-
-    /// @dev Mints shares by depositing assets.
-    /// @param shares Amount of shares to mint.
-    /// @param receiver Address to receive the shares.
-    /// @return assets Amount of assets required.
-    function mint(uint256 shares, address receiver) external returns (uint256 assets);
-
-    /// @dev Withdraws assets from the Vault and burns shares.
-    /// @param assets Amount of assets to withdraw.
-    /// @param receiver Address to receive the assets.
-    /// @param owner Owner's address.
-    /// @return shares Amount of shares burned.
-    function withdraw(
-        uint256 assets,
-        address receiver,
-        address owner
-    ) external returns (uint256 shares);
-
-    /// @dev Redeems shares for assets.
-    /// @param shares Amount of shares to redeem.
-    /// @param receiver Address to receive the assets.
-    /// @param owner Owner's address.
-    /// @return assets Amount of assets received.
-    function redeem(
-        uint256 shares,
-        address receiver,
-        address owner
-    ) external returns (uint256 assets);
 }
 
 interface IERC7575Share {
@@ -139,7 +144,7 @@ interface IERC7575Share {
     /// @dev Emitted when a vault is updated for an asset.
     /// @param asset Asset token's address.
     /// @param vault Vault's address.
-    event VaultUpdate(address indexed asset, address vault);
+    event VaultUpdate(address indexed asset, address indexed vault);
 
     // ============ View Functions ============
 

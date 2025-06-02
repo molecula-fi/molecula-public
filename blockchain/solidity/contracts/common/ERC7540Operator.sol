@@ -6,6 +6,11 @@ pragma solidity ^0.8.23;
 import {IERC7540Operator} from "./external/interfaces/IERC7540.sol";
 
 contract ERC7540Operator is IERC7540Operator {
+    // ============ State Variables ============
+
+    /// @dev Checks whether an operator is approved by the controller.
+    mapping(address controller => mapping(address operator => bool)) public isOperator;
+
     // ============ Errors ============
 
     /// @dev Thrown when an unauthorized address attempts to act as an operator.
@@ -16,26 +21,6 @@ contract ERC7540Operator is IERC7540Operator {
     /// @dev Thrown when an address attempts to set itself as an operator.
     error ESelfOperator();
 
-    // ============ State Variables ============
-
-    /// @dev Checks whether an operator is approved by the controller.
-    mapping(address controller => mapping(address operator => bool)) public isOperator;
-
-    // ============ Core Functions ============
-
-    /// @dev Approves or disapproves an operator for a controller.
-    /// @param operator Corresponding operator.
-    /// @param approved Approval status.
-    /// @return result Approval result.
-    function setOperator(address operator, bool approved) external returns (bool result) {
-        if (msg.sender == operator) {
-            revert ESelfOperator();
-        }
-        isOperator[msg.sender][operator] = approved;
-        emit OperatorSet(msg.sender, operator, approved);
-        return true;
-    }
-
     // ============ Modifiers ============
 
     /// @dev Throws an error if a message sender is not the owner's operator.
@@ -45,5 +30,23 @@ contract ERC7540Operator is IERC7540Operator {
             revert EInvalidOperator(msg.sender, owner);
         }
         _;
+    }
+
+    // ============ Core Functions ============
+
+    /// @dev Approves or disapproves an operator for a controller.
+    /// @param operator Corresponding operator.
+    /// @param approved Approval status.
+    /// @return result Approval result.
+    function setOperator(
+        address operator,
+        bool approved
+    ) external virtual override returns (bool result) {
+        if (msg.sender == operator) {
+            revert ESelfOperator();
+        }
+        isOperator[msg.sender][operator] = approved;
+        emit OperatorSet(msg.sender, operator, approved);
+        return true;
     }
 }

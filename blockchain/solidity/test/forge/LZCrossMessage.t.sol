@@ -12,10 +12,10 @@ import {MessagingReceipt} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAp
 
 // Import the mock AccountantLZ, UsdtOFT, and USDT contracts for testing cross-chain operations
 import {MockAccountantLZ} from "../../contracts/mock/MockAccountantLZ.sol";
-import {MockRebaseTokenCommon} from "../../contracts/mock/MockRebaseTokenCommon.sol";
+import {MockRebaseTokenCommon} from "../../contracts/mock/coreV2/MockRebaseTokenCommon.sol";
 import {MockTronOracle} from "../../contracts/mock/MockTronOracle.sol";
-import {MockUsdtOFT} from "../../contracts/mock/MockUsdtOFT.sol";
-import {MockUSDT} from "../../contracts/mock/MockUsdt.sol";
+import {MockUsdtOFT} from "../../contracts/mock/USDT/MockUsdtOFT.sol";
+import {MockUSDT} from "../../contracts/mock/USDT/MockUsdt.sol";
 import {MoleculaPoolTreasury} from "../../contracts/core/MoleculaPoolTreasury.sol";
 
 // Import options builder and test helper utility functions

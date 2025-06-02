@@ -12,7 +12,7 @@ import {OAppOptionsType3} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/lib
 
 import {OFTLimit, OFTReceipt, OFTFeeDetail} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
-import {IUsdtOFT, IOFT, SendParam, MessagingReceipt, MessagingFee} from "../solutions/Carbon/common/interfaces/IUsdtOFT.sol";
+import {IUsdtOFT, IOFT, SendParam, MessagingReceipt, MessagingFee} from "../../solutions/Carbon/common/interfaces/IUsdtOFT.sol";
 
 contract MockUsdtOFT is IUsdtOFT, OApp, OAppOptionsType3 {
     using SafeERC20 for IERC20;

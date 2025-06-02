@@ -22,19 +22,23 @@ interface ITokenVault {
     // ============ Events ============
 
     /// @dev Emitted when redemption requests are ready to be processed.
-    /// @param requestIds Array of request IDs.
-    /// @param values Array of corresponding values.
-    event RedeemClaimable(uint256[] requestIds, uint256[] values);
+    /// @param requestIds Array of request IDs that have been fulfilled
+    /// @param sumAssets Total sum of assets that were processed for all fulfilled requests
+    event RedeemClaimable(uint256[] requestIds, uint256 sumAssets);
 
     // ============ Errors ============
 
     /// @dev Thrown when the deposit value is less than the minimum one.
     /// @param depositValue Minimum deposit value.
-    error ETooLowDepositValue(uint256 depositValue);
+    error ETooLowDepositAssets(uint256 depositValue);
+
+    /// @dev Thrown when the requested redemption shares exceed the maximum allowed.
+    /// @param maxRedeemShares Maximum allowed redemption shares.
+    error ETooManyRequestRedeemShares(uint256 maxRedeemShares);
 
     /// @dev Thrown when the redemption value is less than the minimum one.
-    /// @param redeemValue Minimum redemption value.
-    error ETooLowRedeemValue(uint256 redeemValue);
+    /// @param minRedeemShares Minimum redemption shares.
+    error ETooLowRequestRedeemShares(uint256 minRedeemShares);
 
     /// @dev Thrown when an operation is called with invalid parameters.
     error EBadOperationParameters();
@@ -53,7 +57,13 @@ interface ITokenVault {
 
     /// @dev Thrown when the redemption amount exceeds the available assets' amount.
     /// @param claimableRedeemAssets Available assets for claiming.
-    error ETooManyAssets(uint256 claimableRedeemAssets);
+    error ETooManyRedeemAssets(uint256 claimableRedeemAssets);
+
+    /// @dev Emitted when trying set `minDepositAssets` to zero.
+    error EZeroMinDepositAssets();
+
+    /// @dev Emitted when trying set `minRedeemShares` to zero.
+    error EZeroMinRedeemShares();
 
     // ============ Core Functions ============
 
@@ -61,33 +71,26 @@ interface ITokenVault {
     /// @param asset_ Asset token address.
     /// @param minDepositAssets_ Minimum deposit amount.
     /// @param minRedeemShares_ Minimum redemption shares.
-    function init(address asset_, uint256 minDepositAssets_, uint256 minRedeemShares_) external;
+    function init(address asset_, uint128 minDepositAssets_, uint128 minRedeemShares_) external;
 
     /// @dev Sets the minimum deposit assets' amount.
     /// @param minDepositAssets_ New minimum deposit amount.
-    function setMinDepositAssets(uint256 minDepositAssets_) external;
+    function setMinDepositAssets(uint128 minDepositAssets_) external;
 
     /// @dev Sets the minimum redemption shares' amount.
     /// @param minRedeemShares_ New minimum redemption shares.
-    function setMinRedeemShares(uint256 minRedeemShares_) external;
+    function setMinRedeemShares(uint128 minRedeemShares_) external;
 
-    // ============ Admin Functions ============
-
-    /// @dev Pauses the `requestDeposit` function and other enter functions.
-    function pauseRequestDeposit() external;
-
-    /// @dev Unpauses the `requestDeposit` function.
-    function unpauseRequestDeposit() external;
-
-    /// @dev Pauses the `requestRedeem` function.
-    function pauseRequestRedeem() external;
-
-    /// @dev Unpauses the `requestRedeem` function.
-    function unpauseRequestRedeem() external;
-
-    /// @dev Pauses both `requestDeposit` and `requestRedeem` functions.
-    function pauseAll() external;
-
-    /// @dev Unpauses both `requestDeposit` and `requestRedeem` functions.
-    function unpauseAll() external;
+    /// @dev Requests an asynchronous redemption.
+    /// @param assets Amount of assets to be redeemed.
+    /// @param controller Request's controller.
+    /// @param owner Source of the shares.
+    /// @return requestId Created request's ID.
+    /// @dev The function is a part of neither ERC-7540 nor ERC-4626 standards.
+    ///      It extends contract's withdrawal functionality by allowing to request assets.
+    function requestWithdraw(
+        uint256 assets,
+        address controller,
+        address owner
+    ) external returns (uint256 requestId);
 }

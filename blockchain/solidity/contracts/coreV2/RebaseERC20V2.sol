@@ -2,35 +2,42 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-import {Context} from "@openzeppelin/contracts/utils/Context.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
+import {IOracle} from "./../common/interfaces/IOracle.sol";
+import {ValueValidator} from "./../common/ValueValidator.sol";
 import {IOracleV2} from "./interfaces/IOracleV2.sol";
-import {IOracle} from "../common/interfaces/IOracle.sol";
 import {ITokenShares} from "./interfaces/ITokenShares.sol";
 
 /// @title RebaseERC20V2.
 /// @notice Contract for implementing the RebaseERC20V2 functionality.
 /// @dev Extends RebaseERC20.sol with additional features.
-contract RebaseERC20V2 is ITokenShares, IERC20, IERC20Metadata, IERC20Errors, Context {
+contract RebaseERC20V2 is
+    ITokenShares,
+    IERC20,
+    IERC20Metadata,
+    IERC20Errors,
+    Context,
+    ValueValidator
+{
     // ============ State Variables ============
 
+    /// @dev Token decimals.
+    uint8 internal immutable _DECIMALS;
+
     /// @dev Mapping of account addresses to their respective token balances.
-    mapping(address => uint256) private _shares;
+    mapping(address => uint256) internal _shares;
 
     /// @dev Mapping of account addresses to their respective mapping of spender addresses to token allowances.
-    mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => mapping(address => uint256)) internal _allowances;
 
     /// @inheritdoc IERC20Metadata
     string public name;
 
     /// @inheritdoc IERC20Metadata
     string public symbol;
-
-    /// @dev Token decimals.
-    uint8 private immutable _DECIMALS;
 
     /// @inheritdoc ITokenShares
     address public oracle;
@@ -41,51 +48,46 @@ contract RebaseERC20V2 is ITokenShares, IERC20, IERC20Metadata, IERC20Errors, Co
     // ============ Constructor ============
 
     /// @dev Initializes the contract with specified parameters.
-    /// @param initialShares Initial shares amount to mint.
     /// @param oracleAddress Oracle contract address.
     /// @param tokenName Token name.
     /// @param tokenSymbol Token symbol.
     /// @param tokenDecimals Token decimals.
     constructor(
-        uint256 initialShares,
         address oracleAddress,
         string memory tokenName,
         string memory tokenSymbol,
         uint8 tokenDecimals
-    ) {
+    ) notZeroAddress(oracleAddress) {
         oracle = oracleAddress;
         name = tokenName;
         symbol = tokenSymbol;
         _DECIMALS = tokenDecimals;
-        _mint(address(this), initialShares);
     }
 
     // ============ View Functions ============
 
     /// @inheritdoc IERC20
-    function totalSupply() public view virtual override returns (uint256 totalPool) {
+    function totalSupply() external view virtual override returns (uint256 totalPool) {
         totalPool = IOracle(oracle).getTotalPoolSupply();
-        return totalPool;
     }
 
     /// @inheritdoc ITokenShares
-    function totalSharesSupply() public view virtual override returns (uint256 totalShares) {
+    function totalSharesSupply() external view virtual override returns (uint256 totalShares) {
         totalShares = IOracle(oracle).getTotalSharesSupply();
-        return totalShares;
     }
 
     /// @inheritdoc ITokenShares
-    function sharesOf(address user) public view virtual override returns (uint256 shares) {
+    function sharesOf(address user) external view virtual override returns (uint256 shares) {
         return _shares[user];
     }
 
     /// @inheritdoc IERC20
-    function balanceOf(address user) public view virtual override returns (uint256 balance) {
+    function balanceOf(address user) external view virtual override returns (uint256 balance) {
         return convertToAssets(_shares[user]);
     }
 
     /// @inheritdoc IERC20Metadata
-    function decimals() public view virtual override returns (uint8 tokenDecimals) {
+    function decimals() external view virtual override returns (uint8 tokenDecimals) {
         return _DECIMALS;
     }
 
@@ -100,14 +102,17 @@ contract RebaseERC20V2 is ITokenShares, IERC20, IERC20Metadata, IERC20Errors, Co
     // ============ Core Functions ============
 
     /// @inheritdoc IERC20
-    function transfer(address to, uint256 value) public virtual override returns (bool result) {
+    function transfer(address to, uint256 value) external virtual override returns (bool result) {
         address owner = _msgSender();
         _transfer(owner, to, value);
         return true;
     }
 
     /// @inheritdoc IERC20
-    function approve(address spender, uint256 value) public virtual override returns (bool result) {
+    function approve(
+        address spender,
+        uint256 value
+    ) external virtual override returns (bool result) {
         address owner = _msgSender();
         _approve(owner, spender, value);
         return true;
@@ -118,7 +123,7 @@ contract RebaseERC20V2 is ITokenShares, IERC20, IERC20Metadata, IERC20Errors, Co
         address from,
         address to,
         uint256 value
-    ) public virtual override returns (bool result) {
+    ) external virtual override returns (bool result) {
         address spender = _msgSender();
         _spendAllowance(from, spender, value);
         _transfer(from, to, value);
@@ -240,12 +245,12 @@ contract RebaseERC20V2 is ITokenShares, IERC20, IERC20Metadata, IERC20Errors, Co
     }
 
     /// @inheritdoc ITokenShares
-    function convertToShares(uint256 assets) public view virtual returns (uint256 shares) {
+    function convertToShares(uint256 assets) public view virtual override returns (uint256 shares) {
         return IOracleV2(oracle).convertToShares(assets);
     }
 
     /// @inheritdoc ITokenShares
-    function convertToAssets(uint256 shares) public view virtual returns (uint256 assets) {
+    function convertToAssets(uint256 shares) public view virtual override returns (uint256 assets) {
         return IOracleV2(oracle).convertToAssets(shares);
     }
 }

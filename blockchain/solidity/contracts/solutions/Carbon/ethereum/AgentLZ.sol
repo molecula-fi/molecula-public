@@ -2,18 +2,17 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-import {IAgent} from "../../../common/interfaces/IAgent.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IOracle} from "../../../common/interfaces/IOracle.sol";
-import {ISupplyManager} from "../../../common/interfaces/ISupplyManager.sol";
-
-import {LZMsgCodec} from "../../../common/layerzero/LZMsgCodec.sol";
 import {OApp, Origin, MessagingFee} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
-import {OptionsLZ, Ownable2Step, Ownable} from "../../../common/layerzero/OptionsLZ.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {UsdtOFT, SendParam, OFTReceipt, MessagingFee} from "../common/UsdtOFT.sol";
-import {ZeroValueChecker} from "../../../common/ZeroValueChecker.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IAgent} from "./../../../common/interfaces/IAgent.sol";
+import {IOracle} from "./../../../common/interfaces/IOracle.sol";
+import {ISupplyManager} from "./../../../common/interfaces/ISupplyManager.sol";
+import {LZMsgCodec} from "./../../../common/layerzero/LZMsgCodec.sol";
+import {OptionsLZ, Ownable2Step, Ownable} from "./../../../common/layerzero/OptionsLZ.sol";
+import {ZeroValueChecker} from "./../../../common/ZeroValueChecker.sol";
+import {UsdtOFT, SendParam, OFTReceipt} from "./../common/UsdtOFT.sol";
 
 /// @title AgentLZ - Agent contract for LayerZero cross-chain communication.
 contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
@@ -114,23 +113,19 @@ contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
      * It overrides the equivalent function in the parent contract.
      * Protocol messages are defined as packets, comprised of the following parameters.
      * Call on depositing.
-     * @param _origin Struct containing information about where the packet came from.
-     * @param _guid Global unique identifier for tracking the packet.
+     * param _origin Struct containing information about where the packet came from.
+     * param _guid Global unique identifier for tracking the packet.
+     * param _executor Executor address as specified by the OApp.
+     * param _options Extra data or options to trigger upon receipt.
      * @param payload Encoded message.
-     * @param _executor Executor address as specified by the OApp.
-     * @param _options Extra data or options to trigger upon receipt.
      */
     function _lzReceive(
-        Origin calldata _origin,
-        bytes32 _guid,
+        Origin calldata /*_origin*/,
+        bytes32 /*_guid*/,
         bytes calldata payload,
-        address _executor, // Executor address as specified by the OApp.
-        bytes calldata _options // Extra data or options to trigger on receipt.
+        address /*_executor*/, // Executor address as specified by the OApp.
+        bytes calldata /*_options*/ // Extra data or options to trigger on receipt.
     ) internal override {
-        _origin;
-        _guid;
-        _executor;
-        _options;
         // Decode the payload to get the message. Get the message type.
         uint8 msgType = uint8(payload[0]);
         if (msgType == LZMsgCodec.REQUEST_DEPOSIT) {
@@ -307,9 +302,10 @@ contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
     }
 
     /// @inheritdoc IAgent
+    // solhint-disable-next-line gas-calldata-parameters
     function redeem(
         address fromAddress,
-        uint256[] memory requestIds,
+        uint256[] calldata requestIds,
         uint256[] memory values,
         uint256 totalValue
     ) external payable onlySupplyManager {
@@ -404,8 +400,8 @@ contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
 
     /// @inheritdoc IAgent
     function distribute(
-        address[] memory users,
-        uint256[] memory shares
+        address[] calldata users,
+        uint256[] calldata shares
     ) external payable onlySupplyManager {
         // Declare LayerZero options and payload variables.
         bytes memory lzOptions;

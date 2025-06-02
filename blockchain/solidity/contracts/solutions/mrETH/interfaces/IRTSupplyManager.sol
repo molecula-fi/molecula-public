@@ -11,7 +11,12 @@ interface IRTSupplyManager {
      * @param value A deposited amount.
      * @param shares Shares' amount to mint.
      */
-    event RequestDeposit(uint256 requestId, address user, uint256 value, uint256 shares);
+    event RequestDeposit(
+        uint256 indexed requestId,
+        address indexed user,
+        uint256 indexed value,
+        uint256 shares
+    );
 
     /**
      * @dev Emitted when processing deposits into EigenLayer.
@@ -20,7 +25,7 @@ interface IRTSupplyManager {
      * @param signature Deposit value.
      * @param depositDataRoot The SHA-256 hash of the SSZ-encoded DepositData object.
      */
-    event Deposit(uint256 value, bytes pubkey, bytes signature, bytes32 depositDataRoot);
+    event Deposit(uint256 indexed value, bytes pubkey, bytes signature, bytes32 depositDataRoot);
 
     /**
      * @dev Emitted when a user processing a withdrawal.
@@ -29,7 +34,12 @@ interface IRTSupplyManager {
      * @param value A withdrawn value.
      * @param shares A withdrawn shares.
      */
-    event RedeemRequest(uint256 indexed requestId, address agent, uint256 shares, uint256 value);
+    event RedeemRequest(
+        uint256 indexed requestId,
+        address indexed agent,
+        uint256 indexed shares,
+        uint256 value
+    );
 
     /**
      * @dev Event emitted when the redeem operation is executed.
@@ -47,11 +57,11 @@ interface IRTSupplyManager {
 
     /// @dev Emitted when the `isDepositPaused` flag is changed.
     /// @param newValue New value.
-    event IsDepositPausedChanged(bool newValue);
+    event IsDepositPausedChanged(bool indexed newValue);
 
     /// @dev Emitted when the `isRedeemPaused` flag is changed.
     /// @param newValue New value.
-    event IsRedeemPausedChanged(bool newValue);
+    event IsRedeemPausedChanged(bool indexed newValue);
 
     // @dev Error indicating incorrect array length.
     error EIncorrectLength();

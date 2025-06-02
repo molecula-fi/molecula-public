@@ -4,21 +4,17 @@
 pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
-
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {PausableContract} from "./../common/pausable/PausableContract.sol";
 import {AbstractTokenVault} from "./AbstractTokenVault.sol";
-import {FunctionPausable} from "../common/FunctionPausable.sol";
-import {IIssuer} from "./interfaces/IIssuer.sol";
+import {ISupplyManagerV2} from "./interfaces/ISupplyManagerV2.sol";
 
 /// @title Token Vault.
 /// @notice Abstract contract for managing token Vault operations.
 /// @dev Implements basic token Vault functionality with pausable features.
 abstract contract TokenVault is AbstractTokenVault {
-    // ============ Events ============
-
-    /// @dev Event emitted when distributing yield.
-    /// @param users Array of user addresses.
-    /// @param shares Array of shares.
-    event DistributeYield(address[] users, uint256[] shares);
+    using SafeERC20 for IERC20;
 
     // ============ Constructor ============
 
@@ -35,32 +31,71 @@ abstract contract TokenVault is AbstractTokenVault {
     )
         AbstractTokenVault(shareAddress, supplyManager)
         Ownable(owner_)
-        FunctionPausable(guardianAddress)
+        PausableContract(guardianAddress)
     {}
 
     // ============ View Functions ============
 
     /// @dev Returns the issuer contract interface.
     /// @return Issuer contract interface.
-    function issuer() public view override returns (IIssuer) {
+    function _issuer() internal view virtual override returns (address) {
         // Cast the share token to the issuer interface.
-        return IIssuer(_SHARE);
+        return _SHARE;
+    }
+
+    /// @inheritdoc AbstractTokenVault
+    function _supplyManagerRequestRedeem(
+        address controller,
+        uint256 requestId,
+        uint256 shares
+    ) internal virtual override returns (uint256 assets) {
+        assets = ISupplyManagerV2(SUPPLY_MANAGER).requestRedeem(
+            asset,
+            controller,
+            requestId,
+            shares
+        );
+    }
+
+    /// @inheritdoc AbstractTokenVault
+    function _storeRequestInfo(
+        uint256 /*requestId*/,
+        address /*controller*/,
+        uint256 /*shares*/ // solhint-disable-next-line no-empty-blocks
+    ) internal virtual override {
+        // Do nothing. SupplyManagerV2 stores information about request.
     }
 
     // ============ Core Functions ============
 
     /// @dev Fulfills redemption requests for the specified request IDs.
-    /// @param fromAddress Address to fulfill requests from.
-    /// @param requestIds Array of request IDs to fulfill.
-    /// @param assets Array of asset amounts.
-    /// @param totalValue Total value of assets.
+    /// @param assetOwner Source of assets.
+    /// @param requestIds Array of redemption request IDs.
+    /// @param sumAssets Total assets being transferred.
+    /// @dev In case the requestId[i] is zero, then it should be skipped from being processed.
+    ///      This might happen when someone satisfies the redemption request in the same block.
     function fulfillRedeemRequests(
-        address fromAddress,
-        uint256[] memory requestIds,
-        uint256[] memory assets,
-        uint256 totalValue
-    ) external {
-        // Process redeem requests.
-        _fulfillRedeemRequests(fromAddress, requestIds, assets, totalValue);
+        address assetOwner,
+        uint256[] calldata requestIds,
+        uint256 sumAssets
+    ) external virtual {
+        // slither-disable-next-line arbitrary-send-erc20
+        IERC20(asset).safeTransferFrom(assetOwner, address(this), sumAssets);
+
+        uint256 length = requestIds.length;
+        for (uint256 i = 0; i < length; ++i) {
+            uint256 requestId = requestIds[i];
+            if (requestId != 0) {
+                // slither-disable-next-line unused-return
+                (, , address user, uint256 assets, uint256 shares) = ISupplyManagerV2(
+                    SUPPLY_MANAGER
+                ).redeemRequests(requestId);
+                pendingRedeemShares[user] -= shares;
+                claimableRedeemAssets[user] += assets;
+            }
+        }
+
+        // Emit an event to log the redemption operation.
+        emit RedeemClaimable(requestIds, sumAssets);
     }
 }

@@ -97,6 +97,8 @@ export async function deployMrETh() {
         ),
     ).to.be.reverted;
 
+    const withdrawalCredentials = await rtSupplyManager.getWithdrawalCredentials();
+
     return {
         rtSupplyManager,
         mrETH,
@@ -110,5 +112,6 @@ export async function deployMrETh() {
         aavePool,
         aaveBufferLib,
         compoundBufferLib,
+        withdrawalCredentials,
     };
 }

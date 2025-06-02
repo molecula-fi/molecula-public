@@ -13,7 +13,7 @@ interface ITokenShares {
     /// @param from Tokens owner's address.
     /// @param to Tokens recipient's address.
     /// @param shares Shares amount to transfer.
-    event TransferShares(address indexed from, address indexed to, uint256 shares);
+    event TransferShares(address indexed from, address indexed to, uint256 indexed shares);
 
     // ============ View Functions ============
 

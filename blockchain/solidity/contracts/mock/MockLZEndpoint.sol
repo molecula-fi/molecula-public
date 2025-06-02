@@ -84,7 +84,7 @@ contract MockLZEndpoint {
         }
         _params;
         _refundAddress;
-        nonce += 1;
+        ++nonce;
         lastMessage = _params.message;
         lastOptions = _params.options;
         receipt = MessagingReceipt(bytes32(0), nonce, MessagingFee(gasLimit, 0));
@@ -109,7 +109,7 @@ contract MockLZEndpoint {
         uint256 requestId,
         uint256 value
     ) external payable {
-        nonce += 1;
+        ++nonce;
         bytes memory options;
         bytes memory message = abi.encodePacked(msgType, requestId, value);
         ILZApp(oApp).lzReceive(
@@ -143,7 +143,7 @@ contract MockLZEndpoint {
         uint256 totalValue,
         uint256 totalShares
     ) external payable {
-        nonce += 1;
+        ++nonce;
         bytes memory options;
         bytes memory message = abi.encodePacked(
             msgType,
@@ -179,12 +179,12 @@ contract MockLZEndpoint {
         uint32 srcEid,
         bytes32 sender,
         bytes1 msgType,
-        address[] memory users,
-        uint256[] memory shares,
+        address[] calldata users,
+        uint256[] calldata shares,
         uint256 totalValue,
         uint256 totalShares
     ) external payable {
-        nonce += 1;
+        ++nonce;
         bytes memory options;
         bytes memory message = _lzEncodeDistributeYieldMessageAndUpdateOracle(
             msgType,
@@ -270,10 +270,10 @@ contract MockLZEndpoint {
         uint32 srcEid,
         bytes32 sender,
         bytes1 msgType,
-        uint256[] memory requestIds,
-        uint256[] memory values
+        uint256[] calldata requestIds,
+        uint256[] calldata values
     ) external payable {
-        nonce += 1;
+        ++nonce;
         bytes memory options;
         bytes memory message = abi.encodePacked(msgType, requestIds, values);
         ILZApp(oApp).lzReceive(
@@ -299,10 +299,10 @@ contract MockLZEndpoint {
         uint32 srcEid,
         bytes32 sender,
         bytes1 msgType,
-        address[] memory users,
-        uint256[] memory shares
+        address[] calldata users,
+        uint256[] calldata shares
     ) external payable {
-        nonce += 1;
+        ++nonce;
         bytes memory options;
         // Encode the message.
 
@@ -377,7 +377,7 @@ contract MockLZEndpoint {
         bytes32 sender,
         uint256 value
     ) external payable {
-        nonce += 1;
+        ++nonce;
         bytes memory options;
         bytes memory message = abi.encodePacked(value);
         ILZApp(oApp).lzReceive(
@@ -402,7 +402,7 @@ contract MockLZEndpoint {
         bytes32 sender,
         uint256 value
     ) external payable {
-        nonce += 1;
+        ++nonce;
         bytes memory options;
         bytes memory message = abi.encodePacked(value);
         ILZApp(oApp).lzReceive(

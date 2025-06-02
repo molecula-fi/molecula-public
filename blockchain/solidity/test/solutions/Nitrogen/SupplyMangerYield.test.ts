@@ -139,7 +139,7 @@ describe('Test SupplyManger yield', () => {
 
             // Grant user1 wallet with 100 USDT and 2 ETH
             await grantERC20(caller, USDT, depositValue);
-            await grantETH(caller, ethers.parseEther('2'));
+            await grantETH(caller);
             expect(await USDT.balanceOf(caller)).to.equal(depositValue);
             expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
                 income + depositValue * 2n,
@@ -189,7 +189,7 @@ describe('Test SupplyManger yield', () => {
 
             // Grant user1 wallet with 100 USDT and 2 ETH
             await grantERC20(caller, USDT, depositValue);
-            await grantETH(caller, ethers.parseEther('2'));
+            await grantETH(caller);
             expect(await USDT.balanceOf(caller)).to.equal(depositValue);
             expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
                 income + depositValue * 3n,
