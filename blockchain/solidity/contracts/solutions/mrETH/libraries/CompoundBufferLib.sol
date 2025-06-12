@@ -4,10 +4,12 @@ pragma solidity ^0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library CompoundBufferLib {
+    /// @dev Constant for selector of compound deposit function.
     // solhint-disable-next-line private-vars-leading-underscore
     bytes4 internal constant COMPOUND_SUPPLY_SELECTOR =
         bytes4(keccak256("supply(address,uint256)"));
 
+    /// @dev Constant for selector of compound withdraw function.
     // solhint-disable-next-line private-vars-leading-underscore
     bytes4 internal constant COMPOUND_WITHDRAW_SELECTOR =
         bytes4(keccak256("withdraw(address,uint256)"));

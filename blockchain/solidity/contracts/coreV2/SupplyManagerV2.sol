@@ -3,28 +3,32 @@
 pragma solidity ^0.8.28;
 
 import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC7575} from "./../common/external/interfaces/IERC7575.sol";
 import {ValueValidator} from "./../common/ValueValidator.sol";
 import {IIssuerShare7575} from "./interfaces/IIssuer.sol";
 import {IMoleculaPoolV2} from "./interfaces/IMoleculaPoolV2.sol";
 import {IOracleV2} from "./interfaces/IOracleV2.sol";
 import {ISupplyManagerV2} from "./interfaces/ISupplyManagerV2.sol";
-import {TokenVault} from "./TokenVault.sol";
+import {IERC20TokenVault} from "./Tokens/interfaces/ITokenVault.sol";
 
 /// @title Supply Manager V2.
-/// @notice Manages the Pool data and handles deposit and redemption operations.
+/// @notice Manages the Pool data and handles the deposit and redemption operations.
 /// @dev Implements the yield distribution and share management functionality.
 contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueValidator {
+    //    using Address for address;
+    using Address for address payable;
+
     // ============ Constants ============
 
     /// @dev https://docs.openzeppelin.com/contracts/5.x/erc4626#defending_with_a_virtual_offset
-    ///      The _VIRTUAL_OFFSET represents a virtual amount of fantom molecula tokens and fantom shares
-    ///      that are considered to be initially deposited in any empty TokenVault. This is used as a
-    ///      mitigation technique against first depositor price manipulation attacks. The virtual tokens
-    ///      and shares are not actually minted but factored into calculations.
+    ///      `_VIRTUAL_OFFSET` represents a virtual amount of fantom molecula tokens and
+    ///      shares considered to be initially deposited in an empty `TokenVault`. This is
+    ///      used as a mitigation technique against the first depositor price manipulation attacks.
+    ///      The virtual tokens and shares are not minted but factored into calculations.
     uint64 internal constant _VIRTUAL_OFFSET = 1e18;
 
-    /// @dev Basis points factor for the APY calculation (100% = 10000).
+    /// @dev Basis points factor for the APY calculation, where 100% = 10000.
     /// Used as a denominator in percentage calculations.
     uint16 internal constant _APY_FACTOR = 10_000;
 
@@ -34,19 +38,18 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
 
     // ============ State Variables ============
 
-    /// @dev Controls token Vault validation and share minting.
+    /// @dev Controls the token Vault validation and share minting.
     IIssuerShare7575 public immutable SHARE7575;
 
-    /// @notice The Molecula Pool contract's interface.
-    /// @dev Handles actual asset deposits and redemptions.
-    /// @custom:security non-reentrant
-    IMoleculaPoolV2 public immutable MOLECULA_POOL;
+    /// @notice Molecula Pool contract's interface.
+    /// @dev Handles asset deposits and redemptions.
+    address public immutable MOLECULA_POOL;
 
     /// @notice Total amount of staking shares in circulation.
     /// @dev Used for calculating share prices and distribution.
     uint256 public totalSharesSupply;
 
-    /// @notice Total amount of molecula tokens deposited into the Pool.
+    /// @notice Total amount of Molecula tokens deposited into the Pool.
     /// @dev Represents the base value without yield.
     uint256 public totalDepositedSupply;
 
@@ -100,7 +103,7 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
         notZeroAddress(moleculaPoolAddress)
         notZeroAddress(share7575_)
     {
-        MOLECULA_POOL = IMoleculaPoolV2(moleculaPoolAddress);
+        MOLECULA_POOL = moleculaPoolAddress;
         totalSharesSupply = totalDepositedSupply = _poolSupplyWithOffset();
         _checkApyFormatter(apy);
         apyFormatter = apy;
@@ -120,25 +123,22 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
         uint256 startTotalSupply = totalSupply();
 
         // Call the Molecula Pool to deposit the assets.
-        uint256 moleculaTokenAmount = MOLECULA_POOL.deposit(requestId, token, msg.sender, assets);
+        // slither-disable-next-line reentrancy-no-eth,reentrancy-benign
+        uint256 moleculaTokenAmount = IMoleculaPoolV2(MOLECULA_POOL).deposit(
+            requestId,
+            token,
+            msg.sender,
+            assets
+        );
 
-        // Calculate the shares' amount to add upon the deposit operation by dividing the value by the `sharePrice` value.
-        shares = _convert(moleculaTokenAmount, totalSharesSupply, startTotalSupply);
-
-        // Increase the total shares' supply amount.
-        totalSharesSupply += shares;
-
-        // Increase the total deposited supply value.
-        totalDepositedSupply += moleculaTokenAmount;
-
-        // Emit the `Deposit` event.
-        emit Deposit(requestId, msg.sender, assets, shares);
+        shares = _updateDepositData(requestId, assets, startTotalSupply, moleculaTokenAmount);
     }
 
     /// @inheritdoc ISupplyManagerV2
     function requestRedeem(
         address token,
         address controller,
+        address owner,
         uint256 requestId,
         uint256 shares
     ) external virtual override onlyTokenVault returns (uint256 assets) {
@@ -195,13 +195,19 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
         totalSharesSupply += operationYieldShares;
 
         // Make a redeem operation request into the Pool and get a converted value with the right decimal amount.
-        assets = MOLECULA_POOL.requestRedeem(requestId, token, moleculaTokenAmount);
+        // slither-disable-next-line reentrancy-no-eth
+        assets = IMoleculaPoolV2(MOLECULA_POOL).requestRedeem(
+            requestId,
+            token,
+            moleculaTokenAmount
+        );
 
         // Save the redeem operation information.
         redeemRequests[requestId] = RedeemRequestInfo({
             tokenVault: msg.sender,
             state: RequestState.Pending,
             controller: controller,
+            owner: owner,
             assets: assets,
             shares: shares
         });
@@ -217,51 +223,15 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
     function fulfillRedeemRequests(
         address assetOwner,
         uint256[] memory requestIds
-    )
-        external
-        virtual
-        override
-        only(address(MOLECULA_POOL))
-        returns (address asset, uint256 sumAssets)
-    {
-        // Get `TokenVault` associated with the first request.
-        address tokenVault = redeemRequests[requestIds[0]].tokenVault;
-
-        // Loop through the remaining requests.
-        uint256 length = requestIds.length;
-        for (uint256 i = 0; i < length; ++i) {
-            RedeemRequestInfo storage redeemRequest = redeemRequests[requestIds[i]];
-
-            // Check if the redeem request is in Pending status and ready to be fulfilled.
-            if (redeemRequest.state == RequestState.Pending) {
-                // Check whether `TokenVault` is the same for all requests.
-                if (redeemRequest.tokenVault != tokenVault) {
-                    revert EWrongTokenVault();
-                }
-
-                // Add the assets to the total value.
-                sumAssets += redeemRequest.assets;
-
-                // Set the status of the current request to `Claimable`.
-                redeemRequest.state = RequestState.Claimable;
-            } else if (redeemRequest.state == RequestState.None) {
-                revert EUnknownRequest();
-            } else if (redeemRequest.state == RequestState.Claimable) {
-                // If Request is in Claimable status then one is already confirmed and we don't need to process.
-                requestIds[i] = 0;
-            }
-        }
-
-        // Revert if there are no valid pending requests to fulfill (sum of assets equals zero).
-        if (sumAssets == 0) {
-            revert ENoPendingRequests();
-        }
-
-        // Call the `redeem` function on `TokenVault`.
-        TokenVault(tokenVault).fulfillRedeemRequests(assetOwner, requestIds, sumAssets);
+    ) external virtual override only(MOLECULA_POOL) returns (address asset, uint256 sumAssets) {
+        address tokenVault;
+        (tokenVault, sumAssets) = _fulfillRedeemRequests(requestIds);
 
         // Get the ERC20 token associated with the `TokenVault`.
         asset = IERC7575(tokenVault).asset();
+
+        // Call the `fulfillRedeemRequests` function on `TokenVault`.
+        IERC20TokenVault(tokenVault).fulfillRedeemRequests(assetOwner, requestIds, sumAssets);
 
         emit FulfillRedeemRequests(requestIds, sumAssets);
     }
@@ -288,7 +258,7 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
 
     /// @inheritdoc ISupplyManagerV2
     function getMoleculaPool() external view virtual override returns (address pool) {
-        return address(MOLECULA_POOL);
+        return MOLECULA_POOL;
     }
 
     /**
@@ -344,7 +314,7 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
             uint256 shares = (party.portion * sharesToDistribute) / _FULL_PORTION;
             totalPortion += party.portion;
 
-            // slither-disable-next-line reentrancy-no-eth.
+            // slither-disable-next-line reentrancy-no-eth
             SHARE7575.mint(party.user, shares);
         }
 
@@ -416,14 +386,14 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
     function onAddTokenVault(
         address tokenVault
     ) external virtual override only(address(SHARE7575)) {
-        MOLECULA_POOL.addTokenVault(tokenVault);
+        IMoleculaPoolV2(MOLECULA_POOL).addTokenVault(tokenVault);
     }
 
     /// @inheritdoc ISupplyManagerV2
     function onRemoveTokenVault(
         address tokenVault
     ) external virtual override only(address(SHARE7575)) {
-        MOLECULA_POOL.removeTokenVault(tokenVault);
+        IMoleculaPoolV2(MOLECULA_POOL).removeTokenVault(tokenVault);
     }
 
     // ============ Internal Functions ============
@@ -432,7 +402,9 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
     /// @param amount Amount to convert.
     /// @param numerator Conversion ratio numerator.
     /// @param denominator Conversion ratio denominator.
-    /// @return result The converted amount - if denominator is 0, returns amount; otherwise returns (amount * numerator) / denominator.
+    /// @return result Converted amount:
+    ///                - If the denominator equals `0`, returns the amount.
+    ///                - Otherwise, returns the result of (amount * numerator) / denominator.
     function _convert(
         uint256 amount,
         uint256 numerator,
@@ -441,9 +413,79 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
         result = (amount * numerator) / denominator;
     }
 
-    /// @dev Returns the total supply with a virtual offset added to mitigate first depositor attacks.
-    /// @return The total supply from MOLECULA_POOL plus the _VIRTUAL_OFFSET constant.
+    /// @dev Returns the total supply with a virtual offset added to mitigate the first depositor attacks.
+    /// @return Total supply from `MOLECULA_POOL` and the `_VIRTUAL_OFFSET` constant.
     function _poolSupplyWithOffset() internal view virtual returns (uint256) {
-        return MOLECULA_POOL.totalSupply() + _VIRTUAL_OFFSET;
+        return IMoleculaPoolV2(MOLECULA_POOL).totalSupply() + _VIRTUAL_OFFSET;
+    }
+
+    /// @dev Internal function to process multiple redeem requests.
+    /// @param requestIds Array of request IDs to be fulfilled.
+    /// @return tokenVault Address of the `TokenVault` associated with these requests.
+    /// @return sumAssets Total sum of assets to be redeemed across all valid requests.
+    /// @notice All requests must be from the same `TokenVault` and in the `Pending` state.
+    /// @notice Requests in the `Claimable` state are skipped and marked with `0`.
+    /// @notice Reverts if no valid pending requests are found or if requests are from different Vaults.
+    // solhint-disable-next-line gas-calldata-parameters
+    function _fulfillRedeemRequests(
+        uint256[] memory requestIds
+    ) internal virtual returns (address tokenVault, uint256 sumAssets) {
+        // Get `TokenVault` associated with the first request.
+        tokenVault = redeemRequests[requestIds[0]].tokenVault;
+
+        // Loop through the remaining requests.
+        uint256 length = requestIds.length;
+        for (uint256 i = 0; i < length; ++i) {
+            RedeemRequestInfo storage redeemRequest = redeemRequests[requestIds[i]];
+
+            // Check if the redeem request is in the `Pending` status and ready to be fulfilled.
+            if (redeemRequest.state == RequestState.Pending) {
+                // Check whether `TokenVault` is the same for all requests.
+                if (redeemRequest.tokenVault != tokenVault) {
+                    revert EWrongTokenVault();
+                }
+
+                // Add the assets to the total value.
+                sumAssets += redeemRequest.assets;
+
+                // Set the status of the current request to `Claimable`.
+                redeemRequest.state = RequestState.Claimable;
+            } else if (redeemRequest.state == RequestState.None) {
+                revert EUnknownRequest();
+            } else if (redeemRequest.state == RequestState.Claimable) {
+                // If the request is in the `Claimable` status, it is already confirmed with no need to be processed.
+                requestIds[i] = 0;
+            }
+        }
+
+        // Revert if there are no valid pending requests to fulfill—sum of assets equals zero.
+        if (sumAssets == 0) {
+            revert ENoPendingRequests();
+        }
+    }
+
+    /// @dev Updates the internal accounting state after a successful deposit.
+    /// @param requestId Deposit request's ID.
+    /// @param assets Amount of assets being deposited.
+    /// @param startTotalSupply Total supply snapshot taken at the start of deposit.
+    /// @param moleculaTokenAmount Amount of Molecula tokens minted for this deposit.
+    /// @return shares Amount of shares minted to represent the deposited assets.
+    function _updateDepositData(
+        uint256 requestId,
+        uint256 assets,
+        uint256 startTotalSupply,
+        uint256 moleculaTokenAmount
+    ) internal virtual returns (uint256 shares) {
+        // Calculate the shares' amount to add upon the deposit operation by dividing by the `sharePrice` value.
+        shares = _convert(moleculaTokenAmount, totalSharesSupply, startTotalSupply);
+
+        // Increase the total shares' supply amount.
+        totalSharesSupply += shares;
+
+        // Increase the total deposited supply value.
+        totalDepositedSupply += moleculaTokenAmount;
+
+        // Emit the `Deposit` event.
+        emit Deposit(requestId, msg.sender, assets, shares);
     }
 }

@@ -4,6 +4,8 @@ import { ethers } from 'hardhat';
 
 import type { IERC20 } from '../../typechain-types';
 
+import { expectEqual } from './math';
+
 export const FAUCET = {
     DAI: '0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C',
     USDT: '0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C',
@@ -14,6 +16,7 @@ export const FAUCET = {
     aWETH: '0x28a55C4b4f9615FDE3CDAdDf6cc01FcF2E38A6b0',
     USDe: '0xf89d7b9c864f589bbF53a82105107622B35EaA40',
     sUSDe: '0x52Aa899454998Be5b000Ad077a46Bbe360F4e497',
+    stETH: '0x176F3DAb24a159341c0509bB36B833E7fdd0a132',
 };
 
 export async function grantETH(wallet: AddressLike, amount: BigNumberish = ethers.parseEther('2')) {
@@ -41,5 +44,7 @@ export async function grantERC20(
     const balance0 = await token.connect(faucetSigner).balanceOf(wallet);
     await token.connect(faucetSigner).transfer(wallet, amount);
     const balance = await token.balanceOf(wallet);
-    expect(balance - balance0).to.equal(amount);
+
+    // used expectEqual for rebase token rounding
+    expectEqual(balance - balance0, BigInt(amount));
 }

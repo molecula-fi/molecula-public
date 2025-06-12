@@ -5,6 +5,9 @@ if [ "$(uname | tr '[:upper:]' '[:lower:]' | grep -o 'linux')" ] ; then
   set -e
 fi
 
+echo "📊 Checking versions..."
+yarn run check-versions
+
 # Add the rm_global function
 source ./rm_global.sh
 

@@ -62,6 +62,9 @@ export const ethMainnetProdConfig: EthereumNetworkConfig = {
     /** Compound Token for WETH (cWETHv3) token address on Ethereum Mainnet. */
     CWETH_V3: '0xA17581A9E3356d9A858b789D68B4d866e593aE94',
 
+    /** Lido LRT Token address on Ethereum Mainnet. */
+    STETH_ADDRESS: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+
     /**  DAI token address on Ethereum Mainnet. */
     DAI_ADDRESS: evmStaticTokenAddresses.DAI[EVMChainIDs.Mainnet],
 
@@ -114,6 +117,19 @@ export const ethMainnetProdConfig: EthereumNetworkConfig = {
 
     /** EigenPodManager contract address. */
     EIGEN_POD_MANAGER: '0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338',
+
+    /** DelegationManager contract address. */
+    DELEGATION_MANAGER: '0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A',
+
+    /** StrategyFactory contract address. */
+    STRATEGY_FACTORY: '0x5e4C39Ad7A3E881585e383dB9827EB4811f6F647',
+
+    /** StETH Strategy contract address. */
+    STRATEGY_BASE_STETH: '0x93c4b944D05dfe6df7645A86cd2206016c51564D',
+
+    /** EigenLayer default operator address. */
+    EIGENLAYER_OPERATOR: '0x5accc90436492f24e6af278569691e2c942a676d',
+
     WMUSD_TOKEN_NAME: 'Wrapped mUSD',
     WMUSD_TOKEN_SYMBOL: 'wmUSD',
 

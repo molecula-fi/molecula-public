@@ -3,10 +3,26 @@
 pragma solidity ^0.8.23;
 
 interface INitrogenTokenVault {
+    // ============ Structs ============
+
+    /// @dev Information about a deposit or redemption request.
+    /// @param controller Controller's address.
+    /// @param owner Owner's address.
+    /// @param assets Assets amount.
+    /// @param shares Shares amount.
+    struct RequestInfo {
+        address controller;
+        address owner;
+        uint256 assets;
+        uint256 shares;
+    }
+
+    // ============ Core Functions ============
+
     /// @dev Follows the sequences:
-    /// - Claim assets available to redeem first.
+    /// - Claims assets available to redeem.
     /// - Creates a new redemption operation request.
-    /// - Fulfill the request.
+    /// - Fulfills the request.
     /// - Claims the redeemed assets.
     /// @param shares Amount of shares to redeem.
     /// @param receiver Receiver's address.

@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import {IERC7575Share} from "./../common/external/interfaces/IERC7575.sol";
+import {IERC7575Share} from "../../common/external/interfaces/IERC7575.sol";
 import {IVaultContainer} from "./interfaces/IVaultContainer.sol";
 
 /// @title Vault Container.

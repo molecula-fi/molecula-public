@@ -6,23 +6,17 @@ import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {IOracle} from "./../../common/interfaces/IOracle.sol";
-import {IRebaseToken} from "./../../common/interfaces/IRebaseToken.sol";
-import {ZeroValueChecker} from "./../../common/ZeroValueChecker.sol";
+import {Guardian} from "./../../common/pausable/Guardian.sol";
+import {DepositManagerStorage, IDelegationManager, IStrategyFactory, IStrategy} from "./DepositManagerStorage.sol";
+import {IStrategyManager} from "./external/interfaces/IStrategyManager.sol";
 import {IWETH} from "./external/interfaces/IWETH.sol";
 import {IBufferInteractor} from "./interfaces/IBufferInteractor.sol";
-import {IRTSupplyManager} from "./interfaces/IRTSupplyManager.sol";
-import {RTSupplyManagerStorage, IEigenPodManager} from "./RTSupplyManagerStorage.sol";
+import {IDepositManager, BeaconChainProofs} from "./interfaces/IDepositManager.sol";
 
+// TO:DO extend IMoleculaPoolV2 after adding eth to corev2
 /// @title Deposit Manager.
 /// @notice Manages the deposits and pool data.
-contract RTSupplyManager is
-    RTSupplyManagerStorage,
-    IRTSupplyManager,
-    IOracle,
-    Ownable2Step,
-    ZeroValueChecker
-{
+contract DepositManager is DepositManagerStorage, IDepositManager, Ownable2Step, Guardian {
     using SafeERC20 for IERC20;
     using Address for address;
 
@@ -35,10 +29,10 @@ contract RTSupplyManager is
         _;
     }
 
-    /// @dev Check that `msg.sender` is the owner or guardian.
-    modifier onlyAuthForPause() {
-        if (msg.sender != owner() && msg.sender != guardian) {
-            revert EBadSender();
+    /// @dev Check that stake functionality not paused.
+    modifier stakeNotPaused() {
+        if (isStakePaused) {
+            revert EStakePaused();
         }
         _;
     }
@@ -46,68 +40,53 @@ contract RTSupplyManager is
     /**
      * @dev Constructor.
      * @param initialOwner_ Smart contract owner address.
-     * @param authorizedYieldDistributorAddress_ Authorized Yield Distributor address.
      * @param authorizedStaker_ Authorized Staker and Restaker address.
-     * @param rebaseTokenAddress_ Address of mrETH token.
+     * @param guardian_ Guardian address that can pause the contract.
+     * @param supplyManager_ Address of Supply Manager contract.
      * @param weth_ Wrapped ETH contract address.
-     * @param eigenPodManager_ Address of EigenPodManager contract.
-     * @param initialSupply_ Amount of tokens to be deposited while initialize.
-     * @param apyFormatter_ APY formatter value.
-     * @param bufferPercent_ Percentage from TVL to be stored in Pools.
+     * @param strategyFactory_ Address of StrategyFactory contract.
+     * @param delegationManager_ Address of DelegationManager contract.
      */
     constructor(
         address initialOwner_,
-        address authorizedYieldDistributorAddress_,
         address authorizedStaker_,
-        address rebaseTokenAddress_,
+        address guardian_,
+        address supplyManager_,
         address weth_,
-        address eigenPodManager_,
-        uint256 initialSupply_,
-        uint128 apyFormatter_,
-        uint128 bufferPercent_
+        address strategyFactory_,
+        address delegationManager_
     )
-        checkNotZero(initialOwner_)
-        checkNotZero(authorizedYieldDistributorAddress_)
-        checkNotZero(authorizedStaker_)
-        checkNotZero(rebaseTokenAddress_)
-        checkNotZero(weth_)
-        checkNotZero(eigenPodManager_)
+        notZeroAddress(initialOwner_)
+        notZeroAddress(authorizedStaker_)
+        notZeroAddress(guardian_)
+        notZeroAddress(supplyManager_)
+        notZeroAddress(weth_)
+        notZeroAddress(strategyFactory_)
+        notZeroAddress(delegationManager_)
         Ownable(initialOwner_)
+        Guardian(guardian_)
     {
-        REBASE_TOKEN = rebaseTokenAddress_;
-
-        authorizedYieldDistributor = authorizedYieldDistributorAddress_;
         authorizedStaker = authorizedStaker_;
 
-        // TODO: remove WETH and read it from EIP7575's Share vaults,
-        // i.e. REBASE_TOKEN.vaults.
+        SUPPLY_MANAGER = supplyManager_;
         WETH = weth_;
 
-        EIGEN_POD_MANAGER = IEigenPodManager(eigenPodManager_);
+        STRATEGY_FACTORY = IStrategyFactory(strategyFactory_);
+        DELEGATION_MANAGER = IDelegationManager(delegationManager_);
+
         // slither-disable-next-line unused-return
-        EIGEN_POD_MANAGER.createPod();
-
-        // Set initial total deposited supply.
-        totalDepositedSupply = initialSupply_;
-
-        // Set initial total shares supply.
-        totalSharesSupply = totalDepositedSupply;
-
-        // Set initial APY formatter.
-        _checkPercentage(apyFormatter_);
-        apyFormatter = apyFormatter_;
-
-        // Set initial buffer percentage.
-        _checkPercentage(bufferPercent_);
-        bufferPercentage = bufferPercent_;
+        DELEGATION_MANAGER.eigenPodManager().createPod();
     }
 
     /**
      * @dev Initialize function.
+     * @param bufferPercent_ Percentage from TVL to be stored in Pools.
      * @param pools_ Array of pools addresses.
      * @param poolData_ Array of PoolData structs.
+     * @param auth_ Array of boolean add types.
      */
     function initialize(
+        uint32 bufferPercent_,
         address[] calldata pools_,
         PoolData[] calldata poolData_,
         bool[] calldata auth_
@@ -115,77 +94,71 @@ contract RTSupplyManager is
         if (initialized) {
             revert EInitialized();
         }
+
         initialized = true;
 
+        // Set initial buffer percentage.
+        _checkPercentage(bufferPercent_);
+        bufferPercentage = bufferPercent_;
+
         _setPools(pools_, poolData_, auth_);
-
-        // Transfer from user
-        // slither-disable-next-line arbitrary-send-erc20
-        IERC20(WETH).safeTransferFrom(msg.sender, address(this), totalDepositedSupply);
-
-        // Deposit into Pools.
-        _depositIntoPools(totalDepositedSupply);
     }
 
-    /// @inheritdoc IRTSupplyManager
-    function requestDeposit(
-        address user,
-        uint256 requestId,
+    /// @inheritdoc IDepositManager
+    function deposit(
+        uint256,
+        address token,
+        address vault,
         uint256 value
-    ) external payable only(REBASE_TOKEN) {
-        // TODO: authorized EIP7575 entries.
-        if (isDepositPaused) {
-            revert EDepositPaused();
-        }
-
-        // Save the total supply value at the start of the operation.
-        uint256 startTotalSupply = totalSupply();
-
-        // Calculate the shares' amount to add upon the deposit operation by dividing the value by the `sharePrice` value.
-        uint256 shares = (value * totalSharesSupply) / startTotalSupply;
-
-        // Increase the total shares' supply amount.
-        totalSharesSupply += shares;
-
-        // Increase the total deposited supply value.
-        totalDepositedSupply += value;
-
-        // TODO: split the logic depending on the token type of the entry.
-        // Idea: Consider to find out the dedicated flow logic from the entry itself.
+    ) external payable only(SUPPLY_MANAGER) returns (uint256) {
         if (msg.value > 0) {
+            if (msg.value != value) {
+                revert EIncorrectNativeValue();
+            }
+
             // Convert ETH to WETH
             IWETH(WETH).deposit{value: msg.value}();
+
+            // Call the Pool to deposit the value.
+            _depositIntoPools(value);
         } else {
-            // Transfer from user
+            // Transfer from token vault
             // slither-disable-next-line arbitrary-send-erc20
-            IERC20(WETH).safeTransferFrom(user, address(this), value);
+            IERC20(token).safeTransferFrom(vault, address(this), value);
+
+            if (token == WETH) {
+                // Call the Pool to deposit the value.
+                _depositIntoPools(value);
+            } else {
+                // Get strategy manager  contract.
+                IStrategyManager strategyManager = DELEGATION_MANAGER.strategyManager();
+
+                // Approve to the Strategy manager contract.
+                IERC20(token).forceApprove(address(strategyManager), value);
+
+                // Deposit only whitelisted LRT tokens into the EigenLayer.
+                // slither-disable-next-line unused-return
+                strategyManager.depositIntoStrategy(getStrategy(token), IERC20(token), value);
+            }
         }
 
-        // Call the Pool to deposit the value.
-        _depositIntoPools(value);
-
         // Emit the request deposit event.
-        emit RequestDeposit(requestId, user, value, shares);
+        emit Deposit(token, vault, value);
 
-        // ConfirmDeposit for user with shares' amount.
-        IRebaseToken(REBASE_TOKEN).confirmDeposit(requestId, shares);
+        return value;
     }
 
     /// @dev receive ETH function.
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
-    /// @inheritdoc IRTSupplyManager
-    function deposit(
+    /// @inheritdoc IDepositManager
+    function stakeNative(
         uint256 value,
         bytes calldata pubkey,
         bytes calldata signature,
         bytes32 depositDataRoot
-    ) external only(authorizedStaker) {
-        if (isDepositPaused) {
-            revert EDepositPaused();
-        }
-
+    ) external only(authorizedStaker) stakeNotPaused {
         // Calculate the actual buffered supply.
         uint256 actualBufferedSupply = _totalBufferedSupply();
 
@@ -196,8 +169,17 @@ contract RTSupplyManager is
 
         // If the buffer percentage is greater than 0, calculate the max value to deposit.
         if (bufferPercentage > 0) {
-            // Calculate the max value to deposit.
-            uint256 maxValueToDeposit = (_totalSupply() * bufferPercentage) / PERCENTAGE_FACTOR;
+            // Calculate the desired allocation to stay in the buffer.
+            uint256 desiredAllocationToStayInBuffer = (totalSupply() * bufferPercentage) /
+                PERCENTAGE_FACTOR;
+
+            // Check if there is any value to stake available.
+            if (actualBufferedSupply < desiredAllocationToStayInBuffer) {
+                revert ENoNeedToStake();
+            }
+
+            // Calculate the maximum value to deposit.
+            uint256 maxValueToDeposit = actualBufferedSupply - desiredAllocationToStayInBuffer;
 
             // Ensure we can deposit the value.
             if (value > maxValueToDeposit) {
@@ -212,98 +194,61 @@ contract RTSupplyManager is
         IWETH(WETH).withdraw(value);
 
         // stake ETH in EigenPod contract
-        EIGEN_POD_MANAGER.stake{value: value}(pubkey, signature, depositDataRoot);
+        DELEGATION_MANAGER.eigenPodManager().stake{value: value}(
+            pubkey,
+            signature,
+            depositDataRoot
+        );
 
         // Emit the deposit event.
-        emit Deposit(value, pubkey, signature, depositDataRoot);
+        emit StakeNative(value, pubkey, signature, depositDataRoot);
     }
 
-    // TODO: add a token deposit function to support assets different from ETH.
-    // commented to avoid compile warrnings
-    // function depositToken(
-    //     address token,
-    //     bytes calldata pubkey,
-    //     bytes calldata signature,
-    //     bytes32 depositDataRoot
-    // ) external only(authorizedStaker) {
-    //     if (isDepositPaused) {
-    //         revert EDepositPaused();
-    //     }
+    /// @inheritdoc IDepositManager
+    function verifyWithdrawalCredentials(
+        uint64 beaconTimestamp,
+        BeaconChainProofs.StateRootProof calldata stateRootProof,
+        uint40[] calldata validatorIndices,
+        bytes[] calldata validatorFieldsProofs,
+        bytes32[][] calldata validatorFields
+    ) external only(authorizedStaker) stakeNotPaused {
+        DELEGATION_MANAGER.eigenPodManager().getPod(address(this)).verifyWithdrawalCredentials(
+            beaconTimestamp,
+            stateRootProof,
+            validatorIndices,
+            validatorFieldsProofs,
+            validatorFields
+        );
+    }
 
-    // TODO: implement it.
-    // }
+    /// @inheritdoc IDepositManager
+    function delegateTo(
+        address operator,
+        IDelegationManager.SignatureWithExpiry calldata approverSignatureAndExpiry,
+        bytes32 approverSalt
+    ) external only(authorizedStaker) stakeNotPaused {
+        DELEGATION_MANAGER.delegateTo(operator, approverSignatureAndExpiry, approverSalt);
+    }
+
+    /// @inheritdoc IDepositManager
+    function redelegate(
+        address operator,
+        IDelegationManager.SignatureWithExpiry calldata approverSignatureAndExpiry,
+        bytes32 approverSalt
+    ) external only(authorizedStaker) stakeNotPaused {
+        DELEGATION_MANAGER.delegateTo(operator, approverSignatureAndExpiry, approverSalt);
+    }
+
+    /// @inheritdoc IDepositManager
+    function undelegate()
+        external
+        only(authorizedStaker)
+        returns (bytes32[] memory withdrawalRoots)
+    {
+        withdrawalRoots = DELEGATION_MANAGER.undelegate(address(this));
+    }
 
     // TO:DO add requestRedeem and redeem
-
-    /**
-     * @dev Distributes yield.
-     * @param beneficiaryInfo List of parties.
-     * @param newApyFormatter New APY formatter.
-     */
-    function distributeYield(
-        Party[] calldata beneficiaryInfo,
-        uint128 newApyFormatter
-    ) external only(authorizedYieldDistributor) {
-        // Validate the input.
-        _checkPercentage(newApyFormatter);
-
-        // Calculate the extra yield to distribute.
-        uint256 realTotalSupply = _totalSupply();
-        if (realTotalSupply <= totalDepositedSupply) {
-            revert ENoRealYield();
-        }
-        uint256 realYield = realTotalSupply - totalDepositedSupply;
-        uint256 currentYield = (realYield * apyFormatter) / PERCENTAGE_FACTOR;
-        uint256 extraYield = realYield - currentYield;
-        // Find the amount of shares to mint.
-        uint256 sharesToMint = (extraYield * totalSharesSupply) /
-            // newTotalSupply
-            (totalDepositedSupply + currentYield);
-
-        // Find the amount of shares to distribute by adding the locked yield shares' amount.
-        uint256 sharesToDistribute = sharesToMint + lockedYieldShares;
-
-        uint256 length = beneficiaryInfo.length;
-        // slither-disable-next-line uninitialized-local
-        uint256 totalPortion;
-
-        // Distribute the extra yield to the parties.
-        address[] memory users = new address[](length);
-        uint256[] memory shares = new uint256[](length);
-        // Calculate shares' value for every user.
-        for (uint256 i = 0; i < length; ++i) {
-            Party memory p = beneficiaryInfo[i];
-            users[i] = p.party;
-            // slither-disable-next-line divide-before-multiply
-            shares[i] = (p.portion * sharesToDistribute) / FULL_PORTION;
-
-            // Get the total portion.
-            totalPortion += beneficiaryInfo[i].portion;
-
-            // slither-disable-next-line reentrancy-no-eth
-            IRebaseToken(REBASE_TOKEN).distribute(users[i], shares[i]);
-        }
-
-        // Check that the total portion is equal to `FULL_PORTION`.
-        if (totalPortion != FULL_PORTION) {
-            revert EWrongPortion();
-        }
-
-        // Distribute an extra yield by:
-        // - Increasing the total shares' supply.
-        // - Equating the total deposited and real total supply values.
-        totalSharesSupply += sharesToMint;
-        totalDepositedSupply = realTotalSupply;
-
-        // Reset the locked yield shares' amount.
-        lockedYieldShares = 0;
-
-        // Set the new APY formatter.
-        apyFormatter = newApyFormatter;
-
-        // Emit an event to log operation.
-        emit DistributeYield(users, shares);
-    }
 
     /// @dev deposits ETH into Pools.
     /// @param value Amount of ETH to deposit.
@@ -352,35 +297,35 @@ contract RTSupplyManager is
         // in order to avoid rounding issues.
     }
 
-    /// @inheritdoc IRTSupplyManager
-    function totalSupply() public view returns (uint256 res) {
-        // Get the Pool's total supply.
-        res = _totalSupply();
-
-        // Then reduce it using APY formatter if needed.
-        if (totalDepositedSupply < res) {
-            res -= totalDepositedSupply;
-            res = (res * apyFormatter) / PERCENTAGE_FACTOR;
-            res += totalDepositedSupply;
+    /**
+     * @dev Getter for the Strategy contract deployed for token.
+     * @param token Address of Strategy contract token.
+     * @return strategy Address of Strategy contract.
+     */
+    function getStrategy(address token) public view returns (IStrategy strategy) {
+        if (address(strategies[token]) == address(0)) {
+            return STRATEGY_FACTORY.deployedStrategies(IERC20(token));
         }
+        return strategies[token];
     }
 
     /// @dev calculates the yield of the .
     /// @return res Total ETH supply.
-    function _totalSupply() internal view returns (uint256) {
-        return _totalBufferedSupply();
-        // TODO: include the supply from EigenLayer pods.
+    function totalSupply() public view returns (uint256) {
+        return _totalBufferedSupply() + _totalRestakedSupply();
     }
 
-    /// @dev calculates the yield on the increased balances of LP tokens.
-    /// @return res Total ETH supply.
-    function _totalBufferedSupply() internal view returns (uint256 res) {
+    /// @dev Calculates the total buffered supply including the yield gained with the increased balances of LP tokens.
+    /// @return bufferedTvl Total ETH supply in buffer.
+    function _totalBufferedSupply() internal view returns (uint256 bufferedTvl) {
         uint256 length = poolsArray.length;
+
+        // gets all withdrawable tokens from LP
         for (uint256 i = 0; i < length; ++i) {
             address pool = poolsArray[i];
             PoolData memory _poolData = poolData[pool];
 
-            res += IBufferInteractor(_poolData.poolLib).getEthBalance(
+            bufferedTvl += IBufferInteractor(_poolData.poolLib).getEthBalance(
                 pool,
                 _poolData.poolToken,
                 address(this)
@@ -388,28 +333,34 @@ contract RTSupplyManager is
         }
     }
 
-    /**
-     * @dev Validate Percentage.
-     * @param percentage All needed percentages.
-     */
-    function _checkPercentage(uint256 percentage) internal pure {
-        if (percentage > PERCENTAGE_FACTOR) {
-            revert EInvalidAPY();
+    /// @dev calculates the yield on the increased balances of staked .
+    /// @return restakedTvl Total ETH supply in EigenLayer.
+    function _totalRestakedSupply() internal view returns (uint256 restakedTvl) {
+        // Get strategy manager  contract.
+        IStrategyManager strategyManager = DELEGATION_MANAGER.strategyManager();
+
+        // gets all deposited strategies
+        // slither-disable-next-line unused-return
+        (IStrategy[] memory _strategies, ) = strategyManager.getDeposits(address(this));
+
+        // length of strategies array
+        uint256 length = _strategies.length;
+
+        // Get all withdrawable tokens from EigenLayer
+        // TO:DO rewrite to work with reward bearing assets
+        for (uint256 i = 0; i < length; ++i) {
+            restakedTvl += _strategies[i].userUnderlyingView(address(this));
         }
     }
 
     /**
-     * @inheritdoc IOracle
+     * @dev Validate Percentage.
+     * @param percentage All needed percentages.
      */
-    function getTotalPoolSupply() external view returns (uint256 pool) {
-        return totalSupply();
-    }
-
-    /**
-     * @inheritdoc IOracle
-     */
-    function getTotalSharesSupply() external view returns (uint256 shares) {
-        return totalSharesSupply;
+    function _checkPercentage(uint32 percentage) internal pure {
+        if (percentage > PERCENTAGE_FACTOR) {
+            revert EInvalidPercentage();
+        }
     }
 
     /**
@@ -417,25 +368,12 @@ contract RTSupplyManager is
      * @return withdrawalCredentials bytes.
      */
     function getWithdrawalCredentials() external view returns (bytes memory) {
-        return abi.encodePacked(bytes1(0x01), bytes11(0), EIGEN_POD_MANAGER.getPod(address(this)));
-    }
-
-    /**
-     * @inheritdoc IOracle
-     */
-    function getTotalSupply() external view returns (uint256 pool, uint256 shares) {
-        pool = totalSupply();
-        shares = totalSharesSupply;
-    }
-
-    /**
-     * @dev Setter for the Authorized Yield Distributor address.
-     * @param newAuthorizedYieldDistributor New authorized Yield Distributor address.
-     */
-    function setAuthorizedYieldDistributor(
-        address newAuthorizedYieldDistributor
-    ) external onlyOwner checkNotZero(newAuthorizedYieldDistributor) {
-        authorizedYieldDistributor = newAuthorizedYieldDistributor;
+        return
+            abi.encodePacked(
+                bytes1(0x01),
+                bytes11(0),
+                DELEGATION_MANAGER.eigenPodManager().getPod(address(this))
+            );
     }
 
     /**
@@ -444,7 +382,7 @@ contract RTSupplyManager is
      */
     function setAuthorizedStaker(
         address newAuthorizedStaker
-    ) external onlyOwner checkNotZero(newAuthorizedStaker) {
+    ) external onlyOwner notZeroAddress(newAuthorizedStaker) {
         authorizedStaker = newAuthorizedStaker;
     }
 
@@ -468,6 +406,7 @@ contract RTSupplyManager is
      * @param pool Pool's address.
      * @param newPoolData PoolData of new pool.
      * @param auth Boolean flag indicating for adding or removing Pool.
+     * @return balanceEthToRebalance Amount of ETH withdrawn from the LP.
      */
     function _setPool(
         address pool,
@@ -506,6 +445,7 @@ contract RTSupplyManager is
      * @param pools actual Pool's addresses array.
      * @param newPoolsData array of new pools data.
      * @param auth Array of boolean flags indicating for adding or removing Pool.
+     * @return balanceEthToRebalance Total amount of ETH withdrawn from the LPs.
      */
     function _setPools(
         address[] memory pools,
@@ -558,7 +498,7 @@ contract RTSupplyManager is
         uint256 length = poolsArray.length;
 
         // calculate actual buffer tvl
-        uint256 bufferTvl = extraValue + _totalSupply();
+        uint256 bufferTvl = extraValue + totalSupply();
 
         // create arrays for rebalance calculation
         uint256[] memory expectedPoolsBalances = new uint256[](length);
@@ -599,72 +539,45 @@ contract RTSupplyManager is
      * @dev Setter for the bufferPercentage.
      * @param newBufferPercentage Number of new bufferPercentage.
      */
-    function setBufferPercentage(uint128 newBufferPercentage) external onlyOwner {
+    function setBufferPercentage(uint32 newBufferPercentage) external onlyOwner {
         _checkPercentage(newBufferPercentage);
         bufferPercentage = newBufferPercentage;
     }
 
-    /// @dev Change the guardian address.
-    /// @param newGuardian New guardian address.
-    function changeGuardian(address newGuardian) external onlyOwner checkNotZero(newGuardian) {
-        guardian = newGuardian;
-    }
+    /**
+     * @dev Setter Strategy contract for token.
+     * @param tokens array of LRT tokens addresses.
+     * @param _strategies array of Strategy contracts addresses.
+     */
+    function addStrategies(
+        address[] calldata tokens,
+        IStrategy[] calldata _strategies
+    ) external onlyOwner {
+        uint256 length = tokens.length;
 
-    /// @dev Set new value for the `isExecutePaused` flag.
-    /// @param newValue New value.
-    function _setDepositPaused(bool newValue) private {
-        if (isDepositPaused != newValue) {
-            isDepositPaused = newValue;
-            emit IsDepositPausedChanged(newValue);
+        if (length != _strategies.length) {
+            revert EIncorrectLength();
         }
-    }
 
-    /// @dev Set new value for the `isRedeemPaused` flag.
-    /// @param newValue New value.
-    function _setRedeemPaused(bool newValue) private {
-        if (isRedeemPaused != newValue) {
-            isRedeemPaused = newValue;
-            emit IsRedeemPausedChanged(newValue);
+        for (uint256 i = 0; i < length; ++i) {
+            strategies[tokens[i]] = _strategies[i];
         }
-    }
-
-    /// @dev Pause the `deposit` functions.
-    function pauseDeposit() external onlyAuthForPause {
-        _setDepositPaused(true);
-    }
-
-    /// @dev Unpause the `deposit` functions.
-    function unpauseDeposit() external onlyOwner {
-        _setDepositPaused(false);
-    }
-
-    /// @dev Pause the `redeem` functions.
-    function pauseRedeem() external onlyAuthForPause {
-        _setRedeemPaused(true);
-    }
-
-    /// @dev Unpause the `redeem` functions.
-    function unpauseRedeem() external onlyOwner {
-        _setRedeemPaused(false);
-    }
-
-    /// @dev Pause the `deposit` and `redeem` functions.
-    function pauseAll() external onlyAuthForPause {
-        _setDepositPaused(true);
-        _setRedeemPaused(true);
-    }
-
-    /// @dev Unpause the `deposit` and `redeem` functions.
-    function unpauseAll() external onlyOwner {
-        _setDepositPaused(false);
-        _setRedeemPaused(false);
     }
 
     // TO:DO remove after eigenlayer integration
+    /**
+     * @dev Process withdraw ETH from contract.
+     * @param amount Amount of ETH to withdraw.
+     */
     function withdrawETH(uint256 amount) external onlyOwner {
         payable(msg.sender).transfer(amount);
     }
 
+    /**
+     * @dev Process a deposit into LP protocols.
+     * @param pool LP protocol address.
+     * @param value Deposit value.
+     */
     function _executeDeposit(address pool, uint256 value) internal {
         // Approve to the AAVE Pool.
         IERC20(WETH).forceApprove(pool, value);
@@ -680,6 +593,11 @@ contract RTSupplyManager is
         pool.functionCall(data);
     }
 
+    /**
+     * @dev Process withdraw from LP protocols.
+     * @param pool LP protocol address.
+     * @param value Amount to withdraw.
+     */
     function _executeWithdraw(address pool, uint256 value) internal {
         // gets calldata for withdraw from Pool
         bytes memory data = IBufferInteractor(poolData[pool].poolLib).encodeWithdraw(
@@ -689,5 +607,56 @@ contract RTSupplyManager is
         );
         // slither-disable-next-line unused-return
         pool.functionCall(data);
+    }
+
+    // should be removed or reorganized
+    /**
+     * @dev Setter a vault for new added token.
+     * @param tokenVault Address of TokenVault contract.
+     */
+    // solhint-disable-next-line no-empty-blocks
+    function addTokenVault(address tokenVault) external {
+        // do nothing, need for SupplyManagerV2
+    }
+
+    // should be removed or reorganized
+    /**
+     * @dev Process remove a vault for deleted token.
+     * @param tokenVault Address of TokenVault contract.
+     */
+    // solhint-disable-next-line no-empty-blocks
+    function removeTokenVault(address tokenVault) external {
+        // do nothing, need for SupplyManagerV2
+    }
+
+    /// @dev Set new value for the `isRedeemPaused` flag.
+    /// @param newValue New value.
+    function _setStakePaused(bool newValue) private {
+        if (isStakePaused != newValue) {
+            isStakePaused = newValue;
+            emit IsStakePausedChanged(newValue);
+        }
+    }
+
+    /// @dev Pause the `stake` and `delegate` functions.
+    function pauseStake() external onlyAuthForPause {
+        _setStakePaused(true);
+    }
+
+    /// @dev Unpause the `stake` and `delegate` functions.
+    function unpauseStake() external onlyOwner {
+        _setStakePaused(false);
+    }
+
+    /// @inheritdoc Ownable2Step
+    function _transferOwnership(address newOwner) internal virtual override(Ownable, Ownable2Step) {
+        // Transfer ownership to the new owner.
+        super._transferOwnership(newOwner);
+    }
+
+    /// @inheritdoc Ownable2Step
+    function transferOwnership(address newOwner) public virtual override(Ownable, Ownable2Step) {
+        // Initiate ownership transfer.
+        super.transferOwnership(newOwner);
     }
 }

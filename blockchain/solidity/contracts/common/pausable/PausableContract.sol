@@ -2,24 +2,19 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.23;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
-import {ValueValidator} from "../ValueValidator.sol";
+import {Guardian} from "./Guardian.sol";
 
 /// @title PausableContract.
 /// @notice Abstract contract for managing function pausing functionality.
 /// @dev Implements pausable functions with the guardian and owner controls.
-abstract contract PausableContract is Ownable, ValueValidator {
+abstract contract PausableContract is Guardian {
     // ============ State Variables ============
-
-    /// @dev Account address that can pause functions.
-    address public guardian;
 
     /// @dev Mapping of function selectors to their pause status.
     mapping(bytes4 functionSelector => bool isPaused) public isFunctionPaused;
 
     /// @dev Array of function selectors that can be paused.
-    /// @notice Stores all registered function selectors that can be controlled by pause functionality.
+    /// @notice Stores all registered function selectors that can be controlled by the pause functionality.
     bytes4[] public selectors;
 
     // ============ Events ============
@@ -31,31 +26,20 @@ abstract contract PausableContract is Ownable, ValueValidator {
 
     // ============ Errors ============
 
-    /// @dev Thrown when trying to set a `isPaused` status that is already set.
-    /// @param functionSelector Function selector that was attempted to be set.
-    /// @param isPaused The status that was attempted to be set.
+    /// @dev Error thrown when trying to set a `isPaused` status that is already set.
+    /// @param functionSelector Function selector attempted to be set.
+    /// @param isPaused Status attempted to be set.
     error EAlreadySet(bytes4 functionSelector, bool isPaused);
 
-    /// @dev Thrown when trying to set all functions to a `isPaused` status that they already have.
-    /// @param isPaused The status that was attempted to be set.
+    /// @dev Error thrown when trying to set all functions to a `isPaused` status that they already have.
+    /// @param isPaused Status attempted to be set.
     error EAllAlreadySet(bool isPaused);
 
-    /// @dev Thrown when a paused function is called.
+    /// @dev Error thrown when a paused function is called.
     /// @param functionSelector Function selector that is paused.
     error EFunctionPaused(bytes4 functionSelector);
 
-    /// @dev Thrown when the caller is not authorized to pause functions.
-    error ENotAuthorizedForPause();
-
     // ============ Modifiers ============
-
-    /// @dev Ensures the caller is either the owner or guardian.
-    modifier onlyAuthForPause() {
-        if (msg.sender != owner() && msg.sender != guardian) {
-            revert ENotAuthorizedForPause();
-        }
-        _;
-    }
 
     /// @dev Ensures the function is not paused.
     /// @param functionSelector Function selector to check.
@@ -70,19 +54,9 @@ abstract contract PausableContract is Ownable, ValueValidator {
 
     /// @dev Initializes the contract with a guardian address.
     /// @param guardianAddress Guardian's address.
-    constructor(address guardianAddress) notZeroAddress(guardianAddress) {
-        guardian = guardianAddress;
-    }
+    constructor(address guardianAddress) Guardian(guardianAddress) {}
 
     // ============ Admin Functions ============
-
-    /// @dev Changes the guardian's address.
-    /// @param newGuardian New guardian's address.
-    function changeGuardian(
-        address newGuardian
-    ) external virtual onlyOwner notZeroAddress(newGuardian) {
-        guardian = newGuardian;
-    }
 
     /// @dev Pauses all registered functions.
     function pauseAll() external virtual onlyAuthForPause {
@@ -97,7 +71,7 @@ abstract contract PausableContract is Ownable, ValueValidator {
     // ============ Internal Functions ============
 
     /// @dev Adds a function selector to the list of pausable functions.
-    /// @param selector The function selector to be added to the list.
+    /// @param selector Function selector to be added to the list.
     // slither-disable-next-line dead-code
     function _addSelector(bytes4 selector) internal virtual {
         selectors.push(selector);
@@ -113,8 +87,8 @@ abstract contract PausableContract is Ownable, ValueValidator {
     /// @dev Sets the pause status for a function with optional exception throwing.
     /// @param functionSelector Function selector to update.
     /// @param isPaused New pause status.
-    /// @param throwException If true, throws an exception when the status is already set.
-    /// @return changed Returns true if the pause status was changed, false otherwise.
+    /// @param throwException If `true`, throws an exception when the status is already set.
+    /// @return changed Returns `true`, if the pause status was changed, or `false` otherwise.
     function _setPauseOptional(
         bytes4 functionSelector,
         bool isPaused,
@@ -130,7 +104,7 @@ abstract contract PausableContract is Ownable, ValueValidator {
     }
 
     /// @dev Iterates through all registered selectors and updates their pause status.
-    ///      Throws EAllAlreadySet if no function's status was changed.
+    ///      Throws `EAllAlreadySet` if no function's status was changed.
     /// @param isPaused New pause status to be set for all functions.
     function _setPauseAll(bool isPaused) internal virtual {
         uint256 length = selectors.length;

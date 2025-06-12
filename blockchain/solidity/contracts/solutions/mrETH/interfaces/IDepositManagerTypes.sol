@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
-/// @title Restaking Supply Managers's Types Interface
+/// @title Deposit Managers's Types Interface
 /// @notice Defines the structs and enums of Deposit Manager contract.
-interface IRTSupplyManagerTypes {
+interface IDepositManagerTypes {
     /**
      * @dev Enum of operation statuses.
      */

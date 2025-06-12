@@ -43,7 +43,7 @@ interface ILZApp {
      * @dev Called when the data is received from the protocol. It overrides the equivalent function in the parent contract.
      * Protocol messages are defined as packets, comprised of the following parameters. Call on deposit.
      * @param _origin Struct containing information about where the packet came from.
-     * @param _guid Global unique identifier for tracking the packet.
+     * @param _guid Global ID for tracking the packet.
      * @param _message Encoded message.
      * @param _executor Executor address as specified by the OApp.
      * @param _extraData Any extra data or options to trigger on receipt.

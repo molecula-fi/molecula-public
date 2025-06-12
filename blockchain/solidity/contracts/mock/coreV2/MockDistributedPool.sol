@@ -11,7 +11,10 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC7575} from "./../../common/external/interfaces/IERC7575.sol";
 import {ZeroValueChecker} from "./../../common/ZeroValueChecker.sol";
 import {IMoleculaPoolV2} from "./../../coreV2/interfaces/IMoleculaPoolV2.sol";
+import {ISupplyManagerV2WithNative} from "./../../coreV2/interfaces/ISupplyManagerV2.sol";
 import {ISupplyManagerV2} from "./../../coreV2/interfaces/ISupplyManagerV2.sol";
+import {ConstantsCoreV2} from "../../coreV2/Constants.sol";
+import {IMoleculaPoolV2WithNativeToken} from "../../coreV2/interfaces/IMoleculaPoolV2.sol";
 
 /**
  * @dev Token parameters.
@@ -48,9 +51,15 @@ struct TokenInfo {
 }
 
 /// @notice Based on MoleculaPoolTreasury
-contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
+contract MockDistributedPool is
+    Ownable,
+    IMoleculaPoolV2,
+    ZeroValueChecker,
+    IMoleculaPoolV2WithNativeToken
+{
     using SafeERC20 for IERC20;
     using Address for address;
+    using Address for address payable;
 
     /// @dev Supply Manager's address.
     address public immutable SUPPLY_MANAGER;
@@ -253,7 +262,12 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
             TokenParams memory tokenParam = pool[i];
             address token = tokenParam.token;
 
-            uint256 balance = IERC20(token).balanceOf(address(this));
+            uint256 balance;
+            if (token == ConstantsCoreV2.NATIVE_TOKEN) {
+                balance = address(this).balance;
+            } else {
+                balance = IERC20(token).balanceOf(address(this));
+            }
             uint256 curSupply = _tokenAmountTomUSD(
                 balance,
                 token,
@@ -285,34 +299,52 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
      * @param token ERC20 token address.
      */
     function _addToken(address token) internal {
-        // Ensure that the token is a contract before making a call.
-        if (token.code.length == 0) {
-            revert ENotContract();
+        if (token == ConstantsCoreV2.NATIVE_TOKEN) {
+            // Ensure that the token is not duplicated.
+            if (poolMap[token].tokenType != TokenType.None) {
+                revert EDuplicatedToken();
+            }
+
+            // Add the token to the pool.
+            int8 n = 0;
+            pool.push(TokenParams(token, n, false));
+            poolMap[token] = TokenInfo({
+                tokenType: TokenType.ERC20,
+                n: n,
+                arrayIndex: uint32(pool.length - 1),
+                valueToRedeem: 0,
+                isBlocked: false
+            });
+        } else {
+            // Ensure that the token is a contract before making a call.
+            if (token.code.length == 0) {
+                revert ENotContract();
+            }
+
+            // Ensure that the token has the `balanceOf()` function.
+            if (!_hasBalanceOf(token)) {
+                revert ENotERC20PoolToken();
+            }
+
+            bool isERC4626 = _hasConvertToAssets(token);
+
+            // Ensure that the token is not duplicated.
+            if (poolMap[token].tokenType != TokenType.None) {
+                revert EDuplicatedToken();
+            }
+
+            // Add the token to the pool.
+            uint8 decimals = IERC20Metadata(token).decimals();
+            int8 n = 18 - int8(decimals);
+            pool.push(TokenParams(token, n, isERC4626));
+            poolMap[token] = TokenInfo({
+                tokenType: isERC4626 ? TokenType.ERC4626 : TokenType.ERC20,
+                n: n,
+                arrayIndex: uint32(pool.length - 1),
+                valueToRedeem: 0,
+                isBlocked: false
+            });
         }
-
-        // Ensure that the token has the `balanceOf()` function.
-        if (!_hasBalanceOf(token)) {
-            revert ENotERC20PoolToken();
-        }
-
-        bool isERC4626 = _hasConvertToAssets(token);
-
-        // Ensure that the token is not duplicated.
-        if (poolMap[token].tokenType != TokenType.None) {
-            revert EDuplicatedToken();
-        }
-
-        // Add the token to the pool.
-        uint8 decimals = IERC20Metadata(token).decimals();
-        int8 n = 18 - int8(decimals);
-        pool.push(TokenParams(token, n, isERC4626));
-        poolMap[token] = TokenInfo({
-            tokenType: isERC4626 ? TokenType.ERC4626 : TokenType.ERC20,
-            n: n,
-            arrayIndex: uint32(pool.length - 1),
-            valueToRedeem: 0,
-            isBlocked: false
-        });
     }
 
     /**
@@ -394,12 +426,12 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
         poolKeeper = poolKeeperAddress;
     }
 
-    function deposit(
+    function _deposit(
         uint256 requestId,
         address token,
         address from,
         uint256 value
-    ) external only(SUPPLY_MANAGER) returns (uint256 moleculaTokenAmount) {
+    ) internal only(SUPPLY_MANAGER) returns (uint256 moleculaTokenAmount) {
         requestId;
         if (poolMap[token].tokenType == TokenType.None) {
             revert ETokenNotExist();
@@ -410,10 +442,34 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
             uint256 assets = IERC4626(token).convertToAssets(value);
             moleculaTokenAmount = _normalize(poolMap[token].n, assets);
         }
-        // Transfer assets to the token holder.
-        // slither-disable-next-line arbitrary-send-erc20
-        IERC20(token).safeTransferFrom(from, address(this), value);
+        if (token == ConstantsCoreV2.NATIVE_TOKEN) {
+            require(value == msg.value, "value != msg.value");
+        } else {
+            // Transfer assets to the token holder.
+            // slither-disable-next-line arbitrary-send-erc20
+            IERC20(token).safeTransferFrom(from, address(this), value);
+        }
         return moleculaTokenAmount;
+    }
+
+    /// @inheritdoc IMoleculaPoolV2
+    function deposit(
+        uint256 requestId,
+        address token,
+        address from,
+        uint256 value
+    ) external only(SUPPLY_MANAGER) returns (uint256 moleculaTokenAmount) {
+        return _deposit(requestId, token, from, value);
+    }
+
+    /// @inheritdoc IMoleculaPoolV2WithNativeToken
+    function depositNativeToken(
+        uint256 requestId,
+        address token,
+        address from,
+        uint256 value
+    ) external payable only(SUPPLY_MANAGER) returns (uint256 moleculaTokenAmount) {
+        return _deposit(requestId, token, from, value);
     }
 
     function requestRedeem(
@@ -472,6 +528,38 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
 
         // Reduce the value to redeem for the correct `totalSupply` calculation.
         poolMap[token].valueToRedeem -= value;
+    }
+
+    function fulfillRedeemRequestsForNativeToken(uint256[] calldata requestIds) external {
+        if (isRedeemPaused) {
+            revert ERedeemPaused();
+        }
+
+        if (requestIds.length == 0) {
+            revert EEmptyArray();
+        }
+        // Call the Supply Manager's `redeem` method.
+        // Receive the corresponding ERC20 token and total value redeemed.
+        // Note: `value` is in the token amount (e.g. sUSDe).
+        // slither-disable-next-line reentrancy-benign
+        (address token, uint256 value) = ISupplyManagerV2WithNative(SUPPLY_MANAGER)
+            .fulfillRedeemRequestsForNativeToken(requestIds);
+
+        // Check whether the token is in `poolMap`.
+        if (poolMap[token].tokenType == TokenType.None) {
+            revert ETokenNotExist();
+        }
+
+        if (poolMap[token].isBlocked) {
+            revert ETokenBlocked();
+        }
+
+        // Reduce the value to redeem for the correct `totalSupply` calculation.
+        poolMap[token].valueToRedeem -= value;
+    }
+
+    function grantNativeToken(address receiver, uint256 nativeTokenAmount) external {
+        payable(receiver).sendValue(nativeTokenAmount);
     }
 
     /**
@@ -643,12 +731,16 @@ contract MockDistributedPool is Ownable, IMoleculaPoolV2, ZeroValueChecker {
     }
 
     function addTokenVault(address tokenVault) external {
-        IERC20 token = IERC20(IERC7575(tokenVault).asset());
-        token.forceApprove(tokenVault, type(uint256).max);
+        address asset = IERC7575(tokenVault).asset();
+        if (asset != ConstantsCoreV2.NATIVE_TOKEN) {
+            IERC20(asset).forceApprove(tokenVault, type(uint256).max);
+        }
     }
 
     function removeTokenVault(address tokenVault) external {
-        IERC20 token = IERC20(IERC7575(tokenVault).asset());
-        token.forceApprove(tokenVault, 0);
+        address asset = IERC7575(tokenVault).asset();
+        if (asset != ConstantsCoreV2.NATIVE_TOKEN) {
+            IERC20(asset).forceApprove(tokenVault, 0);
+        }
     }
 }

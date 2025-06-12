@@ -72,7 +72,7 @@ contract AccountantAgent is Ownable, IAccountant, IAgent, ZeroValueChecker {
     /**
      * @dev Initializes the contract setting the initializer address.
      * @param initialOwner Owner address.
-     * @param rebaseTokenAddress Rebase token address.
+     * @param rebaseTokenAddress Rebase token's address.
      * @param supplyManagerAddress Supply Manager's contract address.
      * @param usdtAddress USDT token's address.
      * @param guardianAddress Guardian address that can pause the contract.

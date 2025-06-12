@@ -30,5 +30,8 @@
         "@molecula-monorepo/eslint-config-shared": "*",
         "@molecula-monorepo/prettier-config-shared": "*",
         "@molecula-monorepo/tsconfig-shared": "*"
+    },
+    "volta": {
+        "extends": "../../package.json"
     }
 }

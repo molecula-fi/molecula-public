@@ -29,8 +29,6 @@ export class Environment {
         return (
             // Check for "BUILD_TYPE" env variable first
             (this.getEnv(Keys.BUILD_TYPE, process.env.BUILD_TYPE) as BuildType) ||
-            // Check for Expo App which can use only variables with `EXPO_PUBLIC_` prefix
-            (this.getEnv(Keys.BUILD_TYPE, process.env.EXPO_PUBLIC_BUILD_TYPE) as BuildType) ||
             // Check for React App which can use only variables with `REACT_APP_` prefix
             (this.getEnv(Keys.BUILD_TYPE, process.env.REACT_APP_BUILD_TYPE) as BuildType) ||
             // Fallback to `Local` build type in case the variable is not passed

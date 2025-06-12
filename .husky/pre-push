@@ -16,9 +16,10 @@ if [ -z "$branch_name" ]; then
   exit 1
 fi
 
-# For other branches, enforce MLC- prefix pattern
-if [[ ! $branch_name =~ ^MLC-[0-9]+.*$ ]]; then
-  echo "❌ Branch name '$branch_name' is invalid. It must start with 'MLC-<number>' (e.g., MLC-123-my-feature)"
+# For other branches, enforce MLC- or INFRASTRUC- prefix pattern
+echo "$branch_name" | grep -Eq '^(MLC|INFRASTRUC)-[0-9]+(-.*)?$'
+if [ $? -ne 0 ]; then
+  echo "❌ Branch name '$branch_name' is invalid. It must start with 'MLC-<number>' or 'INFRASTRUC-<number>' (e.g., MLC-123, MLC-124-my-feature, INFRASTRUC-125, INFRASTRUC-126-infra-feature)"
   exit 1
 fi
 

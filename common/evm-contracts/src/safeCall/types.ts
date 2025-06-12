@@ -4,7 +4,6 @@ import type { MoleculaPoolTreasury } from '@molecula-monorepo/solidity/typechain
 
 import type {
     AgentLZ,
-    MoleculaPool,
     MUSDLock,
     RebaseToken,
     SupplyManager,
@@ -56,7 +55,6 @@ export type EvmContractSafeCall<Contract extends PickFunctions<Contract>, Respon
 ) => Promise<Response>;
 
 export type AllEvmContracts =
-    | MoleculaPool
     | MoleculaPoolTreasury
     | AgentLZ
     | AccountantAgent

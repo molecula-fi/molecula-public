@@ -4,10 +4,10 @@ import { expect } from 'chai';
 import { keccak256 } from 'ethers';
 import { ethers } from 'hardhat';
 
-import { expectEqual } from '../../utils/Common';
 import { deployNitrogenV11WithTokenVault, getRidOf } from '../../utils/NitrogenCommonV1.1';
 import { findRequestRedeemEvent } from '../../utils/event';
 import { FAUCET, grantERC20 } from '../../utils/grant';
+import { expectEqual } from '../../utils/math';
 
 describe('Test TokenVault', () => {
     it('Should deposit and redeem via tokenUSDCVault', async () => {
@@ -569,12 +569,12 @@ describe('Test TokenVault', () => {
     });
 
     it('Test tokenUSDCVault errors', async () => {
-        const { tokenUSDCVault, randAccount, USDC } = await loadFixture(
+        const { tokenUSDCVault, randAccount, USDC, poolOwner } = await loadFixture(
             deployNitrogenV11WithTokenVault,
         );
 
         await expect(
-            tokenUSDCVault.connect(randAccount).init(ethers.ZeroAddress, 0, 0),
+            tokenUSDCVault.connect(poolOwner).init(ethers.ZeroAddress, 0, 0),
         ).to.be.rejectedWith('EZeroAddress()');
         await expect(tokenUSDCVault.connect(randAccount).init(USDC, 1, 1)).to.be.rejectedWith(
             'OwnableUnauthorizedAccount(',
@@ -585,7 +585,7 @@ describe('Test TokenVault', () => {
             tokenUSDCVault
                 .connect(randAccount)
                 ['deposit(uint256,address,address)'](0, ethers.ZeroAddress, ethers.ZeroAddress),
-        ).to.be.rejectedWith('EZeroAddress(');
+        ).to.be.rejectedWith('EInvalidOperator(');
 
         await expect(
             tokenUSDCVault

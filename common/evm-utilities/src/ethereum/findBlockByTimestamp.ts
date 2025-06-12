@@ -1,5 +1,7 @@
 import type { ethers } from 'ethers';
 
+import { evmQueue } from '../helpers';
+
 type FindBlockByTimestampOptions = {
     /**
      * Ethereum provider
@@ -43,7 +45,7 @@ export async function findBlockByTimestamp(options: FindBlockByTimestampOptions)
     let iterations = 0;
 
     if (!endBlock) {
-        endBlock = await provider.getBlockNumber();
+        endBlock = await evmQueue.add(() => provider.getBlockNumber());
     }
 
     // Validate block range
@@ -63,7 +65,7 @@ export async function findBlockByTimestamp(options: FindBlockByTimestampOptions)
 
         try {
             // eslint-disable-next-line no-await-in-loop
-            const block = await provider.getBlock(middleBlock);
+            const block = await evmQueue.add(() => provider.getBlock(middleBlock));
 
             if (!block) {
                 throw new Error(`Block ${middleBlock} not found`);
@@ -86,7 +88,7 @@ export async function findBlockByTimestamp(options: FindBlockByTimestampOptions)
     }
 
     // Return the first block with timestamp >= targetTimestamp
-    const finalBlock = await provider.getBlock(startBlock);
+    const finalBlock = await evmQueue.add(() => provider.getBlock(startBlock));
     if (finalBlock && finalBlock.timestamp >= targetTimestamp) {
         return startBlock;
     }

@@ -18,6 +18,9 @@ describe('Token Vault', () => {
 
         await expect(tokenUSDCVault.setMinDepositAssets(0)).to.be.rejectedWith('EZeroValue()');
         await expect(tokenUSDCVault.setMinRedeemShares(0)).to.be.rejectedWith('EZeroValue()');
+
+        expect(await tokenUSDCVault.isRequestDepositPaused()).to.be.true;
+        expect(await tokenUSDCVault.isRequestRedeemPaused()).to.be.true;
     });
 
     it('Check zero params', async () => {
@@ -34,10 +37,10 @@ describe('Token Vault', () => {
         // user0 deposits tokens
         await expect(
             tokenUSDCVault.connect(user0).requestDeposit(depositValue, ethers.ZeroAddress, user0),
-        ).to.be.rejectedWith('EZeroAddress()');
+        ).to.be.rejectedWith('EZeroAddress(');
         await expect(
             tokenUSDCVault.connect(user0).requestDeposit(depositValue, user0, ethers.ZeroAddress),
-        ).to.be.rejectedWith('EZeroAddress()');
+        ).to.be.rejectedWith('EInvalidOperator(');
         await tokenUSDCVault.connect(user0).requestDeposit(depositValue, user0, user0);
 
         // requestRedeem
@@ -65,5 +68,38 @@ describe('Token Vault', () => {
         await expect(
             tokenUSDCVault.connect(user0).redeem(shares, ethers.ZeroAddress, user0),
         ).to.be.rejectedWith('EZeroAddress()');
+    });
+
+    it('Deposit native token', async () => {
+        const { nativeTokenVault, user0, user1, rebaseTokenV2, mockDistributedPool } =
+            await loadFixture(deployCoreV2);
+        const { provider } = ethers;
+
+        expect(await provider.getBalance(mockDistributedPool)).to.be.equal(0);
+
+        // user deposits eth
+        const decimals = 18n;
+        const depositValue = 10n ** decimals;
+        expect(await rebaseTokenV2.sharesOf(user0)).to.be.equal(0);
+        await nativeTokenVault.connect(user0).deposit(0, user0, { value: depositValue });
+        expect(await rebaseTokenV2.sharesOf(user0)).to.be.equal(depositValue);
+        expect(await provider.getBalance(mockDistributedPool)).to.be.equal(depositValue);
+
+        // Request redeem
+        const shares = await rebaseTokenV2.sharesOf(user0);
+        const tx = await nativeTokenVault.connect(user0).requestRedeem(shares, user0, user0);
+        const redeemEvent = await findRequestRedeemEventV2(tx);
+
+        // Fulfilling
+        await mockDistributedPool.fulfillRedeemRequestsForNativeToken([redeemEvent.operationId]);
+        const claimableAssets = await nativeTokenVault.claimableRedeemAssets(user0);
+        expect(claimableAssets).to.be.equal(redeemEvent.redeemValue);
+
+        // user0 withdraws native tokens for user1
+        const user1Balance = await provider.getBalance(user1);
+        await nativeTokenVault.connect(user0).withdraw(claimableAssets, user1, user0);
+        expect(await provider.getBalance(user1)).to.be.equal(
+            user1Balance + redeemEvent.redeemValue,
+        );
     });
 });

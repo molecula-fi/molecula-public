@@ -127,7 +127,7 @@ export const evmMoleculaContractAddresses = {
         },
         [EVMChainIDs.Sepolia]: DevnetContractsNitrogen.eth.poolKeeper as EVMAddress,
     },
-    MoleculaPool: {
+    MoleculaPoolTreasury: {
         [EVMChainIDs.Mainnet]: {
             beta: MainBetaContractsNitrogen.eth.moleculaPool as EVMAddress,
             prod: MainProdContractsNitrogen.eth.moleculaPool as EVMAddress,

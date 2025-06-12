@@ -15,5 +15,8 @@
     "dependencies": {
         "prettier": "^3.2.5",
         "prettier-plugin-solidity": "^1.4.1"
+    },
+    "volta": {
+        "extends": "../../package.json"
     }
 }

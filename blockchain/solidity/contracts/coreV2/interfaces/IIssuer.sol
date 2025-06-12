@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.23;
 
-import {IVaultContainer} from "./IVaultContainer.sol";
+import {IVaultContainer} from "../Tokens/interfaces/IVaultContainer.sol";
 
 /// @title IIssuer.
 /// @notice Interface for token minting and burning operations.

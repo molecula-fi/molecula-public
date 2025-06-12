@@ -44,12 +44,12 @@ interface IwmUSD {
     /// @dev Throws an error if shares for distributions are greater than the yield shares.
     error ETooManyShares();
 
-    /// @dev Returns mUSD Rebase token address.
-    /// @return mUSD Rebase token address.
+    /// @dev Returns mUSD Rebase token's address.
+    /// @return mUSD Rebase token's address.
     // solhint-disable-next-line func-name-mixedcase
     function MUSD() external returns (RebaseERC20);
 
-    /// @dev Authorized yield distributor (e.g. lmUSD token).
+    /// @dev Authorized yield distributor (e.g. the lmUSD token).
     /// @return Authorized yield distributor.
     function authorizedYieldDistributor() external returns (address);
 
@@ -82,7 +82,7 @@ interface IwmUSD {
     /// @return Current yield in shares.
     function currentYieldShares() external view returns (uint256);
 
-    /// @dev Grand shares for the user.
+    /// @dev Grant shares for the user.
     /// @param user User address.
     /// @param shares Shares for the user.
     function distributeYield(address user, uint256 shares) external;

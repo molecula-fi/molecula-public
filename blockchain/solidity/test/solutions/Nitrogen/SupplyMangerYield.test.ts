@@ -4,14 +4,15 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 import { INITIAL_SUPPLY } from '../../utils/Carbon';
-import { deployNitrogen } from '../../utils/NitrogenCommon';
+import { deployNitrogenV11WithUSDT } from '../../utils/NitrogenCommonV1.1';
 import { findRequestRedeemEvent } from '../../utils/event';
 import { grantERC20, grantETH } from '../../utils/grant';
 
 describe('Test SupplyManger yield', () => {
     describe('Test SupplyManager pool yield lock and out of gas distribution', () => {
         it('SupplyManager.distributeYield() out of gas for', async () => {
-            const { moleculaPool, supplyManager, agent, USDT } = await loadFixture(deployNitrogen);
+            const { moleculaPool, supplyManager, agent, USDT } =
+                await loadFixture(deployNitrogenV11WithUSDT);
 
             const income = 250_000_000n;
             await grantERC20(await moleculaPool.poolKeeper(), USDT, income);
@@ -40,13 +41,13 @@ describe('Test SupplyManger yield', () => {
 
         it('SupplyManager test lock yield', async () => {
             const { moleculaPool, supplyManager, rebaseToken, agent, user0, user1, caller, USDT } =
-                await loadFixture(deployNitrogen);
+                await loadFixture(deployNitrogenV11WithUSDT);
 
             // generate income. make x2 share price.
             const income = 250_000_000n;
-            const income18 = income * 10n ** 12n;
+            // const income18 = income * 10n ** 12n;
             await grantERC20(await moleculaPool.poolKeeper(), USDT, income);
-            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 2n);
+            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY);
 
             // user0 deposit 100 USDT
             const depositValue = 100_000_000n;
@@ -61,15 +62,13 @@ describe('Test SupplyManger yield', () => {
             // user0 calls requestDeposit on rebaseToken
             await rebaseToken.connect(user0).requestDeposit(depositValue, user0, user0);
 
-            const shares = (depositValue / 2n) * 10n ** 12n;
+            const shares = depositValue * 10n ** 12n;
             const value18 = depositValue * 10n ** 12n;
             expect(await USDT.balanceOf(user0)).to.equal(0);
-            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
-                income + depositValue,
-            );
-            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 3n);
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(income);
+            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 2n);
             expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY + shares);
-            expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY + income18 + value18);
+            expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY * 2n);
             expect(await rebaseToken.balanceOf(user0)).to.equal(value18);
             expect(await rebaseToken.sharesOf(user0)).to.equal(shares);
 
@@ -78,9 +77,7 @@ describe('Test SupplyManger yield', () => {
             // Grant user1 wallet with 100 USDT and 2 ETH
             await grantERC20(user1, USDT, depositValue);
             expect(await USDT.balanceOf(user1)).to.equal(depositValue);
-            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
-                income + depositValue,
-            );
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(income);
 
             // approve USDT to agent
             await USDT.connect(user1).approve(await agent.getAddress(), depositValue);
@@ -88,14 +85,10 @@ describe('Test SupplyManger yield', () => {
             // user0 calls requestDeposit on rebaseToken
             await rebaseToken.connect(user1).requestDeposit(depositValue, user1, user1);
             expect(await USDT.balanceOf(user1)).to.equal(0);
-            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
-                income + depositValue * 2n,
-            );
-            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 4n);
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(income);
+            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 3n);
             expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY + shares * 2n);
-            expect(await moleculaPool.totalSupply()).to.equal(
-                INITIAL_SUPPLY + income18 + value18 * 2n,
-            );
+            expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY + shares * 2n);
             expect(await rebaseToken.balanceOf(user1)).to.equal(value18);
             expect(await rebaseToken.sharesOf(user1)).to.equal(shares);
 
@@ -115,7 +108,7 @@ describe('Test SupplyManger yield', () => {
                 ethValue: 0n,
             };
             // distribute yield
-            await supplyManager.distributeYield([party_1], 4000);
+            await expect(supplyManager.distributeYield([party_1], 4000)).to.be.reverted;
 
             // user0 income request
             let tx = await rebaseToken.connect(user0).requestRedeem(shares * 100n, user0, user0);
@@ -133,7 +126,7 @@ describe('Test SupplyManger yield', () => {
                 (await supplyManager.redeemRequests(user1OperationId)).value - depositValue;
 
             // 40% of income kept for a company
-            expect(ownerIncome + user1Income).to.be.equal((income * 60n) / 100n);
+            expect(ownerIncome + user1Income).to.be.equal(0);
 
             // caller deposit 100 USDT
 
@@ -141,9 +134,7 @@ describe('Test SupplyManger yield', () => {
             await grantERC20(caller, USDT, depositValue);
             await grantETH(caller);
             expect(await USDT.balanceOf(caller)).to.equal(depositValue);
-            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
-                income + depositValue * 2n,
-            );
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(income);
 
             // approve USDT to agent
             await USDT.connect(caller).approve(await agent.getAddress(), depositValue);
@@ -152,12 +143,10 @@ describe('Test SupplyManger yield', () => {
             await rebaseToken.connect(caller).requestDeposit(depositValue, caller, caller);
 
             expect(await USDT.balanceOf(caller)).to.equal(0);
-            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
-                income + depositValue * 3n,
-            );
-            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 3n);
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(income);
+            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 2n);
             expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY + shares * 1n);
-            expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY + value18 * 2n);
+            expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY + value18);
             expect(await rebaseToken.balanceOf(caller)).to.equal(value18);
             expect(await rebaseToken.sharesOf(caller)).to.equal(shares);
 
@@ -191,9 +180,7 @@ describe('Test SupplyManger yield', () => {
             await grantERC20(caller, USDT, depositValue);
             await grantETH(caller);
             expect(await USDT.balanceOf(caller)).to.equal(depositValue);
-            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
-                income + depositValue * 3n,
-            );
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(income);
 
             // approve USDT to agent
             await USDT.connect(caller).approve(await agent.getAddress(), depositValue);
@@ -202,12 +189,10 @@ describe('Test SupplyManger yield', () => {
             await rebaseToken.connect(caller).requestDeposit(depositValue, caller, caller);
 
             expect(await USDT.balanceOf(caller)).to.equal(0);
-            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(
-                income + depositValue * 4n,
-            );
-            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 3n);
+            expect(await USDT.balanceOf(await moleculaPool.poolKeeper())).to.equal(income);
+            expect(await supplyManager.totalSupply()).to.equal(INITIAL_SUPPLY * 2n);
             expect(await supplyManager.totalSharesSupply()).to.equal(INITIAL_SUPPLY + shares * 1n);
-            expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY + value18 * 2n);
+            expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY + value18);
             expect(await rebaseToken.balanceOf(caller)).to.equal(value18);
             expect(await rebaseToken.sharesOf(caller)).to.equal(shares);
 

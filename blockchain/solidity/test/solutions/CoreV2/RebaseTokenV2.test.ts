@@ -4,14 +4,15 @@ import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { expectEqual } from '../../utils/Common';
 import { deployCoreV2 } from '../../utils/CoreV2';
 import { FAUCET, grantERC20 } from '../../utils/grant';
+import { expectEqual } from '../../utils/math';
 import { signERC2612Permit } from '../../utils/sign';
 
 describe('RebaseTokenV2', () => {
     it('Test total supply: USDC (6 decimals)', async () => {
-        const { rebaseTokenV2, USDC, mockDistributedPool } = await loadFixture(deployCoreV2);
+        const { rebaseTokenV2, USDC, mockDistributedPool, supplyManagerV2 } =
+            await loadFixture(deployCoreV2);
 
         const virtualOffset = 10n ** 18n;
         let totalSupply = await rebaseTokenV2.totalSupply();
@@ -27,8 +28,8 @@ describe('RebaseTokenV2', () => {
 
         expect(await rebaseTokenV2.decimals()).to.be.equal(18);
 
-        expect(await rebaseTokenV2.convertToShares(totalSupply)).to.be.equal(totalSharesSupply);
-        expect(await rebaseTokenV2.convertToAssets(totalSharesSupply)).to.be.equal(totalSupply);
+        expect(await supplyManagerV2.convertToShares(totalSupply)).to.be.equal(totalSharesSupply);
+        expect(await supplyManagerV2.convertToAssets(totalSharesSupply)).to.be.equal(totalSupply);
     });
 
     it('Test transfer/transferFrom/approve', async () => {

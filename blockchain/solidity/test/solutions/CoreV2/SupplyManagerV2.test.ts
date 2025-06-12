@@ -132,7 +132,7 @@ describe('Supply Manager V2', () => {
             'TokenVaultNotAllowed',
         );
         await expect(
-            supplyManagerV2.connect(user0).requestRedeem(user0, user0, 0, 0),
+            supplyManagerV2.connect(user0).requestRedeem(user0, user0, user0, 0, 0),
         ).to.be.rejectedWith('TokenVaultNotAllowed');
 
         await expect(mockDistributedPool.fulfillRedeemRequests([123n])).to.be.rejectedWith(

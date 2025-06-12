@@ -114,7 +114,7 @@ contract AgentLZ is OApp, OptionsLZ, ReentrancyGuard, ZeroValueChecker, IAgent {
      * Protocol messages are defined as packets, comprised of the following parameters.
      * Call on depositing.
      * param _origin Struct containing information about where the packet came from.
-     * param _guid Global unique identifier for tracking the packet.
+     * param _guid Global ID for tracking the packet.
      * param _executor Executor address as specified by the OApp.
      * param _options Extra data or options to trigger upon receipt.
      * @param payload Encoded message.

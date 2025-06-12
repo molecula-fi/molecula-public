@@ -60,6 +60,9 @@ export const sepoliaConfig: EthereumNetworkConfig = {
     /** Compound Token for WETH (cWETHv3) token address on Ethereum Sepolia. */
     CWETH_V3: '0x2943ac1216979aD8dB76D9147F64E61adc126e96',
 
+    /** Lido LRT Token address on Ethereum Sepolia. */
+    STETH_ADDRESS: '0x3e3FE7dBc6B4C189E7128855dD526361c49b40Af',
+
     /**  DAI token address on Ethereum Sepolia. */
     DAI_ADDRESS: evmStaticTokenAddresses.DAI[EVMChainIDs.Sepolia],
 
@@ -111,6 +114,19 @@ export const sepoliaConfig: EthereumNetworkConfig = {
 
     /** EigenPodManager contract address. */
     EIGEN_POD_MANAGER: '0x2E3D6c0744b10eb0A4e6F679F71554a39Ec47a5D',
+
+    /** DelegationManager contract address. */
+    DELEGATION_MANAGER: '0xD4A7E1Bd8015057293f0D0A557088c286942e84b',
+
+    /** StrategyFactory contract address. */
+    STRATEGY_FACTORY: '0x066cF95c1bf0927124DFB8B02B401bc23A79730D',
+
+    /** StETH Strategy contract address. */
+    STRATEGY_BASE_STETH: '0x0000000000000000000000000000000000000000',
+
+    /** EigenLayer default operator address. */
+    EIGENLAYER_OPERATOR: '0x47801F2AACDce93229C304f3bEf2f92A859f77F2',
+
     WMUSD_TOKEN_NAME: 'Wrapped mUSD test',
     WMUSD_TOKEN_SYMBOL: 'wmUSDt',
 

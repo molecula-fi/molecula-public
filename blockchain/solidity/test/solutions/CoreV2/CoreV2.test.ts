@@ -4,10 +4,10 @@ import { expect } from 'chai';
 
 import { ethers } from 'ethers';
 
-import { expectEqual } from '../../utils/Common';
 import { deployCoreV2 } from '../../utils/CoreV2';
 import { findRequestRedeemEventV2 } from '../../utils/event';
 import { grantERC20 } from '../../utils/grant';
+import { expectEqual } from '../../utils/math';
 
 describe('Core V2', () => {
     it('Tets gas usage for fulfillRedeemRequests', async () => {
@@ -52,6 +52,7 @@ describe('Core V2', () => {
             rebaseTokenV2,
             USDC,
             mockDistributedPool,
+            supplyManagerV2,
         } = await loadFixture(deployCoreV2);
 
         const decimals: bigint = await USDC.decimals();
@@ -63,7 +64,7 @@ describe('Core V2', () => {
 
         // Check shares
         const shares = await tokenVault.convertToShares(depositValue);
-        const shares2 = await rebaseTokenV2.convertToShares(depositValue * 10n ** 12n);
+        const shares2 = await supplyManagerV2.convertToShares(depositValue * 10n ** 12n);
         expect(shares).to.be.equal(shares2);
 
         // Deposit assets in every way

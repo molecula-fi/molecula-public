@@ -5,6 +5,10 @@
             "path": ".",
         },
         {
+            "name": "🔑 Configs",
+            "path": "configs",
+        },
+        {
             "name": "💰 Contracts",
             "path": "contracts",
         },

@@ -7,68 +7,9 @@ pragma solidity >=0.5.0;
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./IETHPOSDeposit.sol";
 import "./IEigenPod.sol";
-
-interface IEigenPodManagerErrors {
-    /// @dev Thrown when caller is not a EigenPod.
-    error OnlyEigenPod();
-    /// @dev Thrown when caller is not DelegationManager.
-    error OnlyDelegationManager();
-    /// @dev Thrown when caller already has an EigenPod.
-    error EigenPodAlreadyExists();
-    /// @dev Thrown when shares is not a multiple of gwei.
-    error SharesNotMultipleOfGwei();
-    /// @dev Thrown when shares would result in a negative integer.
-    error SharesNegative();
-    /// @dev Thrown when the strategy is not the beaconChainETH strategy.
-    error InvalidStrategy();
-    /// @dev Thrown when the pods shares are negative and a beacon chain balance update is attempted.
-    /// The podOwner should complete legacy withdrawal first.
-    error LegacyWithdrawalsNotCompleted();
-    /// @dev Thrown when caller is not the proof timestamp setter
-    error OnlyProofTimestampSetter();
-}
-
-interface IEigenPodManagerEvents {
-    /// @notice Emitted to notify the deployment of an EigenPod
-    event PodDeployed(address indexed eigenPod, address indexed podOwner);
-
-    /// @notice Emitted to notify a deposit of beacon chain ETH recorded in the strategy manager
-    event BeaconChainETHDeposited(address indexed podOwner, uint256 amount);
-
-    /// @notice Emitted when the balance of an EigenPod is updated
-    event PodSharesUpdated(address indexed podOwner, int256 sharesDelta);
-
-    /// @notice Emitted every time the total shares of a pod are updated
-    event NewTotalShares(address indexed podOwner, int256 newTotalShares);
-
-    /// @notice Emitted when a withdrawal of beacon chain ETH is completed
-    event BeaconChainETHWithdrawalCompleted(
-        address indexed podOwner,
-        uint256 shares,
-        uint96 nonce,
-        address delegatedAddress,
-        address withdrawer,
-        bytes32 withdrawalRoot
-    );
-
-    /// @notice Emitted when a staker's beaconChainSlashingFactor is updated
-    event BeaconChainSlashingFactorDecreased(
-        address staker,
-        uint64 prevBeaconChainSlashingFactor,
-        uint64 newBeaconChainSlashingFactor
-    );
-
-    /// @notice Emitted when an operator is slashed and shares to be burned are increased
-    event BurnableETHSharesIncreased(uint256 shares);
-
-    /// @notice Emitted when the Pectra fork timestamp is updated
-    event PectraForkTimestampSet(uint64 newPectraForkTimestamp);
-
-    /// @notice Emitted when the proof timestamp setter is updated
-    event ProofTimestampSetterSet(address newProofTimestampSetter);
-}
+import "./IETHPOSDeposit.sol";
+import "./IStrategy.sol";
 
 interface IEigenPodManagerTypes {
     /**
@@ -87,112 +28,11 @@ interface IEigenPodManagerTypes {
 }
 
 /**
- * @title Minimal interface for an `Strategy` contract.
- * @author Layr Labs, Inc.
- * @notice Terms of Service: https://docs.eigenlayer.xyz/overview/terms-of-service
- * @notice Custom `Strategy` implementations may expand extensively on this interface.
- */
-interface IStrategy {
-    /**
-     * @notice Used to deposit tokens into this Strategy
-     * @param token is the ERC20 token being deposited
-     * @param amount is the amount of token being deposited
-     * @dev This function is only callable by the strategyManager contract. It is invoked inside of the strategyManager's
-     * `depositIntoStrategy` function, and individual share balances are recorded in the strategyManager as well.
-     * @return newShares is the number of new shares issued at the current exchange ratio.
-     */
-    function deposit(IERC20 token, uint256 amount) external returns (uint256);
-
-    /**
-     * @notice Used to withdraw tokens from this Strategy, to the `recipient`'s address
-     * @param recipient is the address to receive the withdrawn funds
-     * @param token is the ERC20 token being transferred out
-     * @param amountShares is the amount of shares being withdrawn
-     * @dev This function is only callable by the strategyManager contract. It is invoked inside of the strategyManager's
-     * other functions, and individual share balances are recorded in the strategyManager as well.
-     */
-    function withdraw(address recipient, IERC20 token, uint256 amountShares) external;
-
-    /**
-     * @notice Used to convert a number of shares to the equivalent amount of underlying tokens for this strategy.
-     * For a staker using this function and trying to calculate the amount of underlying tokens they have in total they
-     * should input into `amountShares` their withdrawable shares read from the `DelegationManager` contract.
-     * @notice In contrast to `sharesToUnderlyingView`, this function **may** make state modifications
-     * @param amountShares is the amount of shares to calculate its conversion into the underlying token
-     * @return The amount of underlying tokens corresponding to the input `amountShares`
-     * @dev Implementation for these functions in particular may vary significantly for different strategies
-     */
-    function sharesToUnderlying(uint256 amountShares) external returns (uint256);
-
-    /**
-     * @notice Used to convert an amount of underlying tokens to the equivalent amount of shares in this strategy.
-     * @notice In contrast to `underlyingToSharesView`, this function **may** make state modifications
-     * @param amountUnderlying is the amount of `underlyingToken` to calculate its conversion into strategy shares
-     * @return The amount of shares corresponding to the input `amountUnderlying`.  This is used as deposit shares
-     * in the `StrategyManager` contract.
-     * @dev Implementation for these functions in particular may vary significantly for different strategies
-     */
-    function underlyingToShares(uint256 amountUnderlying) external returns (uint256);
-
-    /**
-     * @notice convenience function for fetching the current underlying value of all of the `user`'s shares in
-     * this strategy. In contrast to `userUnderlyingView`, this function **may** make state modifications
-     */
-    function userUnderlying(address user) external returns (uint256);
-
-    /**
-     * @notice convenience function for fetching the current total shares of `user` in this strategy, by
-     * querying the `strategyManager` contract
-     */
-    function shares(address user) external view returns (uint256);
-
-    /**
-     * @notice Used to convert a number of shares to the equivalent amount of underlying tokens for this strategy.
-     * For a staker using this function and trying to calculate the amount of underlying tokens they have in total they
-     * should input into `amountShares` their withdrawable shares read from the `DelegationManager` contract.
-     * @notice In contrast to `sharesToUnderlying`, this function guarantees no state modifications
-     * @param amountShares is the amount of shares to calculate its conversion into the underlying token
-     * @return The amount of underlying tokens corresponding to the input `amountShares`
-     * @dev Implementation for these functions in particular may vary significantly for different strategies
-     */
-    function sharesToUnderlyingView(uint256 amountShares) external view returns (uint256);
-
-    /**
-     * @notice Used to convert an amount of underlying tokens to the equivalent amount of shares in this strategy.
-     * @notice In contrast to `underlyingToShares`, this function guarantees no state modifications
-     * @param amountUnderlying is the amount of `underlyingToken` to calculate its conversion into strategy shares
-     * @return The amount of shares corresponding to the input `amountUnderlying`. This is used as deposit shares
-     * in the `StrategyManager` contract.
-     * @dev Implementation for these functions in particular may vary significantly for different strategies
-     */
-    function underlyingToSharesView(uint256 amountUnderlying) external view returns (uint256);
-
-    /**
-     * @notice convenience function for fetching the current underlying value of all of the `user`'s shares in
-     * this strategy. In contrast to `userUnderlying`, this function guarantees no state modifications
-     */
-    function userUnderlyingView(address user) external view returns (uint256);
-
-    /// @notice The underlying token for shares in this Strategy
-    function underlyingToken() external view returns (IERC20);
-
-    /// @notice The total number of extant shares in this Strategy
-    function totalShares() external view returns (uint256);
-
-    /// @notice Returns either a brief string explaining the strategy's goal & purpose, or a link to metadata that explains in more detail.
-    function explanation() external view returns (string memory);
-}
-
-/**
  * @title Interface for factory that creates and manages solo staking pods that have their withdrawal credentials pointed to EigenLayer.
  * @author Layr Labs, Inc.
  * @notice Terms of Service: https://docs.eigenlayer.xyz/overview/terms-of-service
  */
-interface IEigenPodManager is
-    IEigenPodManagerErrors,
-    IEigenPodManagerEvents,
-    IEigenPodManagerTypes
-{
+interface IEigenPodManager is IEigenPodManagerTypes {
     /**
      * @notice Creates an EigenPod for the sender.
      * @dev Function will revert if the `msg.sender` already has an EigenPod.

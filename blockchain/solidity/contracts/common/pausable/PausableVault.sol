@@ -6,13 +6,13 @@ import {IERC7540Deposit, IERC7540Redeem} from "./../external/interfaces/IERC7540
 import {PausableContract} from "./PausableContract.sol";
 
 abstract contract PausableVault is PausableContract {
-    /// @dev Function selector for deposit operations.
+    /// @dev Function selector for the deposit operations.
     bytes4 internal constant _DEPOSIT_SELECTOR = IERC7540Deposit.deposit.selector;
 
-    /// @dev Function selector for redemption request operations.
+    /// @dev Function selector for the redemption request operations.
     bytes4 internal constant _REQUEST_REDEEM_SELECTOR = IERC7540Redeem.requestRedeem.selector;
 
-    /// @dev Initializes the contract by registering deposit and redeem request functions.
+    /// @dev Initializes the contract by registering the `deposit` and `requestRedeem` functions.
     constructor() {
         _addSelector(_DEPOSIT_SELECTOR);
         _addSelector(_REQUEST_REDEEM_SELECTOR);
@@ -36,5 +36,17 @@ abstract contract PausableVault is PausableContract {
     /// @dev Unpauses the `requestRedeem` function.
     function unpauseRequestRedeem() external virtual onlyOwner {
         _setPause(_REQUEST_REDEEM_SELECTOR, false);
+    }
+
+    /// @dev Checks if the request deposit functionality is paused.
+    /// @return bool `true` if the request deposit is paused, `false` otherwise.
+    function isRequestDepositPaused() external view virtual returns (bool) {
+        return isFunctionPaused[_DEPOSIT_SELECTOR];
+    }
+
+    /// @dev Checks if the request redeem functionality is paused.
+    /// @return bool `true` if the request redeem is paused, `false` otherwise.
+    function isRequestRedeemPaused() external view virtual returns (bool) {
+        return isFunctionPaused[_REQUEST_REDEEM_SELECTOR];
     }
 }

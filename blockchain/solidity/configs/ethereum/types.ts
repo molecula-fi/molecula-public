@@ -26,6 +26,7 @@ export type EthereumNetworkConfig = {
     WETH_ADDRESS: EVMAddress;
     AWETH_ADDRESS: EVMAddress;
     CWETH_V3: EVMAddress;
+    STETH_ADDRESS: EVMAddress;
 
     // Deploy params
     INITIAL_DAI_SUPPLY: bigint;
@@ -52,6 +53,10 @@ export type EthereumNetworkConfig = {
 
     AAVE_POOL: EVMAddress;
     EIGEN_POD_MANAGER: EVMAddress;
+    DELEGATION_MANAGER: EVMAddress;
+    STRATEGY_FACTORY: EVMAddress;
+    STRATEGY_BASE_STETH: EVMAddress;
+    EIGENLAYER_OPERATOR: EVMAddress;
     WMUSD_TOKEN_NAME: string;
     WMUSD_TOKEN_SYMBOL: string;
 

@@ -21,15 +21,15 @@ contract RebaseERC20Permit is RebaseERC20, IERC20Permit, EIP712, Nonces {
         );
 
     /**
-     * @dev The deadline for the `Permit` function has expired.
+     * @dev Deadline for the `Permit` function has expired.
      * @param deadline Deadline for the signature.
      */
     error ERC2612ExpiredSignature(uint256 deadline);
 
     /**
      * @dev Mismatched signature.
-     * @param signer Signer address.
-     * @param owner Owner address.
+     * @param signer Signer's address.
+     * @param owner Owner's address.
      */
     error ERC2612InvalidSigner(address signer, address owner);
 

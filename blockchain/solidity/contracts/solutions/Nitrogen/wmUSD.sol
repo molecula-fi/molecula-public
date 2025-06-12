@@ -47,7 +47,7 @@ contract WMUSD is IwmUSD, ERC20, ERC20Permit, ERC20Votes, ERC165, Ownable2Step, 
     /// @param name Token name.
     /// @param symbol Token symbol.
     /// @param owner Smart contract owner address.
-    /// @param mUSD Rebase token address.
+    /// @param mUSD Rebase token's address.
     /// @param authorizedYieldDistributorAddress Authorized `yieldDistributor` address.
     constructor(
         string memory name,

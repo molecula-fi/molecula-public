@@ -54,7 +54,7 @@ contract LMUSD is IlmUSD, ERC721Enumerable, Ownable2Step, IdGenerator {
      * @param name Token name.
      * @param symbol Token symbol.
      * @param owner Smart contract owner address.
-     * @param mUSDAddress mUSD rebase token address.
+     * @param mUSDAddress mUSD rebase token's address.
      * @param wmUSDAddress wmUSD token address.
      * @param allowedPeriods Lock periods.
      * @param periodMultiplier Multiplier for the lock periods.
@@ -183,7 +183,7 @@ contract LMUSD is IlmUSD, ERC721Enumerable, Ownable2Step, IdGenerator {
         // Burn `tokenId`.
         _burn(tokenId);
 
-        // Grand the dedicated shares to the token owner.
+        // Grant the dedicated shares to the token owner.
         WMUSD_TOKEN.distributeYield(tokenOwner, dedicatedShares);
 
         // Transfer the locked shares to the token owner.

@@ -6,6 +6,29 @@ if [ "$(uname | tr '[:upper:]' '[:lower:]' | grep -o 'linux')" ] ; then
   set -e
 fi
 
+echo "📊 Checking versions..."
+yarn run check-versions
+
+# Only merge main branch if we're targeting main in the MR
+if [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}" ] && [ "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}" = "main" ]; then
+  echo "🔄 MR targeting main branch detected. Merging main branch into current branch..."
+  
+  # Set Git identity for CI environment (local to this repository) only if not already configured
+  if [ -z "$(git config user.email)" ]; then
+    echo "Setting up Git user.email..."
+    git config --local user.email "ci@dats.tech"
+  fi
+  
+  if [ -z "$(git config user.name)" ]; then
+    echo "Setting up Git user.name..."
+    git config --local user.name "Molecula CI"
+  fi
+  
+  git fetch origin main
+  git merge origin/main --no-edit || { echo "❌ Merge failed. Please resolve conflicts manually."; exit 1; }
+  echo "✅ Successfully merged main branch"
+fi
+
 NO_GENERATE=false
 IS_WEBSITE=false
 IS_BLOCKCHAIN=false

@@ -4,10 +4,11 @@ import type { ContractRunner, ContractTransaction, JsonFragment, Provider } from
 
 import { type DecodedError, ErrorDecoder } from 'ethers-decode-error';
 
-import PQueue from 'p-queue';
-
-import type { Hex } from '@molecula-monorepo/common.evm-utilities/src/ethereum/types';
-import { waitForEthereumTransaction } from '@molecula-monorepo/common.evm-utilities/src/ethereum/waitForEthereumTransaction';
+import {
+    evmQueue,
+    waitForEthereumTransaction,
+    type Hex,
+} from '@molecula-monorepo/common.evm-utilities';
 
 import { jsonStringifyBigint } from '@molecula-monorepo/common.utilities';
 
@@ -55,23 +56,6 @@ type ContractInstance<T> = {
      */
     abi: readonly JsonFragment[];
 };
-
-/**
- * Queue to limit same time queries amount (to avoid rate limit error)
- * Interval: 1000 ms - 1 sec
- * IntervalCap: 10 - 10 requests per second
- */
-const safeCallQueue = new PQueue({ intervalCap: 10, interval: 1000 });
-
-/**
- * Concurrency: 1 - 1 call at the same time
- */
-const singleConcurrencyQueue = new PQueue({ concurrency: 1 });
-
-enum Priority {
-    Low = 1,
-    High = 2,
-}
 
 export class EvmContractSafe<Contract extends AllEvmContracts> {
     public readonly contract: Contract;
@@ -172,7 +156,7 @@ export class EvmContractSafe<Contract extends AllEvmContracts> {
         }
 
         try {
-            return safeCallQueue.add(() => contractMethod(...args), { priority: Priority.Low });
+            return evmQueue.add(() => contractMethod(...args));
         } catch (error) {
             throw new SafeCallError(
                 'Fail evm safe view call',
@@ -197,22 +181,7 @@ export class EvmContractSafe<Contract extends AllEvmContracts> {
 
         const contractMethod = this.contract[method] as TypedContractMethod;
 
-        const response = await safeCallQueue.add(
-            async () => {
-                // Since EVM transactions depend on the unique nonce
-                // calculated as the number of transactions sent by the account
-                // we are to wrap each call into a single-concurrency queue
-                // specifically created for the executing account
-                return singleConcurrencyQueue.add(async () => {
-                    const txResponse = await contractMethod(...args);
-
-                    return txResponse;
-                });
-            },
-            {
-                priority: Priority.High,
-            },
-        );
+        const response = await evmQueue.addSingle(() => contractMethod(...args));
 
         const hash = response.hash as Hex;
 

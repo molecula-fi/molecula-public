@@ -4,7 +4,6 @@ import {
     RebaseToken__factory,
     SupplyManager__factory,
     MUSDE__factory,
-    MoleculaPool__factory,
     MUSDLock__factory,
     IOracle__factory,
     AccountantAgent__factory,
@@ -42,7 +41,6 @@ import type {
     MUSDLock,
     IOracle,
     AccountantAgent,
-    MoleculaPool,
     MoleculaPoolTreasury,
     StakedUSDe,
     SavingsUSDS,
@@ -133,15 +131,6 @@ export const EvmContractSafeFactory = {
         return new EvmContractSafe<MUSDE>(
             {
                 factory: MUSDE__factory,
-                address,
-            },
-            rpcProvider,
-        );
-    },
-    MoleculaPool: (address: string, rpcProvider: ProviderOrRunner) => {
-        return new EvmContractSafe<MoleculaPool>(
-            {
-                factory: MoleculaPool__factory,
                 address,
             },
             rpcProvider,

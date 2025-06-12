@@ -1,4 +1,4 @@
-/* eslint-disable camelcase, max-lines */
+/* eslint-disable camelcase, max-lines, no-restricted-syntax, no-await-in-loop */
 import { expect } from 'chai';
 import { keccak256 } from 'ethers';
 import { ethers } from 'hardhat';
@@ -29,12 +29,13 @@ export async function deployCoreV2WithoutInit() {
 
     const USDC = await ethers.getContractAt('IERC20Metadata', ethMainnetBetaConfig.USDC_ADDRESS);
     const USDe = await ethers.getContractAt('IERC20Metadata', ethMainnetBetaConfig.USDE_ADDRESS);
+    const nativeToken = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
     // deploy mock distributed pool
     const MockDistributedPool = await ethers.getContractFactory('MockDistributedPool');
     const mockDistributedPool = await MockDistributedPool.connect(poolOwner).deploy(
         poolOwner,
-        [USDC, USDe],
+        [USDC, USDe, nativeToken],
         poolKeeper,
         supplyManagerFutureAddress,
         [],
@@ -42,7 +43,7 @@ export async function deployCoreV2WithoutInit() {
     );
 
     // deploy supply manager
-    const SupplyManagerV2 = await ethers.getContractFactory('SupplyManagerV2');
+    const SupplyManagerV2 = await ethers.getContractFactory('SupplyManagerV2WithNative');
     const supplyManagerV2 = await SupplyManagerV2.connect(poolOwner).deploy(
         poolOwner,
         yieldDistributor,
@@ -71,13 +72,25 @@ export async function deployCoreV2WithoutInit() {
         rebaseTokenV2,
         supplyManagerV2,
         guardian,
+        true,
     );
     const tokenUSDEVault = await TokenVault.connect(poolOwner).deploy(
         poolOwner,
         rebaseTokenV2,
         supplyManagerV2,
         guardian,
+        true,
     );
+
+    const NativeTokenVault = await ethers.getContractFactory('MockNativeTokenVault');
+    const nativeTokenVault = await NativeTokenVault.connect(poolOwner).deploy(
+        poolOwner,
+        rebaseTokenV2,
+        supplyManagerV2,
+        guardian,
+        true,
+    );
+
     return {
         user0,
         user1,
@@ -92,6 +105,8 @@ export async function deployCoreV2WithoutInit() {
         guardian,
         USDC,
         USDe,
+        nativeTokenVault,
+        nativeToken,
     };
 }
 
@@ -101,12 +116,17 @@ export async function deployCoreV2() {
     // Init TokenVaults
     await coreV2.tokenUSDCVault.init(
         coreV2.USDC,
-        10n ** 6n, // minDepositValue
+        10n ** 6n, // minDepositAssets
         10n ** 18n, // minRedeemShares
     );
     await coreV2.tokenUSDEVault.init(
         coreV2.USDe,
-        10n ** 6n, // minDepositValue
+        10n ** 6n, // minDepositAssets
+        10n ** 18n, // minRedeemShares
+    );
+    await coreV2.nativeTokenVault.init(
+        coreV2.nativeToken,
+        10n ** 8n, // minDepositAssets
         10n ** 18n, // minRedeemShares
     );
 
@@ -115,6 +135,19 @@ export async function deployCoreV2() {
     await coreV2.rebaseTokenV2.setCodeHash(codeHash, true);
     await coreV2.rebaseTokenV2.addTokenVault(coreV2.tokenUSDCVault);
     await coreV2.rebaseTokenV2.addTokenVault(coreV2.tokenUSDEVault);
+
+    const codeHash2 = keccak256((await coreV2.nativeTokenVault.getDeployedCode())!);
+    await coreV2.rebaseTokenV2.setCodeHash(codeHash2, true);
+    await coreV2.rebaseTokenV2.addTokenVault(coreV2.nativeTokenVault);
+
+    for (const tokenVault of [
+        coreV2.tokenUSDCVault,
+        coreV2.tokenUSDEVault,
+        coreV2.nativeTokenVault,
+    ]) {
+        await tokenVault.unpauseRequestDeposit();
+        await tokenVault.unpauseRequestRedeem();
+    }
 
     return coreV2;
 }

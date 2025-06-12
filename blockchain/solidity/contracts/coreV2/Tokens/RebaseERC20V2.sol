@@ -6,21 +6,22 @@ import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.so
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
-import {IOracle} from "./../common/interfaces/IOracle.sol";
-import {ValueValidator} from "./../common/ValueValidator.sol";
-import {IOracleV2} from "./interfaces/IOracleV2.sol";
-import {ITokenShares} from "./interfaces/ITokenShares.sol";
+import {ValueValidator} from "./../../common/ValueValidator.sol";
+import {CommonToken} from "./CommonToken.sol";
+import {IRebaseERC20V2} from "./interfaces/IRebaseERC20V2.sol";
+import {IShareAssetConverter} from "./interfaces/IShareAssetConverter.sol";
 
 /// @title RebaseERC20V2.
 /// @notice Contract for implementing the RebaseERC20V2 functionality.
 /// @dev Extends RebaseERC20.sol with additional features.
-contract RebaseERC20V2 is
-    ITokenShares,
+abstract contract RebaseERC20V2 is
+    IRebaseERC20V2,
     IERC20,
     IERC20Metadata,
     IERC20Errors,
     Context,
-    ValueValidator
+    ValueValidator,
+    CommonToken
 {
     // ============ State Variables ============
 
@@ -39,64 +40,19 @@ contract RebaseERC20V2 is
     /// @inheritdoc IERC20Metadata
     string public symbol;
 
-    /// @inheritdoc ITokenShares
-    address public oracle;
-
-    /// @inheritdoc ITokenShares
+    /// @inheritdoc IShareAssetConverter
     uint256 public localTotalShares;
 
     // ============ Constructor ============
 
     /// @dev Initializes the contract with specified parameters.
-    /// @param oracleAddress Oracle contract address.
     /// @param tokenName Token name.
     /// @param tokenSymbol Token symbol.
     /// @param tokenDecimals Token decimals.
-    constructor(
-        address oracleAddress,
-        string memory tokenName,
-        string memory tokenSymbol,
-        uint8 tokenDecimals
-    ) notZeroAddress(oracleAddress) {
-        oracle = oracleAddress;
+    constructor(string memory tokenName, string memory tokenSymbol, uint8 tokenDecimals) {
         name = tokenName;
         symbol = tokenSymbol;
         _DECIMALS = tokenDecimals;
-    }
-
-    // ============ View Functions ============
-
-    /// @inheritdoc IERC20
-    function totalSupply() external view virtual override returns (uint256 totalPool) {
-        totalPool = IOracle(oracle).getTotalPoolSupply();
-    }
-
-    /// @inheritdoc ITokenShares
-    function totalSharesSupply() external view virtual override returns (uint256 totalShares) {
-        totalShares = IOracle(oracle).getTotalSharesSupply();
-    }
-
-    /// @inheritdoc ITokenShares
-    function sharesOf(address user) external view virtual override returns (uint256 shares) {
-        return _shares[user];
-    }
-
-    /// @inheritdoc IERC20
-    function balanceOf(address user) external view virtual override returns (uint256 balance) {
-        return convertToAssets(_shares[user]);
-    }
-
-    /// @inheritdoc IERC20Metadata
-    function decimals() external view virtual override returns (uint8 tokenDecimals) {
-        return _DECIMALS;
-    }
-
-    /// @inheritdoc IERC20
-    function allowance(
-        address owner,
-        address spender
-    ) public view virtual override returns (uint256 amount) {
-        return _allowances[owner][spender];
     }
 
     // ============ Core Functions ============
@@ -128,6 +84,31 @@ contract RebaseERC20V2 is
         _spendAllowance(from, spender, value);
         _transfer(from, to, value);
         return true;
+    }
+
+    // ============ View Functions ============
+
+    /// @inheritdoc IRebaseERC20V2
+    function sharesOf(address user) external view virtual override returns (uint256 shares) {
+        return _shares[user];
+    }
+
+    /// @inheritdoc IERC20
+    function balanceOf(address user) external view virtual override returns (uint256 balance) {
+        return convertToAssets(_shares[user]);
+    }
+
+    /// @inheritdoc IERC20Metadata
+    function decimals() external view virtual override returns (uint8 tokenDecimals) {
+        return _DECIMALS;
+    }
+
+    /// @inheritdoc IERC20
+    function allowance(
+        address owner,
+        address spender
+    ) public view virtual override returns (uint256 amount) {
+        return _allowances[owner][spender];
     }
 
     // ============ Internal Functions ============
@@ -242,15 +223,5 @@ contract RebaseERC20V2 is
                 _approve(owner, spender, currentAllowance - value, false);
             }
         }
-    }
-
-    /// @inheritdoc ITokenShares
-    function convertToShares(uint256 assets) public view virtual override returns (uint256 shares) {
-        return IOracleV2(oracle).convertToShares(assets);
-    }
-
-    /// @inheritdoc ITokenShares
-    function convertToAssets(uint256 shares) public view virtual override returns (uint256 assets) {
-        return IOracleV2(oracle).convertToAssets(shares);
     }
 }

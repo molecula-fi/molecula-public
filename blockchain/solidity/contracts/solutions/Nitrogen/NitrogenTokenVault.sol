@@ -13,14 +13,16 @@ import {IRebaseERC20} from "./../../common/interfaces/IRebaseERC20.sol";
 import {ISupplyManager} from "./../../common/interfaces/ISupplyManager.sol";
 import {PausableContract} from "./../../common/pausable/PausableContract.sol";
 import {MoleculaPoolTreasury, TokenType} from "./../../core/MoleculaPoolTreasury.sol";
-import {AbstractTokenVault} from "./../../coreV2/AbstractTokenVault.sol";
+import {IRebaseERC20V2} from "../../coreV2/Tokens/interfaces/IRebaseERC20V2.sol";
+import {BaseTokenVault} from "./../../coreV2/TokenVault/BaseTokenVault.sol";
+import {CommonERC20TokenVault} from "./../../coreV2/TokenVault/CommonERC20TokenVault.sol";
 import {INitrogenTokenVault} from "./interfaces/INitrogenTokenVault.sol";
 import {RebaseTokenOwner} from "./RebaseTokenOwner.sol";
 
 /// @dev Specialized Vault implementing asynchronous redemption flows following the ERC-7540 standard,
 /// with synchronous deposit functionality following ERC-4626. This Vault integrates with
-/// RebaseTokenOwner for token supply management and MoleculaPoolTreasury for asset handling.
-contract NitrogenTokenVault is INitrogenTokenVault, AbstractTokenVault, IAgent {
+/// RebaseTokenOwner for token supply management and MoleculaPoolTreasury for the underlying asset handling.
+contract NitrogenTokenVault is INitrogenTokenVault, CommonERC20TokenVault, IAgent {
     using SafeERC20 for IERC20;
 
     // ============ State Variables ============
@@ -53,16 +55,16 @@ contract NitrogenTokenVault is INitrogenTokenVault, AbstractTokenVault, IAgent {
         RebaseTokenOwner tokenOwner,
         address guardianAddress
     )
-        AbstractTokenVault(shareAddress, supplyManager)
-        Ownable(initialOwner)
+        BaseTokenVault(shareAddress, supplyManager)
         PausableContract(guardianAddress)
+        Ownable(initialOwner)
     {
         REBASE_TOKEN_OWNER = tokenOwner;
     }
 
     // ============ View Functions ============
 
-    /// @inheritdoc AbstractTokenVault
+    /// @inheritdoc BaseTokenVault
     function _issuer() internal view virtual override returns (address) {
         return address(REBASE_TOKEN_OWNER);
     }
@@ -76,7 +78,7 @@ contract NitrogenTokenVault is INitrogenTokenVault, AbstractTokenVault, IAgent {
 
         // See MoleculaPoolTreasury.requestRedeem
         // slither-disable-next-line unused-return
-        (TokenType tokenType, , int8 n, , ) = poolTreasury.poolMap(asset);
+        (TokenType tokenType, , int8 n, , ) = poolTreasury.poolMap(_asset);
         if (tokenType == TokenType.None) {
             revert MoleculaPoolTreasury.ETokenNotExist();
         }
@@ -85,18 +87,26 @@ contract NitrogenTokenVault is INitrogenTokenVault, AbstractTokenVault, IAgent {
             assets = mUSDAmount / (uint256(10) ** uint256(int256(n)));
         } else {
             uint256 assets2 = mUSDAmount / (uint256(10) ** uint256(int256(n)));
-            assets = IERC4626(asset).convertToShares(assets2);
+            assets = IERC4626(_asset).convertToShares(assets2);
         }
     }
 
     /// @inheritdoc IERC7575
     function convertToShares(uint256 assets) public view virtual override returns (uint256 shares) {
+        shares = _convertToShares(assets);
+    }
+
+    /// @inheritdoc BaseTokenVault
+    function _convertToShares(
+        uint256 assets
+    ) internal view virtual override returns (uint256 shares) {
+        // Get a Molecula Pool instance for conversion calculations.
         address moleculaPool = ISupplyManager(SUPPLY_MANAGER).getMoleculaPool();
         MoleculaPoolTreasury poolTreasury = MoleculaPoolTreasury(moleculaPool);
 
-        // See MoleculaPoolTreasury.deposit
+        // Get the token configuration from the pool map.
         // slither-disable-next-line unused-return
-        (TokenType tokenType, , int8 n, , ) = poolTreasury.poolMap(asset);
+        (TokenType tokenType, , int8 n, , ) = poolTreasury.poolMap(_asset);
         if (tokenType == TokenType.None) {
             revert MoleculaPoolTreasury.ETokenNotExist();
         }
@@ -104,7 +114,7 @@ contract NitrogenTokenVault is INitrogenTokenVault, AbstractTokenVault, IAgent {
         if (tokenType == TokenType.ERC20) {
             mUSDAmount = assets * (uint256(10) ** uint256(int256(n)));
         } else {
-            uint256 assets2 = IERC4626(asset).convertToAssets(assets);
+            uint256 assets2 = IERC4626(_asset).convertToAssets(assets);
             mUSDAmount = assets2 * (uint256(10) ** uint256(int256(n)));
         }
 
@@ -115,12 +125,12 @@ contract NitrogenTokenVault is INitrogenTokenVault, AbstractTokenVault, IAgent {
     function totalAssets() external view virtual override returns (uint256 totalManagedAssets) {
         // Total amount of the underlying asset managed by the Vault.
         address moleculaPool = ISupplyManager(SUPPLY_MANAGER).getMoleculaPool();
-        return IERC20(asset).balanceOf(moleculaPool);
+        return IERC20(_asset).balanceOf(moleculaPool);
     }
 
     /// @inheritdoc IAgent
     function getERC20Token() external view virtual override returns (address token) {
-        return asset;
+        return _asset;
     }
 
     // ============ Core Functions ============
@@ -145,20 +155,21 @@ contract NitrogenTokenVault is INitrogenTokenVault, AbstractTokenVault, IAgent {
         uint256 sumAssets
     ) external payable virtual override zeroMsgValue only(SUPPLY_MANAGER) {
         // slither-disable-next-line arbitrary-send-erc20
-        IERC20(asset).safeTransferFrom(assetOwner, address(this), sumAssets);
+        IERC20(_asset).safeTransferFrom(assetOwner, address(this), sumAssets);
 
         uint256 length = requestIds.length;
         for (uint256 i = 0; i < length; ++i) {
             // If assets[i] == 0 than requestIds[i] is already processed.
             if (assets[i] > 0) {
-                // Update redemption request state:
-                // 1. Store the actual assets amount for this request.
-                // 2. Decrease pending shares since request is now fulfilled.
-                // 3. Increase claimable assets that user can withdraw.
-                RequestInfo storage redeemInfo = redeemRequests[requestIds[i]];
-                redeemInfo.assets = assets[i];
-                pendingRedeemShares[redeemInfo.user] -= redeemInfo.shares;
-                claimableRedeemAssets[redeemInfo.user] += assets[i];
+                // Store the assets' amount for this request.
+                RequestInfo storage requestInfo = redeemRequests[requestIds[i]];
+                requestInfo.assets = assets[i];
+
+                // Decrease the pending shares since the request is fulfilled and
+                // increase the amount of claimable assets that the user can withdraw.
+                RedeemInfo storage redeemInfo = _redeemInfo[requestInfo.controller];
+                redeemInfo.pendingRedeemShares -= requestInfo.shares;
+                redeemInfo.claimableRedeemAssets += requestInfo.assets;
             }
         }
 
@@ -173,7 +184,7 @@ contract NitrogenTokenVault is INitrogenTokenVault, AbstractTokenVault, IAgent {
         address owner
     ) external virtual override onlyOperator(owner) returns (uint256 requestId) {
         // Redeem the claimable assets
-        uint256 claimableRedeemShares = convertToShares(claimableRedeemAssets[owner]);
+        uint256 claimableRedeemShares = convertToShares(_redeemInfo[owner].claimableRedeemAssets);
         if (0 < claimableRedeemShares) {
             if (shares <= claimableRedeemShares) {
                 _withdraw(convertToAssets(shares), receiver, owner);
@@ -199,26 +210,34 @@ contract NitrogenTokenVault is INitrogenTokenVault, AbstractTokenVault, IAgent {
         _withdraw(redeemRequests[requestId].assets, receiver, msg.sender);
     }
 
-    /// @inheritdoc AbstractTokenVault
+    /// @inheritdoc BaseTokenVault
     function _supplyManagerRequestRedeem(
         address /*controller*/,
+        address /*owner*/,
         uint256 requestId,
         uint256 shares
     ) internal virtual override returns (uint256 assets) {
-        assets = ISupplyManager(SUPPLY_MANAGER).requestRedeem(asset, requestId, shares);
+        assets = ISupplyManager(SUPPLY_MANAGER).requestRedeem(_asset, requestId, shares);
     }
 
-    /// @inheritdoc AbstractTokenVault
-    function _storeRequestInfo(
+    /// @inheritdoc BaseTokenVault
+    function _storeRedeemRequestInfo(
         uint256 requestId,
         address controller,
+        address owner,
         uint256 shares
     ) internal virtual override {
         // Store the redemption operation in the `redeemRequests` mapping.
         redeemRequests[requestId] = RequestInfo({
-            user: controller,
+            controller: controller,
+            owner: owner,
             assets: 0, // Set the correct value in the `_fulfillRedeemRequests` function.
             shares: shares
         });
+    }
+
+    /// @inheritdoc BaseTokenVault
+    function _maxRedeem(address owner) internal view virtual override returns (uint256 maxShares) {
+        return IRebaseERC20V2(_SHARE).sharesOf(owner);
     }
 }

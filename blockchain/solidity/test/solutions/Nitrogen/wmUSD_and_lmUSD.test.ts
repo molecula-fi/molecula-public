@@ -5,10 +5,10 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 import { ethMainnetBetaConfig } from '../../../configs/ethereum/mainnetBetaTyped';
-import { expectEqual } from '../../utils/Common';
 import { deployNitrogenV11WithUSDT, getRidOf } from '../../utils/NitrogenCommonV1.1';
 import { findTransferEvent } from '../../utils/event';
 import { grantERC20 } from '../../utils/grant';
+import { expectEqual } from '../../utils/math';
 
 describe('Test wmUSD and lmUSD', () => {
     describe('Test wmUSD', () => {

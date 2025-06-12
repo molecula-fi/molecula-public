@@ -87,7 +87,7 @@ contract MockAccountantLZ is OApp, IAccountant, OptionsLZ, ZeroValueChecker {
      * It overrides the equivalent function in the parent contract.
      * Protocol messages are defined as packets, comprised of the following parameters.
      * @param _origin Struct containing information about where the packet came from.
-     * @param _guid Global unique identifier for tracking the packet.
+     * @param _guid Global ID for tracking the packet.
      * @param payload Encoded message.
      * @param _executor Executor address as specified by the OApp.
      * @param _options Any extra data or options to trigger on receipt.

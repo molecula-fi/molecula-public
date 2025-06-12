@@ -1,7 +1,6 @@
 import { TronWeb } from 'tronweb';
-import type { TronWebOptions } from 'tronweb';
 
-import type { TronAddress } from '../types';
+import type { TronAddress, TronWebOptions } from '../types';
 
 import { getTRC20BalanceWithTronWeb } from './getTRC20BalanceWithTronWeb';
 

@@ -40,8 +40,8 @@ interface IMoleculaPoolV2 {
     // ============ View Functions ============
 
     /// @dev Returns the total supply of the pool (TVL).
-    /// @return res Total pool supply.
-    function totalSupply() external view returns (uint256 res);
+    /// @return pool Total pool supply.
+    function totalSupply() external view returns (uint256 pool);
 
     // ============ Admin Functions ============
 
@@ -52,4 +52,27 @@ interface IMoleculaPoolV2 {
     /// @dev Removes a token Vault.
     /// @param tokenVault Token Vault address to remove.
     function removeTokenVault(address tokenVault) external;
+}
+
+/// @title IMoleculaPoolV2WithNativeToken.
+/// @notice Interface for managing the native token operations in the Molecula Pool.
+/// @dev Extends IMoleculaPoolV2 with the native token functionality.
+interface IMoleculaPoolV2WithNativeToken {
+    /// @dev Deposits native tokens to the pool.
+    /// @param requestId Deposit operation's ID.
+    /// @param token Native token address.
+    /// @param from Sender's address.
+    /// @param assets Deposit amount in the native token.
+    /// @return moleculaTokenAmount Formatted deposit amount.
+    function depositNativeToken(
+        uint256 requestId,
+        address token,
+        address from,
+        uint256 assets
+    ) external payable returns (uint256 moleculaTokenAmount);
+
+    /// @dev Grants the native tokens to the specified receiver.
+    /// @param receiver Address to receive the native tokens.
+    /// @param nativeTokenAmount Amount of the native tokens to grant.
+    function grantNativeToken(address receiver, uint256 nativeTokenAmount) external;
 }

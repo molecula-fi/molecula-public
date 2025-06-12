@@ -1,52 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { scope } from 'hardhat/config';
 
-import {
-    migrateNitrogenAgent,
-    migrateNitrogenMoleculaPoolTreasury,
-    setOAppPeer,
-    setCarbonOwner,
-    setCoreOwner,
-    setNitrogenOwner,
-} from '../scripts/ethereum';
+import { setOAppPeer, setCarbonOwner, setCoreOwner, setNitrogenOwner } from '../scripts/ethereum';
 import { setAgentLZGasLimits } from '../scripts/ethereum/setAgentLZGasLimits';
 
 import { setupOAppDVN } from '../scripts/ethereum/setupOAppDVN';
 import { setupUsdtOftDVN } from '../scripts/ethereum/setupUsdtOFTDVN';
-import { getEnvironment, getVersion, readFromFile } from '../scripts/utils/deployUtils';
+import { getEnvironment, readFromFile } from '../scripts/utils/deployUtils';
 
 const ethereumSetupScope = scope('ethereumSetupScope', 'Scope for set ethereum script flow');
-
-ethereumSetupScope
-    .task('migrateNitrogenAgent', 'Nitrogen Migration of Agent')
-    .addParam('environment', 'Migration environment')
-    .addParam('mpv', 'Molecula Pool version')
-    .setAction(async (taskArgs, hre) => {
-        console.log('Environment:', taskArgs.environment);
-        console.log('Version:', taskArgs.mpv);
-        console.log('Network:', hre.network.name);
-
-        const environment = getEnvironment(hre, taskArgs.environment);
-        const version = getVersion(taskArgs.mpv);
-
-        await migrateNitrogenAgent(hre, environment, version);
-        console.log('Migration Nitrogen Agent completed successfully.');
-    });
-
-ethereumSetupScope
-    .task(
-        'migrateNitrogenMoleculaPoolTreasury',
-        'Migrates to new MoleculaPoolTreasury contract in Nitrogen solution',
-    )
-    .addParam('environment', 'Migration environment')
-    .setAction(async (taskArgs, hre) => {
-        console.log('Environment:', taskArgs.environment);
-        console.log('Network:', hre.network.name);
-
-        const environment = getEnvironment(hre, taskArgs.environment);
-        await migrateNitrogenMoleculaPoolTreasury(hre, environment);
-        console.log('Migration Nitrogen MoleculaPoolTreasury completed successfully.');
-    });
 
 ethereumSetupScope
     .task('setNitrogenOwner', 'Nitrogen set owner')

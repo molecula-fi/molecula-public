@@ -345,6 +345,9 @@ export async function deployNitrogenV11WithTokenVault() {
         .connect(nitrogen.rebaseTokenOwner)
         .transferOwnership(rebaseTokenOwner);
 
+    await tokenSUSDEVault.unpauseAll();
+    await tokenUSDCVault.unpauseAll();
+
     return {
         ...nitrogen,
         tokenUSDCVault,

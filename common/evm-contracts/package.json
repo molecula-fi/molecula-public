@@ -28,5 +28,8 @@
         "@molecula-monorepo/tsconfig-shared": "*",
         "@typechain/ethers-v6": "^0.5.1",
         "typechain": "^8.3.2"
+    },
+    "volta": {
+        "extends": "../../package.json"
     }
 }

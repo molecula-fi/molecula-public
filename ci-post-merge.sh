@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "📊 Checking versions..."
+yarn run check-versions
+
 if [ "$(uname | tr '[:upper:]' '[:lower:]' | grep -o 'linux')" ] ; then
   echo "Set shell option 'set -e'"
   # Exit immediately if a command exits with a non-zero status

@@ -2,6 +2,8 @@ import type { ethers, Provider, TransactionReceipt } from 'ethers';
 
 import { Async, Log } from '@molecula-monorepo/common.utilities';
 
+import { evmQueue } from '../helpers';
+
 import {
     EvmTransactionRuntimeError,
     EvmTransactionRuntimeErrors,
@@ -40,7 +42,7 @@ export async function waitForEthereumTransaction(
     // Get the transaction info
     let info: TransactionReceipt | null | undefined;
     try {
-        info = await rpcProvider.getTransactionReceipt(transactionId);
+        info = await evmQueue.add(() => rpcProvider.getTransactionReceipt(transactionId));
     } catch (error) {
         log.debug('Failed to get the transaction info with error:', error);
 

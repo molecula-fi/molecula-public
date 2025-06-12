@@ -10,7 +10,7 @@ import {PausableContract} from "./../../common/pausable/PausableContract.sol";
 import {PausableIIssuer} from "./../../common/pausable/PausableIIssuer.sol";
 import {RebaseERC20} from "./../../common/rebase/RebaseERC20.sol";
 import {IIssuer, IIssuerShare7575} from "./../../coreV2/interfaces/IIssuer.sol";
-import {VaultContainer} from "./../../coreV2/VaultContainer.sol";
+import {VaultContainer} from "../../coreV2/Tokens/VaultContainer.sol";
 import {IRebaseTokenOwner} from "./interfaces/IRebaseTokenOwner.sol";
 
 contract RebaseTokenOwner is

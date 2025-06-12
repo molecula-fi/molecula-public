@@ -23,11 +23,13 @@
         "bump": "yarn version --no-commit-hooks --no-git-tag-version && yarn bump-to && yarn workspace @molecula-monorepo/dev-expo-pool-admin bump",
         "bump-to": "yarn workspaces run bump-to $npm_package_version",
         "prepare": "husky install",
+        "preinstall": "yarn check-versions",
         "pre-commit": "./pre-commit.sh",
         "pre-merge": "./pre-merge.sh",
         "ci:post-merge": "./ci-post-merge.sh",
         "reinstall": "./reinstall.sh",
         "postinstall": "./postinstall.sh",
+        "check-versions": "./scripts/checkVersions.sh",
         "docker-network:create": "docker network create -d bridge proxy_nw",
         "deduplicate": "yarn yarn-deduplicate -s fewer yarn.lock",
         "secret:reveal": "git secret reveal -f",
@@ -53,6 +55,7 @@
         "ton-pool-evm-total:build": "docker build --tag ton-pool-evm-total:$npm_package_version -f backend/ton-pool-evm-total/.Dockerfile .",
         "info-service:build": "docker build --tag info-service:$npm_package_version -f backend/info-service/.Dockerfile .",
         "website:start": "yarn workspace @molecula-monorepo/frontend.website start:k8s -p 8080",
+        "website:start:old": "yarn workspace @molecula-monorepo/frontend.website start -p 8080",
         "rpc-proxy:build": "docker build --tag rpc-proxy:$npm_package_version -f backend/rpc-proxy/.Dockerfile .",
         "terraform:fmt": "dotenvx run --env-file=./configs/frontend-environments/shared/.env --quiet -- terraform -chdir=./frontend/web-infrustructure fmt",
         "terraform:init": "dotenvx run --env-file=./configs/frontend-environments/shared/.env --quiet -- terraform -chdir=./frontend/web-infrustructure init",
@@ -84,8 +87,8 @@
         "website:deploy:staging": "yarn terraform:staging:state && dotenvx run --env-file=./configs/frontend-environments/shared/.env --env-file=./configs/frontend-environments/website/.env --quiet -- yarn website:deploy",
         "website:deploy:prod": "yarn terraform:prod:state && dotenvx run --env-file=./configs/frontend-environments/shared/.env.production --env-file=./configs/frontend-environments/shared/.env --env-file=./configs/frontend-environments/website/.env.production --env-file=./configs/frontend-environments/website/.env --quiet -- yarn website:deploy",
         "website:dev:prepare": "yarn terraform:staging:state && dotenvx run --env-file=./configs/frontend-environments/shared/.env --env-file=./configs/frontend-environments/website/.env --quiet -- yarn prepare-web-deploy",
-        "website:dev": "yarn website:dev:prepare && yarn workspace @molecula-monorepo/frontend.website dev",
-        "website:build": "yarn website:dev:prepare && yarn workspace @molecula-monorepo/frontend.website build",
+        "website:dev": "yarn workspace @molecula-monorepo/frontend.website dev",
+        "website:build": "yarn workspace @molecula-monorepo/frontend.website build",
         "website:preview": "yarn workspace @molecula-monorepo/frontend.website preview",
         "retail:dev:prepare": "yarn terraform:staging:state && dotenvx run --env-file=./configs/frontend-environments/shared/.env --env-file=./configs/frontend-environments/retail/.env --quiet -- yarn prepare-web-deploy",
         "retail:dev": "yarn retail:dev:prepare && yarn workspace @molecula-monorepo/frontend.retail dev",
@@ -114,8 +117,8 @@
         "deploy:prod:front:expo": "./set_deploy.sh -s prod -c front -f expo",
         "deploy:prod:front: admin": "./set_deploy.sh -s prod -c front -f admin",
         "deploy:prod:back": "./set_deploy.sh -s prod -c back",
-        "deploy:website:staging": "./set_website_deploy.sh staging",
-        "deploy:website:prod": "./set_website_deploy.sh prod"
+        "deploy:website:dev": "./set_website_deploy.sh dev",
+        "deploy:website:beta": "./set_website_deploy.sh beta"
     },
     "devDependencies": {
         "@commitlint/cli": "^19.8.1",
@@ -147,8 +150,17 @@
         "elliptic": "^6.6.1",
         "ethers": "^6.13.5",
         "lightningcss": "~1.22.0",
+        "micro-eth-signer": "^0.15.0",
         "solc-typed-ast": "18.2.4",
-        "viem": "^2.21.0"
+        "viem": "2.30.6"
     },
-    "packageManager": "yarn@1.22.22"
+    "packageManager": "yarn@1.22.22",
+    "engines": {
+        "node": "22.16.0",
+        "yarn": "1.22.22"
+    },
+    "volta": {
+        "node": "22.16.0",
+        "yarn": "1.22.22"
+    }
 }

@@ -3,6 +3,9 @@
 # Exit immediately if any command fails
 set -eo pipefail
 
+echo "📊 Checking versions..."
+yarn run check-versions
+
 FULL_CHECK=false
 
 # Check if --full is passed as an argument

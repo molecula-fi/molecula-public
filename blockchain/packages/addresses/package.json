@@ -24,5 +24,8 @@
         "ethers": "^6.13.5",
         "tronweb": "^6.0.3",
         "ts-node": "^10.9.2"
+    },
+    "volta": {
+        "extends": "../../../package.json"
     }
 }
