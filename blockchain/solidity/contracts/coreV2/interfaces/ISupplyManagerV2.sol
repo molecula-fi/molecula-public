@@ -95,9 +95,6 @@ interface ISupplyManagerV2 {
     /// @dev Error thrown when the caller is not an authorized `tokenVault`.
     error ENotMyAgent();
 
-    /// @dev Error thrown when the caller is not authorized.
-    error ENotAuthorized();
-
     /// @dev Error thrown when the wrong `TokenVault` is used.
     error EWrongTokenVault();
 

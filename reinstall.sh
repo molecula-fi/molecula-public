@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ./install_utils.sh
+
 if [ "$(uname | tr '[:upper:]' '[:lower:]' | grep -o 'linux')" ] ; then
   echo "Set shell option 'set -e'"
   set -e
@@ -35,15 +37,10 @@ echo "Cleanup completed!"
 echo "Installing dependencies..."
 yarn install --frozen-lockfile --network-concurrency 3 --network-timeout 300000
 
-echo "Installing slither..."
-# https://github.com/crytic/slither
-python3 -m pip install slither-analyzer || pipx install slither-analyzer
 
-echo "Installing lintspec..."
-# https://github.com/beeb/lintspec
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-. "$HOME/.cargo/env"  # Make `cargo` available
-cargo install lintspec
+install_or_update_slither
+
+install_lintspec
 
 echo "Revealing secrets..."
 if [ -x "$(command -v osascript)" ]

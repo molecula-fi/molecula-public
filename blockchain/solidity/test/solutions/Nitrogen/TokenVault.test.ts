@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { keccak256 } from 'ethers';
 import { ethers } from 'hardhat';
 
-import { deployNitrogenV11WithTokenVault, getRidOf } from '../../utils/NitrogenCommonV1.1';
+import { deployNitrogenWithTokenVault, getRidOf } from '../../utils/NitrogenCommon';
 import { findRequestRedeemEvent } from '../../utils/event';
 import { FAUCET, grantERC20 } from '../../utils/grant';
 import { expectEqual } from '../../utils/math';
@@ -12,7 +12,7 @@ import { expectEqual } from '../../utils/math';
 describe('Test TokenVault', () => {
     it('Should deposit and redeem via tokenUSDCVault', async () => {
         const { tokenUSDCVault, USDC, user0, user1, user2, operator, rebaseToken } =
-            await loadFixture(deployNitrogenV11WithTokenVault);
+            await loadFixture(deployNitrogenWithTokenVault);
 
         const decimals: bigint = await USDC.decimals();
         const depositValue = 100n * 10n ** decimals;
@@ -55,7 +55,7 @@ describe('Test TokenVault', () => {
 
     it('Should deposit and redeemImmediately using claimableRedeemAssets', async () => {
         const { tokenUSDCVault, USDC, user0, rebaseToken, moleculaPool } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         const decimals: bigint = await USDC.decimals();
@@ -104,7 +104,7 @@ describe('Test TokenVault', () => {
             poolKeeper,
             randAccount,
             poolOwner,
-        } = await loadFixture(deployNitrogenV11WithTokenVault);
+        } = await loadFixture(deployNitrogenWithTokenVault);
 
         const decimals: bigint = await USDC.decimals();
         const depositValue = 100n * 10n ** decimals;
@@ -159,7 +159,7 @@ describe('Test TokenVault', () => {
 
     it('Test set min deposit / redeem value', async () => {
         const { tokenUSDCVault, USDC, user0, rebaseToken } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         const decimals: bigint = await USDC.decimals();
@@ -187,7 +187,7 @@ describe('Test TokenVault', () => {
 
     it('Should pause/unpause', async () => {
         const { tokenUSDCVault, USDC, user0, rebaseToken, poolOwner, guardian } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         const decimals: bigint = await USDC.decimals();
@@ -247,7 +247,7 @@ describe('Test TokenVault', () => {
 
     it('Should set parameters', async () => {
         const { rebaseTokenOwner, user0, user1, rebaseToken, poolOwner } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         await rebaseTokenOwner.callRebaseToken(
@@ -284,7 +284,7 @@ describe('Test TokenVault', () => {
 
     it('Should remove token', async () => {
         const { tokenUSDCVault, rebaseTokenOwner, USDC, user0 } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         const decimals: bigint = await USDC.decimals();
@@ -306,7 +306,7 @@ describe('Test TokenVault', () => {
 
     it('Distribute yield via tokenUSDCVault tokenUSDCVault', async () => {
         const { tokenUSDCVault, rebaseToken, USDC, user1, supplyManager, moleculaPool } =
-            await loadFixture(deployNitrogenV11WithTokenVault);
+            await loadFixture(deployNitrogenWithTokenVault);
 
         // generate income
         const decimals: bigint = await USDC.decimals();
@@ -331,7 +331,7 @@ describe('Test TokenVault', () => {
 
     it('White list for agents in the tokenUSDCVault', async () => {
         const { rebaseToken, rebaseTokenOwner, guardian, randAccount, supplyManager, DAI } =
-            await loadFixture(deployNitrogenV11WithTokenVault);
+            await loadFixture(deployNitrogenWithTokenVault);
 
         // Create new dai tokenUSDCVault and add it in tokenUSDCVault
         const TokenVault = await ethers.getContractFactory('NitrogenTokenVault');
@@ -365,7 +365,7 @@ describe('Test TokenVault', () => {
 
     it('Test tokenUSDCVault.{deposit,redeem} errors', async () => {
         const { user0, user1, tokenUSDCVault, USDC } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         const decimals: bigint = await USDC.decimals();
@@ -409,7 +409,7 @@ describe('Test TokenVault', () => {
 
     it('Test rebaseTokenOwner pause', async () => {
         const { tokenUSDCVault, USDC, user0, rebaseTokenOwner, rebaseToken } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         const decimals: bigint = await USDC.decimals();
@@ -473,7 +473,7 @@ describe('Test TokenVault', () => {
             rebaseToken,
             rebaseTokenOwner,
             guardian,
-        } = await loadFixture(deployNitrogenV11WithTokenVault);
+        } = await loadFixture(deployNitrogenWithTokenVault);
 
         await expect(rebaseTokenOwner.addTokenVault(tokenUSDCVault)).to.be.rejectedWith(
             'EHasTokenVaultForAsset(',
@@ -570,7 +570,7 @@ describe('Test TokenVault', () => {
 
     it('Test tokenUSDCVault errors', async () => {
         const { tokenUSDCVault, randAccount, USDC, poolOwner } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         await expect(
@@ -621,7 +621,7 @@ describe('Test TokenVault', () => {
 
     it('Test tokenUSDCVault transfer ownership ', async () => {
         const { tokenUSDCVault, rebaseTokenOwner, user1, poolOwner } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         for (const ownableContract of [tokenUSDCVault, rebaseTokenOwner]) {
@@ -634,7 +634,7 @@ describe('Test TokenVault', () => {
 
     it('Should support interface', async () => {
         const { tokenUSDCVault, rebaseTokenOwner } = await loadFixture(
-            deployNitrogenV11WithTokenVault,
+            deployNitrogenWithTokenVault,
         );
 
         // https://eips.ethereum.org/EIPS/eip-7540
@@ -666,7 +666,7 @@ describe('Test TokenVault', () => {
             USDC,
             SUSDE,
             user0,
-        } = await loadFixture(deployNitrogenV11WithTokenVault);
+        } = await loadFixture(deployNitrogenWithTokenVault);
 
         // Generate yield
         await grantERC20(moleculaPool, USDC, 10n ** 6n - 1n);

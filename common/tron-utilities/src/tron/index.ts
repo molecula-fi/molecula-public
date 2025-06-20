@@ -10,3 +10,4 @@ export * from './fetchTronTransactionInfo';
 export * from './tronSubscriber';
 export * from './createTronWebProvider';
 export * from './verifyEIP4361Signature';
+export * from './normalizeAddress';

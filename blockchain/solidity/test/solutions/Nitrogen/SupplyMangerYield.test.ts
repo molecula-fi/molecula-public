@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 import { INITIAL_SUPPLY } from '../../utils/Carbon';
-import { deployNitrogenV11WithUSDT } from '../../utils/NitrogenCommonV1.1';
+import { deployNitrogenWithUSDT } from '../../utils/NitrogenCommon';
 import { findRequestRedeemEvent } from '../../utils/event';
 import { grantERC20, grantETH } from '../../utils/grant';
 
@@ -12,7 +12,7 @@ describe('Test SupplyManger yield', () => {
     describe('Test SupplyManager pool yield lock and out of gas distribution', () => {
         it('SupplyManager.distributeYield() out of gas for', async () => {
             const { moleculaPool, supplyManager, agent, USDT } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             const income = 250_000_000n;
             await grantERC20(await moleculaPool.poolKeeper(), USDT, income);
@@ -41,7 +41,7 @@ describe('Test SupplyManger yield', () => {
 
         it('SupplyManager test lock yield', async () => {
             const { moleculaPool, supplyManager, rebaseToken, agent, user0, user1, caller, USDT } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             // generate income. make x2 share price.
             const income = 250_000_000n;

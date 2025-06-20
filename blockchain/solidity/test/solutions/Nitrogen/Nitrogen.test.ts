@@ -9,22 +9,23 @@ import { INITIAL_SUPPLY } from '../../utils/Carbon';
 import { getEthena, grantStakedUSDE, grantUSDe } from '../../utils/Common';
 
 import {
-    deployMoleculaPoolV11,
-    deployNitrogenV11WithStakedUSDe,
-    deployNitrogenV11WithUSDT,
+    deployMoleculaPool,
+    deployNitrogenWithStakedUSDe,
+    deployNitrogenWithUSDT,
+    deployNitrogenWithUSDTAndOldPool,
     getRidOf,
     initNitrogenAndRequestDeposit,
     initNitrogenForPause,
-} from '../../utils/NitrogenCommonV1.1';
+} from '../../utils/NitrogenCommon';
 import { findRequestRedeemEvent } from '../../utils/event';
 import { grantERC20 } from '../../utils/grant';
 import { expectEqualBigInt } from '../../utils/math';
 
-describe('Test Nitrogen solution v1.1', () => {
+describe('Test Nitrogen solution', () => {
     describe('General solution tests', () => {
         it('Should set the right owner', async () => {
             const { moleculaPool, supplyManager, agent, rebaseToken, poolOwner, rebaseTokenOwner } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             expect(await moleculaPool.owner()).to.equal(await poolOwner.getAddress());
             expect(await supplyManager.owner()).to.equal(await poolOwner.getAddress());
@@ -44,7 +45,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 user1,
                 malicious,
                 USDT,
-            } = await loadFixture(deployNitrogenV11WithUSDT);
+            } = await loadFixture(deployNitrogenWithUSDT);
             // deposit 100 USDT
             const depositValue = 100_000_000n;
             // Grant user wallet with 100 USDT
@@ -66,8 +67,8 @@ describe('Test Nitrogen solution v1.1', () => {
             expect(await rebaseToken.balanceOf(user0)).to.equal(depositValue * 10n ** 12n);
             expect(await rebaseToken.sharesOf(user0)).to.equal(shares);
 
-            // generate income. make x2 share price.
-            // User get 40% of the income
+            // Generate income. Make x2 share price.
+            // User gets 40% of the income
             const income = 500_000_000n;
             await grantERC20(moleculaPool.getAddress(), USDT, income);
             expect(await moleculaPool.totalSupply()).to.equal(INITIAL_SUPPLY * 7n);
@@ -188,14 +189,14 @@ describe('Test Nitrogen solution v1.1', () => {
                 (await supplyManager.totalSharesSupply()) * 2n,
             );
 
-            // anyone call confirmRedeem for user
+            // anyone calls confirmRedeem for user
             await rebaseToken.connect(user1).confirmRedeem(operationId);
             expect((await rebaseToken.redeemRequests(operationId)).status).to.equal(2);
             expect((await rebaseToken.redeemRequests(operationId)).val).to.equal(redeemValue);
             expect(await USDT.balanceOf(agent.getAddress())).to.equal(redeemValue_1);
             expect(await USDT.balanceOf(user0)).to.equal(redeemValue);
 
-            // anyone call confirmRedeem for user1
+            // anyone calls confirmRedeem for user1
             await rebaseToken.connect(user1).confirmRedeem(operationId_1);
             expect((await rebaseToken.redeemRequests(operationId_1)).status).to.equal(2);
             expect((await rebaseToken.redeemRequests(operationId_1)).val).to.equal(redeemValue_1);
@@ -217,7 +218,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 USDT,
                 poolOwner,
                 poolKeeper,
-            } = await loadFixture(deployNitrogenV11WithUSDT);
+            } = await loadFixture(deployNitrogenWithUSDT);
             // deposit 100 USDT
             const depositValue = 100n * 10n ** 6n - 1n;
             // Grant user wallet with 100 USDT
@@ -256,7 +257,7 @@ describe('Test Nitrogen solution v1.1', () => {
             await moleculaPool.connect(malicious).redeem([operationId]);
             expect((await moleculaPool.poolMap(USDT)).valueToRedeem).to.be.equal(0n);
 
-            // anyone call confirmRedeem for user
+            // anyone calls confirmRedeem for user
             await rebaseToken.connect(malicious).confirmRedeem(operationId);
             expect(await USDT.balanceOf(user0)).to.be.equal(depositValue - 1n);
         });
@@ -283,7 +284,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 controller,
                 randAccount,
                 USDT,
-            } = await loadFixture(deployNitrogenV11WithUSDT);
+            } = await loadFixture(deployNitrogenWithUSDT);
             // deposit 100 USDT
             const depositValue = 100_000_000n;
             // Grant userAgent wallet with 100 USDT and 2 ETH
@@ -344,7 +345,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
         it('Distribute yield', async () => {
             const { moleculaPool, supplyManager, agent, user1, rebaseToken, malicious } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             const val = 100n * 10n ** 18n;
             expect(await supplyManager.totalSupply()).to.equal(val);
@@ -456,7 +457,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
     describe('Test special cases', () => {
         it('Should be MOLECULA_POOL.totalSupply > 0', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV11);
+            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPool);
 
             // deploy supply manager
             const SupplyManager = await ethers.getContractFactory('SupplyManager');
@@ -472,14 +473,18 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Check push invalid token', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployNitrogenV11WithStakedUSDe);
+            const { moleculaPool, poolOwner } = await loadFixture(deployNitrogenWithStakedUSDe);
 
-            // It's not smart-contract
+            // It's not a smart-contract
             await expect(moleculaPool.addToken(poolOwner)).to.be.rejectedWith('ENotContract');
+            // It's not a ERC-20 token
+            await expect(moleculaPool.addToken(moleculaPool)).to.be.rejectedWith(
+                'ENotERC20PoolToken()',
+            );
         });
 
         it('Check duplicated pools', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV11);
+            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPool);
             const token = ethMainnetBetaConfig.USDT_ADDRESS;
             const token2 = ethMainnetBetaConfig.USDC_ADDRESS;
 
@@ -498,13 +503,12 @@ describe('Test Nitrogen solution v1.1', () => {
             const USDT = await ethers.getContractAt('IERC20', token);
             await moleculaPool.connect(poolOwner).addToken(USDT);
             await grantERC20(moleculaPool, USDT, 100_000_000n);
-            await expect(moleculaPool.connect(poolOwner).removeToken(USDT)).to.be.rejectedWith(
-                'ENotZeroBalanceOfRemovedToken()',
-            );
+            await moleculaPool.connect(poolOwner).removeToken(USDT);
+            expect(await USDT.balanceOf(poolOwner)).to.be.equal(100_000_000n);
         });
 
         it('Test remove tokens', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV11);
+            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPool);
             const token = ethMainnetBetaConfig.USDT_ADDRESS;
             const token2 = ethMainnetBetaConfig.USDC_ADDRESS;
             const token3 = ethMainnetBetaConfig.USDE_ADDRESS;
@@ -524,7 +528,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Check duplicated pools 4626', async () => {
-            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPoolV11);
+            const { moleculaPool, poolOwner } = await loadFixture(deployMoleculaPool);
 
             const { susde, usde, usdeMinter } = await getEthena();
 
@@ -540,14 +544,13 @@ describe('Test Nitrogen solution v1.1', () => {
             await expect(moleculaPool.connect(poolOwner).pool(0)).to.be.rejected;
 
             await moleculaPool.connect(poolOwner).addToken(susde);
-            await grantStakedUSDE(moleculaPool, 100_000_000n, usde, susde, usdeMinter);
-            await expect(moleculaPool.connect(poolOwner).removeToken(susde)).to.be.rejectedWith(
-                'ENotZeroBalanceOfRemovedToken()',
-            );
+            await grantStakedUSDE(moleculaPool, 100n * 10n ** 18n, usde, susde, usdeMinter);
+            await moleculaPool.connect(poolOwner).removeToken(susde);
+            expect(await susde.balanceOf(poolOwner)).to.be.equal(100n * 10n ** 18n);
         });
 
         it('Check SupplyManager.apyFormatter', async () => {
-            const { moleculaPool, poolOwner, USDT } = await loadFixture(deployMoleculaPoolV11);
+            const { moleculaPool, poolOwner, USDT } = await loadFixture(deployMoleculaPool);
             await moleculaPool.connect(poolOwner).addToken(USDT);
             await grantERC20(await moleculaPool.getAddress(), USDT, 100_000_000n);
 
@@ -581,7 +584,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 user1,
                 malicious,
                 randAccount,
-            } = await loadFixture(deployNitrogenV11WithStakedUSDe);
+            } = await loadFixture(deployNitrogenWithStakedUSDe);
 
             // deposit 123 stakedUSDe
             const susdeUserDeposit = 123n * 10n ** (await susde.decimals());
@@ -590,7 +593,7 @@ describe('Test Nitrogen solution v1.1', () => {
             expect(await susde.balanceOf(await moleculaPool.getAddress())).to.equal(0n);
             expect(await susde.balanceOf(await moleculaPool.poolKeeper())).to.equal(0n);
 
-            // Let's increase total USDe (that locked by StakedUSDe) in 2 times!
+            // Let's increase total USDe (that locked by StakedUSDe) by 2 times!
             const totalLockedUsde = await susde.totalAssets();
             await grantUSDe(await susde.getAddress(), usde, usdeMinter, totalLockedUsde);
             // Shares (sUSDe) is not changed
@@ -640,7 +643,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test white list', async () => {
-            const { moleculaPool, poolOwner, malicious } = await loadFixture(deployMoleculaPoolV11);
+            const { moleculaPool, poolOwner, malicious } = await loadFixture(deployMoleculaPool);
 
             // Test deleteFromWhiteList
             expect(
@@ -655,7 +658,7 @@ describe('Test Nitrogen solution v1.1', () => {
                 moleculaPool
                     .connect(poolOwner)
                     .deleteFromWhiteList(ethMainnetBetaConfig.USDT_ADDRESS),
-            ).to.be.rejectedWith('EAlreadyDeleted');
+            ).to.be.rejectedWith('ENotPresentInWhiteList()');
 
             // Test addInWhiteList
             expect(
@@ -686,7 +689,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
         it('Test execute', async () => {
             const { moleculaPool, randAccount, poolOwner, USDT } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
             const keeperSigner = await ethers.getImpersonatedSigner(
                 await moleculaPool.poolKeeper(),
             );
@@ -747,7 +750,7 @@ describe('Test Nitrogen solution v1.1', () => {
 
         it('Test modifiers reverts MoleculaPoolTreasury', async () => {
             const { moleculaPool, randAccount, malicious, USDT } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             await expect(
                 moleculaPool.connect(randAccount).addToken(randAccount),
@@ -782,7 +785,7 @@ describe('Test Nitrogen solution v1.1', () => {
             );
 
             await expect(moleculaPool.deleteFromWhiteList(ethers.ZeroAddress)).to.be.rejectedWith(
-                'EZeroAddress()',
+                'ENotPresentInWhiteList()',
             );
 
             const encodedTransfer = USDT.interface.encodeFunctionData('transfer', [
@@ -805,9 +808,9 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test MoleculaPoolTreasury constructor zero address in array', async () => {
-            const { poolOwner } = await loadFixture(deployNitrogenV11WithUSDT);
+            const { poolOwner } = await loadFixture(deployNitrogenWithUSDT);
 
-            const MoleculaPool_revert = await ethers.getContractFactory('MoleculaPoolTreasury');
+            const MoleculaPool_revert = await ethers.getContractFactory('MoleculaPoolTreasuryV2');
             await expect(
                 MoleculaPool_revert.connect(poolOwner).deploy(
                     poolOwner.address,
@@ -895,6 +898,8 @@ describe('Test Nitrogen solution v1.1', () => {
 
             // Pause `execute` function
             await moleculaPool.connect(poolOwner).setBlockToken(USDT, true);
+            // It's ok if we call it again
+            await moleculaPool.connect(poolOwner).setBlockToken(USDT, true);
             // Fail to call `execute` function
             await failToExecuteFunctions('ETokenBlocked');
             // Unpause `execute` function
@@ -934,7 +939,7 @@ describe('Test Nitrogen solution v1.1', () => {
             await moleculaPool.connect(poolOwner).unpauseRedeem();
             await moleculaPool.connect(malicious).redeem([operationId]);
 
-            // anyone call confirmRedeem for user
+            // anyone calls confirmRedeem for user
             await rebaseToken.connect(user0).confirmRedeem(operationId);
             expect(await USDT.balanceOf(user0)).to.be.equal(redeemValue);
         });
@@ -966,18 +971,21 @@ describe('Test Nitrogen solution v1.1', () => {
             await moleculaPool.connect(poolOwner).unpauseAll();
             await moleculaPool.connect(malicious).redeem([operationId]);
 
-            // anyone call confirmRedeem for user
+            // anyone calls confirmRedeem for user
             await rebaseToken.connect(user0).confirmRedeem(operationId);
             expect(await USDT.balanceOf(user0)).to.be.equal(redeemValue);
         });
 
         it('Test changeGuardian', async () => {
             const { moleculaPool, randAccount, poolOwner } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
             expect(await moleculaPool.guardian()).to.not.equal(randAccount);
             await expect(
                 moleculaPool.connect(randAccount).changeGuardian(randAccount),
             ).to.be.rejectedWith('OwnableUnauthorizedAccount');
+            await expect(
+                moleculaPool.connect(poolOwner).changeGuardian(ethers.ZeroAddress),
+            ).to.be.rejectedWith('EZeroAddress()');
             await moleculaPool.connect(poolOwner).changeGuardian(randAccount);
             expect(await moleculaPool.guardian()).to.equal(randAccount);
         });
@@ -1012,14 +1020,14 @@ describe('Test Nitrogen solution v1.1', () => {
             await moleculaPool.connect(poolOwner).setBlockToken(USDT, false);
             await moleculaPool.connect(malicious).redeem([operationId]);
 
-            // anyone call confirmRedeem for user
+            // anyone calls confirmRedeem for user
             await rebaseToken.connect(user0).confirmRedeem(operationId);
             expect(await USDT.balanceOf(user0)).to.be.equal(redeemValue);
         });
 
         it('Test pause agent accountant', async () => {
             const { moleculaPool, rebaseToken, agent, user0, USDT } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
             const depositValue = 100_000_000n;
 
             await grantERC20(user0, USDT, 2n * depositValue);
@@ -1078,7 +1086,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test changeGuardian for agent accountant', async () => {
-            const { agent, poolOwner, randAccount } = await loadFixture(deployNitrogenV11WithUSDT);
+            const { agent, poolOwner, randAccount } = await loadFixture(deployNitrogenWithUSDT);
             await expect(agent.connect(randAccount).changeGuardian(randAccount)).to.be.rejectedWith(
                 'OwnableUnauthorizedAccount',
             );
@@ -1086,7 +1094,7 @@ describe('Test Nitrogen solution v1.1', () => {
         });
 
         it('Test pause agent accountant (conner cases)', async () => {
-            const { agent, randAccount } = await loadFixture(deployNitrogenV11WithUSDT);
+            const { agent, randAccount } = await loadFixture(deployNitrogenWithUSDT);
             await agent.pauseAll();
             await agent.pauseAll();
 
@@ -1108,5 +1116,164 @@ describe('Test Nitrogen solution v1.1', () => {
                 'OwnableUnauthorizedAccount',
             );
         });
+    });
+
+    it('Test migrate', async () => {
+        const {
+            moleculaPool,
+            rebaseToken,
+            agent,
+            user0,
+            user1,
+            malicious,
+            USDT,
+            poolOwner,
+            poolKeeper,
+            supplyManager,
+            guardian,
+        } = await loadFixture(deployNitrogenWithUSDTAndOldPool);
+        // deposit 100 USDT
+        const depositValue = 100_000_000n;
+        // Grant user wallet with 100 USDT
+        await grantERC20(user0, USDT, depositValue);
+        // approve USDT to agent
+        await USDT.connect(user0).approve(await agent.getAddress(), depositValue);
+
+        // user0 calls requestDeposit on rebaseToken
+        await rebaseToken.connect(user0).requestDeposit(depositValue, user0, user0);
+
+        // user asks for redeem
+        const redeemShares = await rebaseToken.sharesOf(user0);
+        const tx = await rebaseToken.connect(user0).requestRedeem(redeemShares, user0, user0);
+        const eventData = await findRequestRedeemEvent(tx);
+
+        const MoleculaPool = await ethers.getContractFactory('MoleculaPoolTreasuryV2');
+        const newMoleculaPool = await MoleculaPool.connect(poolOwner).deploy(
+            poolOwner.address,
+            [USDT],
+            poolKeeper,
+            supplyManager,
+            [],
+            guardian,
+        );
+
+        await moleculaPool.connect(poolOwner).addInWhiteList(newMoleculaPool);
+        const pool = await moleculaPool.getTokenPool();
+        for (const p of pool) {
+            const token = await ethers.getContractAt('IERC20', p.token);
+            const encodedTransfer = token.interface.encodeFunctionData('approve', [
+                await newMoleculaPool.getAddress(),
+                ethers.MaxUint256,
+            ]);
+            await moleculaPool.connect(poolKeeper).execute(token, encodedTransfer);
+            expect(await token.allowance(moleculaPool, newMoleculaPool)).to.be.equal(
+                ethers.MaxUint256,
+            );
+        }
+        await supplyManager.setMoleculaPool(newMoleculaPool);
+
+        // user0 calls redeem
+        await newMoleculaPool.connect(malicious).redeem([eventData.operationId]);
+        // anyone calls confirmRedeem for user
+        await rebaseToken.connect(user1).confirmRedeem(eventData.operationId);
+    });
+
+    it('Test migrating errors', async () => {
+        const { malicious, USDT, poolOwner, poolKeeper, supplyManager, guardian } =
+            await loadFixture(deployNitrogenWithUSDTAndOldPool);
+        const MoleculaPool = await ethers.getContractFactory('MoleculaPoolTreasuryV2');
+
+        let newMoleculaPool = await MoleculaPool.connect(poolOwner).deploy(
+            malicious,
+            [USDT],
+            poolKeeper,
+            supplyManager,
+            [],
+            guardian,
+        );
+        await expect(supplyManager.setMoleculaPool(newMoleculaPool)).to.be.rejectedWith(
+            'EBadOwner()',
+        );
+
+        newMoleculaPool = await MoleculaPool.connect(poolOwner).deploy(
+            poolOwner.address,
+            [USDT],
+            malicious,
+            supplyManager,
+            [],
+            guardian,
+        );
+        await expect(supplyManager.setMoleculaPool(newMoleculaPool)).to.be.rejectedWith(
+            'EBadPoolKeeper()',
+        );
+
+        newMoleculaPool = await MoleculaPool.connect(poolOwner).deploy(
+            poolOwner.address,
+            [USDT],
+            poolKeeper,
+            supplyManager,
+            [],
+            malicious,
+        );
+        await expect(supplyManager.setMoleculaPool(newMoleculaPool)).to.be.rejectedWith(
+            'EBadGuardian()',
+        );
+    });
+
+    it('Deposit and delete token', async () => {
+        const { moleculaPool, rebaseToken, agent, user0, USDT, poolOwner } =
+            await loadFixture(deployNitrogenWithUSDT);
+
+        // deposit 100 USDT
+        const depositValue = 100n * 10n ** 6n;
+        // Grant user wallet with 100 USDT
+        await grantERC20(user0, USDT, 2n * depositValue);
+        // approve USDT to agent
+        await USDT.connect(user0).approve(await agent.getAddress(), ethers.MaxUint256);
+
+        // user0 calls requestDeposit on rebaseToken
+        await rebaseToken.connect(user0).requestDeposit(depositValue, user0, user0);
+        const shares = await rebaseToken.sharesOf(user0);
+
+        await moleculaPool.connect(poolOwner).removeToken(USDT);
+        await expect(
+            rebaseToken.connect(user0).requestDeposit(depositValue, user0, user0),
+        ).to.be.rejectedWith('ETokenNotExist');
+        await expect(
+            rebaseToken.connect(user0).requestRedeem(shares, user0, user0),
+        ).to.be.rejectedWith('ETokenNotExist');
+    });
+
+    it('Test MoleculaPoolTreasuryV2.totalSupply()', async () => {
+        const {
+            moleculaPool,
+            rebaseToken,
+            agent,
+            user0,
+            USDT,
+            poolOwner,
+            randAccount,
+            poolKeeper,
+            DAI,
+        } = await loadFixture(deployNitrogenWithUSDT);
+
+        // deposit 100 USDT
+        const depositValue = 100n * 10n ** 6n;
+        // Grant user wallet with 100 USDT
+        await grantERC20(user0, USDT, 2n * depositValue);
+        // approve USDT to agent
+        await USDT.connect(user0).approve(await agent.getAddress(), ethers.MaxUint256);
+
+        // user0 calls requestDeposit on rebaseToken
+        await rebaseToken.connect(user0).requestDeposit(depositValue, user0, user0);
+        const shares = await rebaseToken.sharesOf(user0);
+        await rebaseToken.connect(user0).requestRedeem(shares, user0, user0);
+
+        await getRidOf(moleculaPool, poolOwner, USDT, randAccount.address, poolKeeper);
+        await getRidOf(moleculaPool, poolOwner, DAI, randAccount.address, poolKeeper);
+        expect(await moleculaPool.totalSupply()).to.be.equal(0);
+        const { supply, totalRedeem } = await moleculaPool.totalPoolsSupplyAndRedeem();
+        expect(supply).to.be.equal(0);
+        expect(totalRedeem).to.be.greaterThan(0);
     });
 });

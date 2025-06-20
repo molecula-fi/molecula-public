@@ -12,7 +12,7 @@ import {IAgent} from "./../../common/interfaces/IAgent.sol";
 import {IRebaseERC20} from "./../../common/interfaces/IRebaseERC20.sol";
 import {ISupplyManager} from "./../../common/interfaces/ISupplyManager.sol";
 import {PausableContract} from "./../../common/pausable/PausableContract.sol";
-import {MoleculaPoolTreasury, TokenType} from "./../../core/MoleculaPoolTreasury.sol";
+import {MoleculaPoolTreasuryV2, TokenType} from "./../../core/MoleculaPoolTreasuryV2.sol";
 import {IRebaseERC20V2} from "../../coreV2/Tokens/interfaces/IRebaseERC20V2.sol";
 import {BaseTokenVault} from "./../../coreV2/TokenVault/BaseTokenVault.sol";
 import {CommonERC20TokenVault} from "./../../coreV2/TokenVault/CommonERC20TokenVault.sol";
@@ -72,7 +72,7 @@ contract NitrogenTokenVault is INitrogenTokenVault, CommonERC20TokenVault, IAgen
     /// @inheritdoc IERC7575
     function convertToAssets(uint256 shares) public view virtual override returns (uint256 assets) {
         address moleculaPool = ISupplyManager(SUPPLY_MANAGER).getMoleculaPool();
-        MoleculaPoolTreasury poolTreasury = MoleculaPoolTreasury(moleculaPool);
+        MoleculaPoolTreasuryV2 poolTreasury = MoleculaPoolTreasuryV2(moleculaPool);
 
         uint256 mUSDAmount = IRebaseERC20(_SHARE).convertToAssets(shares);
 
@@ -80,7 +80,7 @@ contract NitrogenTokenVault is INitrogenTokenVault, CommonERC20TokenVault, IAgen
         // slither-disable-next-line unused-return
         (TokenType tokenType, , int8 n, , ) = poolTreasury.poolMap(_asset);
         if (tokenType == TokenType.None) {
-            revert MoleculaPoolTreasury.ETokenNotExist();
+            revert MoleculaPoolTreasuryV2.ETokenNotExist();
         }
 
         if (tokenType == TokenType.ERC20) {
@@ -102,13 +102,13 @@ contract NitrogenTokenVault is INitrogenTokenVault, CommonERC20TokenVault, IAgen
     ) internal view virtual override returns (uint256 shares) {
         // Get a Molecula Pool instance for conversion calculations.
         address moleculaPool = ISupplyManager(SUPPLY_MANAGER).getMoleculaPool();
-        MoleculaPoolTreasury poolTreasury = MoleculaPoolTreasury(moleculaPool);
+        MoleculaPoolTreasuryV2 poolTreasury = MoleculaPoolTreasuryV2(moleculaPool);
 
         // Get the token configuration from the pool map.
         // slither-disable-next-line unused-return
         (TokenType tokenType, , int8 n, , ) = poolTreasury.poolMap(_asset);
         if (tokenType == TokenType.None) {
-            revert MoleculaPoolTreasury.ETokenNotExist();
+            revert MoleculaPoolTreasuryV2.ETokenNotExist();
         }
         uint256 mUSDAmount;
         if (tokenType == TokenType.ERC20) {
@@ -205,7 +205,7 @@ contract NitrogenTokenVault is INitrogenTokenVault, CommonERC20TokenVault, IAgen
         uint256[] memory requestIds = new uint256[](1);
         requestIds[0] = requestId;
         // slither-disable-next-line reentrancy-no-eth
-        MoleculaPoolTreasury(moleculaPool).redeem(requestIds);
+        MoleculaPoolTreasuryV2(moleculaPool).redeem(requestIds);
 
         _withdraw(redeemRequests[requestId].assets, receiver, msg.sender);
     }

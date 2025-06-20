@@ -41,9 +41,6 @@ interface IBaseTokenVault {
     /// @dev Error thrown when an operation is called with invalid parameters.
     error EBadOperationParameters();
 
-    /// @dev Error thrown when the caller is not authorized.
-    error ENotAuthorized();
-
     /// @dev Error thrown when the token is already initialized.
     error EAlreadyInitialized();
 

@@ -9,3 +9,7 @@ export function isTronHexAddress(address: string): boolean {
 export function isEvmAddress(address: string) {
     return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
+
+export function isAddress(address: string) {
+    return isTronAddress(address) || isEvmAddress(address);
+}

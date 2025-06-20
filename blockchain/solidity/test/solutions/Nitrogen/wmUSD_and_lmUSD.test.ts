@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 import { ethMainnetBetaConfig } from '../../../configs/ethereum/mainnetBetaTyped';
-import { deployNitrogenV11WithUSDT, getRidOf } from '../../utils/NitrogenCommonV1.1';
+import { deployNitrogenWithUSDT, getRidOf } from '../../utils/NitrogenCommon';
 import { findTransferEvent } from '../../utils/event';
 import { grantERC20 } from '../../utils/grant';
 import { expectEqual } from '../../utils/math';
@@ -22,7 +22,7 @@ describe('Test wmUSD and lmUSD', () => {
                 user0,
                 USDT,
                 lmUSDHolder,
-            } = await loadFixture(deployNitrogenV11WithUSDT);
+            } = await loadFixture(deployNitrogenWithUSDT);
             await wmusd.setAuthorizedYieldDistributor(authorizedYieldDistributor);
 
             // deposit 100 USDT
@@ -78,7 +78,7 @@ describe('Test wmUSD and lmUSD', () => {
 
         it('wrap and unwrap flow without income', async () => {
             const { rebaseToken, wmusd, agent, user0, USDT } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             // deposit 100 USDT
             const depositValue = 100_000_000n - 1n;
@@ -117,7 +117,7 @@ describe('Test wmUSD and lmUSD', () => {
                 poolOwner,
                 randAccount,
                 poolKeeper,
-            } = await loadFixture(deployNitrogenV11WithUSDT);
+            } = await loadFixture(deployNitrogenWithUSDT);
 
             // deposit 100 USDT
             const depositValue = 100_000_000n - 1n;
@@ -166,7 +166,7 @@ describe('Test wmUSD and lmUSD', () => {
                 USDT,
                 moleculaPool,
                 authorizedYieldDistributor,
-            } = await loadFixture(deployNitrogenV11WithUSDT);
+            } = await loadFixture(deployNitrogenWithUSDT);
             await wmusd.setAuthorizedYieldDistributor(authorizedYieldDistributor);
 
             // test distributeYield
@@ -206,7 +206,7 @@ describe('Test wmUSD and lmUSD', () => {
 
         it('Test voting', async () => {
             const { moleculaPool, rebaseToken, wmusd, agent, user0, USDT, user1 } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             // deposit ~100 USDT
             const depositValue = 100_000_000n - 1n;
@@ -251,7 +251,7 @@ describe('Test wmUSD and lmUSD', () => {
         });
 
         it('Coverage', async () => {
-            const { wmusd, user0 } = await loadFixture(deployNitrogenV11WithUSDT);
+            const { wmusd, user0 } = await loadFixture(deployNitrogenWithUSDT);
 
             expect(await wmusd.CLOCK_MODE()).to.be.equal('mode=blocknumber&from=default');
             expect(await wmusd.nonces(user0)).to.be.equal(0);
@@ -273,7 +273,7 @@ describe('Test wmUSD and lmUSD', () => {
     describe('Test lmUSD', () => {
         it('lmUSD main flow', async () => {
             const { rebaseToken, agent, user0, wmusd, user1, moleculaPool, USDT, lmusd } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             // deposit 100 USDT
             const depositValue = 100_000_000n - 1n;
@@ -340,7 +340,7 @@ describe('Test wmUSD and lmUSD', () => {
 
         it('Test add/disallow/delete period', async () => {
             const { rebaseToken, agent, user0, USDT, lmusd } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             // deposit 100 USDT
             const depositValue = 100_000_000n - 1n;
@@ -385,7 +385,7 @@ describe('Test wmUSD and lmUSD', () => {
         });
 
         it('Test auth', async () => {
-            const { user0, lmusd } = await loadFixture(deployNitrogenV11WithUSDT);
+            const { user0, lmusd } = await loadFixture(deployNitrogenWithUSDT);
 
             await expect(lmusd.connect(user0).addPeriod(days(1), 100)).to.be.rejectedWith(
                 'OwnableUnauthorizedAccount(',
@@ -400,7 +400,7 @@ describe('Test wmUSD and lmUSD', () => {
 
         it('Test lmUSD.sharesOf conner case', async () => {
             const { rebaseToken, agent, wmusd, user1, moleculaPool, USDT, lmusd } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             // user1 deposits 100 USDT
             const depositValue2 = 500_000_000n - 1n;

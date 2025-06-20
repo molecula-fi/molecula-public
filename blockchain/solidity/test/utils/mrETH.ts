@@ -7,36 +7,45 @@ import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 
 import { FAUCET, grantERC20 } from './grant';
 
-export const INITIAL_SUPPLY = 10n ** 12n;
-
+// Default approver signature and expiry for testing
 export const approverSignatureAndExpiry = {
     signature: '0x',
     expiry: 0,
 };
 
+// Default salt for testing
 export const approverSalt = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
+// Native token address constant
+export const nativeToken = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+
+/**
+ * Deploys and initializes the mrETH system with all necessary contracts and configurations
+ * @returns Object containing all deployed contracts and test accounts
+ */
 export async function deployMrETh() {
     const signers = await ethers.getSigners();
 
     const owner = signers.at(0)!;
-    const user0 = signers.at(0)!;
-    const user1 = signers.at(0)!;
-    const user2 = signers.at(0)!;
+    const user0 = signers.at(1)!;
+    const user1 = signers.at(2)!;
+    const user2 = signers.at(3)!;
 
+    // Initialize token contracts
     const stETH = await ethers.getContractAt('IERC20Metadata', ethMainnetBetaConfig.STETH_ADDRESS);
     const WETH = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.WETH_ADDRESS);
     const aWETH = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.AWETH_ADDRESS);
     const cWETHv3 = await ethers.getContractAt('IERC20', ethMainnetBetaConfig.CWETH_V3);
 
-    // grant WETH tokens
-    await grantERC20(owner, WETH, ethers.parseEther('20'));
-    await grantERC20(user0, WETH, ethers.parseEther('20'));
+    // Grant test tokens to owner and user0
+    await grantERC20(owner, WETH, ethers.parseEther('100'));
+    await grantERC20(user0, WETH, ethers.parseEther('100'));
 
-    // grant stETH tokens
-    await grantERC20(owner, stETH, ethers.parseEther('40'), FAUCET.stETH);
-    await grantERC20(user0, stETH, ethers.parseEther('40'), FAUCET.stETH);
+    // Grant stETH tokens to owner and user0
+    await grantERC20(owner, stETH, ethers.parseEther('100'), FAUCET.stETH);
+    await grantERC20(user0, stETH, ethers.parseEther('100'), FAUCET.stETH);
 
+    // Deploy buffer libraries
     const AaveBufferLib = await ethers.getContractFactory('AaveBufferLib');
     const aaveBufferLib = await AaveBufferLib.connect(owner!).deploy();
     const aavePool = ethMainnetBetaConfig.AAVE_POOL;
@@ -44,7 +53,11 @@ export async function deployMrETh() {
     const CompoundBufferLib = await ethers.getContractFactory('CompoundBufferLib');
     const compoundBufferLib = await CompoundBufferLib.connect(owner!).deploy();
 
-    // calc future addresses
+    // Deploy delegator implementation
+    const DelegatorImplementation = await ethers.getContractFactory('Delegator');
+    const delegatorImplementation = await DelegatorImplementation.deploy();
+
+    // Calculate future contract addresses for initialization
     const transactionCount = await owner.getNonce();
     const supplyManagerFutureAddress = ethers.getCreateAddress({
         from: owner.address,
@@ -56,7 +69,7 @@ export async function deployMrETh() {
         nonce: (await owner.getNonce()) + 3,
     });
 
-    // deploy DepositManager
+    // Deploy and initialize DepositManager
     const DepositManager = await ethers.getContractFactory('DepositManager');
     const depositManager = await DepositManager.connect(owner!).deploy(
         owner.address,
@@ -66,8 +79,10 @@ export async function deployMrETh() {
         ethMainnetBetaConfig.WETH_ADDRESS,
         ethMainnetBetaConfig.STRATEGY_FACTORY,
         ethMainnetBetaConfig.DELEGATION_MANAGER,
+        await delegatorImplementation.getAddress(),
     );
 
+    // Initialize DepositManager with Aave pool
     await depositManager.initialize(
         0,
         [aavePool],
@@ -82,8 +97,8 @@ export async function deployMrETh() {
         [true],
     );
 
-    // deploy supply manager
-    const SupplyManagerV2 = await ethers.getContractFactory('SupplyManagerV2');
+    // Deploy and initialize SupplyManagerV2
+    const SupplyManagerV2 = await ethers.getContractFactory('SupplyManagerV2WithNative');
     const supplyManagerV2 = await SupplyManagerV2.connect(owner).deploy(
         owner,
         owner,
@@ -93,7 +108,7 @@ export async function deployMrETh() {
     );
     expect(await supplyManagerV2.getAddress()).to.be.equal(supplyManagerFutureAddress);
 
-    // deploy RebaseERC20V2
+    // Deploy and initialize RebaseTokenV2
     const RebaseTokenV2 = await ethers.getContractFactory('RebaseTokenV2');
     const rebaseTokenV2 = await RebaseTokenV2.connect(owner).deploy(
         supplyManagerV2,
@@ -105,10 +120,27 @@ export async function deployMrETh() {
     );
     expect(await rebaseTokenV2.getAddress()).to.be.equal(rebaseERC20V2FutureAddress);
 
-    // deploy TokenVault
+    const defaultOperator = ethMainnetBetaConfig.EIGENLAYER_OPERATOR;
+
+    // Initialize operators and strategies
+    await depositManager.addOperator(
+        defaultOperator,
+        approverSalt,
+        approverSignatureAndExpiry,
+        approverSalt,
+        [defaultOperator],
+        [10_000n],
+    );
+    await depositManager.addStrategies(
+        [ethMainnetBetaConfig.STETH_ADDRESS],
+        [ethMainnetBetaConfig.STRATEGY_BASE_STETH],
+        [ethers.ZeroAddress],
+    );
+
+    // Deploy and initialize token vaults
     const TokenVault = await ethers.getContractFactory('MockTokenVault');
 
-    // deploy WETH token vault
+    // Deploy and initialize WETH token vault
     const tokenVaultWETH = await TokenVault.connect(owner).deploy(
         owner,
         rebaseTokenV2,
@@ -119,10 +151,11 @@ export async function deployMrETh() {
 
     await tokenVaultWETH.init(
         WETH,
-        10n ** 6n, // minDepositValue
-        10n ** 18n, // minRedeemShares
+        10n ** 6n, // Minimum deposit value
+        10n ** 18n, // Minimum redeem shares
     );
 
+    // Deploy and initialize stETH token vault
     const tokenVaultStETH = await TokenVault.connect(owner).deploy(
         owner,
         rebaseTokenV2,
@@ -133,30 +166,69 @@ export async function deployMrETh() {
 
     await tokenVaultStETH.init(
         stETH,
-        10n ** 6n, // minDepositValue
-        10n ** 18n, // minRedeemShares
+        10n ** 6n, // Minimum deposit value
+        10n ** 18n, // Minimum redeem shares
     );
 
-    await depositManager.addStrategies(
-        [ethMainnetBetaConfig.STETH_ADDRESS],
-        [ethMainnetBetaConfig.STRATEGY_BASE_STETH],
+    // Deploy and initialize native token vault
+    const NativeTokenVault = await ethers.getContractFactory('MockNativeTokenVault');
+    const nativeTokenVault = await NativeTokenVault.deploy(
+        owner!.address,
+        rebaseTokenV2,
+        supplyManagerV2,
+        owner!.address,
+        false,
     );
 
-    // Add tokenVault into moleculaRebaseToken's white list
+    await nativeTokenVault.init(
+        nativeToken,
+        10n ** 6n, // Minimum deposit assets
+        10n ** 18n, // Minimum redeem shares
+    );
+
+    // Add token vaults to whitelist
     const codeHash = keccak256((await tokenVaultWETH.getDeployedCode())!);
     await rebaseTokenV2.setCodeHash(codeHash, true);
 
     await rebaseTokenV2.addTokenVault(tokenVaultWETH);
     await rebaseTokenV2.addTokenVault(tokenVaultStETH);
 
-    const operator = ethMainnetBetaConfig.EIGENLAYER_OPERATOR;
-    const withdrawalCredentials = await depositManager.getWithdrawalCredentials();
+    const codeHash2 = keccak256((await nativeTokenVault.getDeployedCode())!);
+    await rebaseTokenV2.setCodeHash(codeHash2, true);
+    await rebaseTokenV2.addTokenVault(nativeTokenVault);
+    await nativeTokenVault.unpauseRequestDeposit();
+    await nativeTokenVault.unpauseRequestRedeem();
+
+    // Test token vault addition revert case
+    const tokenVaultCWETH_V3 = await TokenVault.connect(owner).deploy(
+        owner,
+        rebaseTokenV2,
+        supplyManagerV2,
+        owner!.address,
+        false,
+    );
+
+    await tokenVaultCWETH_V3.init(
+        cWETHv3,
+        10n ** 6n, // Minimum deposit value
+        10n ** 18n, // Minimum redeem shares
+    );
+
+    await expect(rebaseTokenV2.addTokenVault(tokenVaultCWETH_V3)).to.be.reverted;
+
+    // Get default delegator
+    const defaultDelegatorAddress = await depositManager.chooseDelegatorForDeposit();
+
+    // Get default withdrawal credentials and approve tokens
+    const defaultWithdrawalCredentials =
+        await depositManager.getWithdrawalCredentials(defaultDelegatorAddress);
     await WETH.approve(tokenVaultWETH, ethers.MaxUint256);
     await WETH.connect(user0).approve(tokenVaultWETH, ethers.MaxUint256);
 
     await stETH.approve(tokenVaultStETH, ethers.MaxUint256);
     await stETH.connect(user0).approve(tokenVaultStETH, ethers.MaxUint256);
 
+    // Unpause token vaults
     await tokenVaultWETH.unpauseAll();
     await tokenVaultStETH.unpauseAll();
 
@@ -166,6 +238,7 @@ export async function deployMrETh() {
         rebaseTokenV2,
         tokenVaultWETH,
         tokenVaultStETH,
+        nativeTokenVault,
         owner,
         user0,
         user1,
@@ -177,7 +250,7 @@ export async function deployMrETh() {
         aavePool,
         aaveBufferLib,
         compoundBufferLib,
-        withdrawalCredentials,
-        operator,
+        defaultOperator,
+        defaultWithdrawalCredentials,
     };
 }

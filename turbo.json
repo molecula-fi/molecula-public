@@ -132,7 +132,14 @@
         "REDIS_DB",
         "REDIS_PREFIX",
         "REDIS_TTL",
-        "NATS_URL"
+        "NATS_URL",
+        "USE_LEGACY_OPERATIONS",
+        "EVM_TOKEN_TRACKER_URL",
+        "TRON_TOKEN_TRACKER_URL",
+        "EVM_SCAN_URL",
+        "TRON_SCAN_URL",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_CHAT_ID"
     ],
     "globalDependencies": [".env"]
 }

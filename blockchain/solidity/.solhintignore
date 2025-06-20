@@ -24,7 +24,6 @@
 ./contracts/common/interfaces/IRebaseTokenEvents.sol
 ./contracts/common/interfaces/ISupplyManager.sol
 ./contracts/common/rebase/
-./contracts/core/MoleculaPool.sol
 ./contracts/core/MoleculaPoolTreasury.sol
 ./contracts/core/SupplyManager.sol
 ./contracts/core/extensions/mUSDe.sol
@@ -33,5 +32,4 @@
 ./contracts/solutions/Nitrogen/AgentAccountant.sol
 ./contracts/solutions/Nitrogen/interfaces/IRebaseTokenOwner.sol
 ./contracts/common/interfaces/IERC20Basic.sol
-./contracts/common/interfaces/IMoleculaPool.sol
 ./contracts/common/ZeroValueChecker.sol

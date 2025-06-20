@@ -1,5 +1,6 @@
 {
     "extends": ["//"],
+    "$schema": "../../../node_modules/turbo/schema.json",
     "tasks": {
         "compile": {
             "outputs": ["artifacts/**", "cache/**", "typechain-types/**"]

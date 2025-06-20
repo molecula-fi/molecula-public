@@ -6,7 +6,7 @@ import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 import { tronMainnetBetaConfig } from '../../configs/tron/mainnetBetaTyped';
 
 import { generateRandomWallet } from './Common';
-import { deployNitrogenV11WithUSDT } from './NitrogenCommonV1.1';
+import { deployNitrogenWithUSDT } from './NitrogenCommon';
 import { grantERC20, grantETH } from './grant';
 
 export const INITIAL_SUPPLY = 100n * 10n ** 18n;
@@ -14,7 +14,7 @@ export const enforcedOptionData = '0x00030100110100000000000000000000000000030d4
 
 export async function deployCarbon() {
     const { moleculaPool, supplyManager, poolOwner, rebaseTokenOwner, user0, user1 } =
-        await deployNitrogenV11WithUSDT();
+        await deployNitrogenWithUSDT();
 
     // Contracts are deployed using the first signer/account by default
     const [owner, user] = await ethers.getSigners();

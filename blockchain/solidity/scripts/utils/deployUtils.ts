@@ -6,11 +6,7 @@ import { type HardhatRuntimeEnvironment } from 'hardhat/types';
 import * as path from 'path';
 import { TronWeb } from 'tronweb';
 
-import {
-    EnvironmentType,
-    MoleculaPoolVersion,
-    getMoleculaPoolVersion,
-} from '@molecula-monorepo/blockchain.addresses';
+import { EnvironmentType } from '@molecula-monorepo/blockchain.addresses';
 
 import { ethMainnetBetaConfig } from '../../configs/ethereum/mainnetBetaTyped';
 import { ethMainnetProdConfig } from '../../configs/ethereum/mainnetProdTyped';
@@ -19,16 +15,6 @@ import { tronMainnetBetaConfig } from '../../configs/tron/mainnetBetaTyped';
 import { tronMainnetProdConfig } from '../../configs/tron/mainnetProdTyped';
 import { shastaConfig } from '../../configs/tron/shastaTyped';
 import type { IERC20 } from '../../typechain-types';
-
-export function getVersion(param: string): MoleculaPoolVersion {
-    const version = Object.values(MoleculaPoolVersion).find(x => x === param);
-    if (version === undefined) {
-        throw new Error(
-            `Unexpected value '${param}' ': '${getMoleculaPoolVersion().join("', '")}'.`,
-        );
-    }
-    return version;
-}
 
 export function verifyEnvironment(network: string, environment: string) {
     if ((network === 'sepolia' || network === 'shasta') && environment !== 'devnet') {

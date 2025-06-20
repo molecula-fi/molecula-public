@@ -20,10 +20,6 @@ abstract contract CommonToken is IShareAssetConverter, VaultContainer, ValueVali
     /// @dev The address of the Oracle contract.
     address public oracle;
 
-    /// @notice Error thrown when an unauthorized address attempts to access restricted functions
-    /// @dev Used in onlySupplyManagerOrTokenVault modifier for access control
-    error ENotAuthorized();
-
     /// @notice Restricts access to Supply Manager or allowed token Vaults
     /// @dev Validates if the caller is either the Supply Manager or a whitelisted token Vault
     modifier onlySupplyManagerOrTokenVault() {

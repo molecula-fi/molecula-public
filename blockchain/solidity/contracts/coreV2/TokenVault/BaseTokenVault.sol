@@ -65,17 +65,6 @@ abstract contract BaseTokenVault is
         _setPause(_REQUEST_REDEEM_SELECTOR, true);
     }
 
-    // ============ Modifiers ============
-
-    /// @dev Ensures the caller's address matches the expected address.
-    /// @param expectedSender Authorized address to call the functions.
-    modifier only(address expectedSender) {
-        if (msg.sender != expectedSender) {
-            revert ENotAuthorized();
-        }
-        _;
-    }
-
     // ============ Core Functions ============
 
     /// @inheritdoc IBaseTokenVault

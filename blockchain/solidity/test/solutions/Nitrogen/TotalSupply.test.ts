@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 import { INITIAL_SUPPLY } from '../../utils/Carbon';
-import { deployNitrogenV11WithUSDT } from '../../utils/NitrogenCommonV1.1';
+import { deployNitrogenWithUSDT } from '../../utils/NitrogenCommon';
 import { findRequestRedeemEvent } from '../../utils/event';
 import { grantERC20 } from '../../utils/grant';
 
@@ -12,7 +12,7 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
     describe('Test Supply Manager pool reduce without income', () => {
         it('Should set the right owner', async () => {
             const { moleculaPool, supplyManager, agent, poolOwner } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             expect(await moleculaPool.owner()).to.equal(await poolOwner.getAddress());
             expect(await supplyManager.owner()).to.equal(await poolOwner.getAddress());
@@ -22,7 +22,7 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
         });
         it('SupplyManager.totalSupply()', async () => {
             const { moleculaPool, supplyManager, rebaseToken, agent, user0, USDT } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             // generate income. make x2 share price.
             const income = 250_000_000n;
@@ -80,7 +80,7 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
     describe('Test Supply Manager reverts', () => {
         it('Should correct modifiers revert', async () => {
             const { supplyManager, agent, poolOwner, user1 } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+                await loadFixture(deployNitrogenWithUSDT);
 
             await expect(
                 supplyManager.connect(user1).deposit(user1.address, 0n, 0n),
@@ -120,8 +120,7 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
         });
 
         it('Should correct set authorizedYieldDistributor', async () => {
-            const { supplyManager, poolOwner, user1 } =
-                await loadFixture(deployNitrogenV11WithUSDT);
+            const { supplyManager, poolOwner, user1 } = await loadFixture(deployNitrogenWithUSDT);
 
             await expect(
                 supplyManager.connect(user1).setMoleculaPool(user1.address),
@@ -145,7 +144,7 @@ describe('Test Nitrogen SupplyManger totalSupply and reverts', () => {
         });
 
         it('Should validate parties', async () => {
-            const { supplyManager, agent, user0 } = await loadFixture(deployNitrogenV11WithUSDT);
+            const { supplyManager, agent, user0 } = await loadFixture(deployNitrogenWithUSDT);
 
             // create agentInfo variables for test validation parties
             const party_0 = {

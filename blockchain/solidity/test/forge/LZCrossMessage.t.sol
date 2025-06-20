@@ -16,7 +16,7 @@ import {MockRebaseTokenCommon} from "../../contracts/mock/coreV2/MockRebaseToken
 import {MockTronOracle} from "../../contracts/mock/MockTronOracle.sol";
 import {MockUsdtOFT} from "../../contracts/mock/USDT/MockUsdtOFT.sol";
 import {MockUSDT} from "../../contracts/mock/USDT/MockUsdt.sol";
-import {MoleculaPoolTreasury} from "../../contracts/core/MoleculaPoolTreasury.sol";
+import {MoleculaPoolTreasuryV2} from "../../contracts/core/MoleculaPoolTreasury.sol";
 
 // Import options builder and test helper utility functions
 import {OptionsBuilder} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
@@ -56,7 +56,7 @@ contract LZCrossMessageTest is TestHelperOz5 {
     MockRebaseTokenCommon public tronRebase;
 
     // Instance of the MoleculaPoolTreasury on Ethereum.
-    MoleculaPoolTreasury public mpTreasuryEth;
+    MoleculaPoolTreasuryV2 public mpTreasuryEth;
 
     // Instance of the Supply Manager on Ethereum.
     SupplyManager public spManagerEth;

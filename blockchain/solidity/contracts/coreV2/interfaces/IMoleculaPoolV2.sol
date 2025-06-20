@@ -57,7 +57,7 @@ interface IMoleculaPoolV2 {
 /// @title IMoleculaPoolV2WithNativeToken.
 /// @notice Interface for managing the native token operations in the Molecula Pool.
 /// @dev Extends IMoleculaPoolV2 with the native token functionality.
-interface IMoleculaPoolV2WithNativeToken {
+interface IMoleculaPoolV2WithNativeToken is IMoleculaPoolV2 {
     /// @dev Deposits native tokens to the pool.
     /// @param requestId Deposit operation's ID.
     /// @param token Native token address.

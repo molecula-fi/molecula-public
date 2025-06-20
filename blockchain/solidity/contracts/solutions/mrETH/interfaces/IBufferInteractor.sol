@@ -1,15 +1,16 @@
 // SPDX-FileCopyrightText: 2025 Molecula <info@molecula.fi>
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
-/// @title Deposit Managers's Interface
-/// @notice Defines the functions and events required for pool data management.
+
+/// @title Buffer Interactor Interface
+/// @notice Defines the functions required for interacting with liquidity pools.
 interface IBufferInteractor {
     /**
-     * @dev Encodes data for deposit into Pool.
-     * @param asset Address of deposit token.
-     * @param receiver Address of LP token receiver.
-     * @param amount Deposit value.
-     * @return bytes encoded message for deposit transaction.
+     * @dev Encodes the data for depositing into the Pool.
+     * @param asset Deposit token's address.
+     * @param receiver Address of the LP token receiver.
+     * @param amount Amount to deposit.
+     * @return bytes Encoded message for the deposit transaction.
      */
     function encodeSupply(
         address asset,
@@ -18,11 +19,11 @@ interface IBufferInteractor {
     ) external pure returns (bytes memory);
 
     /**
-     * @dev Encodes data for withdraw from Pool.
-     * @param asset Address of deposit token.
-     * @param receiver Address of LP token receiver.
-     * @param amount Deposit value.
-     * @return bytes encoded message for withdraw transaction.
+     * @dev Encodes data for withdrawing from a Pool.
+     * @param asset Deposit token's address.
+     * @param receiver Address of the LP token receiver.
+     * @param amount Amount to withdraw.
+     * @return bytes Encoded message for the withdrawal transaction.
      */
     function encodeWithdraw(
         address asset,
@@ -31,11 +32,11 @@ interface IBufferInteractor {
     ) external pure returns (bytes memory);
 
     /**
-     * @dev Gets withdrawable balance of ETH.
-     * @param pool Address of protocol actual balance storage.
-     * @param asset Address of deposit token.
-     * @param owner Address of LP token owner.
-     * @return withdrawable ETH balance.
+     * @dev Gets the withdrawable ETH balance.
+     * @param pool Address of the protocol's balance storage.
+     * @param asset Deposit token's address.
+     * @param owner LP token owner's address.
+     * @return uint256 Withdrawable ETH balance.
      */
     function getEthBalance(
         address pool,

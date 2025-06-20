@@ -24,7 +24,7 @@ remappings = [
 ]
 
 [doc]
-ignore = ["contracts/test/**/*.sol", "contracts/mock/**/*.sol", "contracts/core/MoleculaPool.sol"]
+ignore = ["contracts/test/**/*.sol", "contracts/mock/**/*.sol"]
 
 [profile.default.fuzz]
 runs = 1024

@@ -73,15 +73,6 @@ contract SupplyManagerV2 is ISupplyManagerV2, Ownable2Step, IOracleV2, ValueVali
         _;
     }
 
-    /// @dev Ensures the caller matches the expected address.
-    /// @param expectedAddress Authorized caller address.
-    modifier only(address expectedAddress) {
-        if (msg.sender != expectedAddress) {
-            revert ENotAuthorized();
-        }
-        _;
-    }
-
     // ============ Constructor ============
 
     /// @notice Initializes the Supply Manager's contract.

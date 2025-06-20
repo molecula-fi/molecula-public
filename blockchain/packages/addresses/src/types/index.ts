@@ -8,22 +8,11 @@ export enum AuthorizedType {
 }
 
 /**
- * Network types used for the contracts deployment.
+ * Network types used for the contract deployment.
  * Might include different stages within the same network.
  */
 export enum EnvironmentType {
     'mainnet/beta' = 'mainnet/beta',
     'mainnet/prod' = 'mainnet/prod',
     devnet = 'devnet',
-}
-
-export enum MoleculaPoolVersion {
-    v10 = '1.0',
-    v11 = '1.1',
-}
-
-export function getMoleculaPoolVersion() {
-    return Object.values(MoleculaPoolVersion).filter(item => {
-        return isNaN(Number(item));
-    });
 }

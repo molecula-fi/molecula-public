@@ -86,7 +86,7 @@ describe('mUSDLock', () => {
         expect(await mUsd.balanceOf(user)).to.equal(350); // 350 - asset
         expect(await mUsd.balanceOf(await mUsdLock.getAddress())).to.equal(0);
 
-        // User unlocks the funds that is already unlocked
+        // User unlocks the funds that are already unlocked
         await expect(mUsdLock.connect(user).unlock(lockId, '0x')).to.be.rejectedWith(
             'ESharesAlreadyUnlocked()',
         );

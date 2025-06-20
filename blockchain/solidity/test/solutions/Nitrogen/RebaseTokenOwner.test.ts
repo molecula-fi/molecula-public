@@ -2,11 +2,11 @@
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { expect } from 'chai';
 
-import { deployNitrogenV11WithTokenVault } from '../../utils/NitrogenCommonV1.1';
+import { deployNitrogenWithTokenVault } from '../../utils/NitrogenCommon';
 
 describe('RebaseTokenOwner', () => {
     it('Test RebaseTokenOwner errors', async () => {
-        const { rebaseTokenOwner, user0 } = await loadFixture(deployNitrogenV11WithTokenVault);
+        const { rebaseTokenOwner, user0 } = await loadFixture(deployNitrogenWithTokenVault);
 
         // Test pause/pause mint
         await rebaseTokenOwner.pauseMint();
